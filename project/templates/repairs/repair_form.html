@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block nav_repairs %}active{% endblock %}
+
+{% block content %}
+<style>
+@media(max-width:768px){
+  .form-actions{flex-direction:column;}
+  .form-actions button,.form-actions a{width:100%;}
+}
+</style>
+
+<div class="card" style="max-width:700px;">
+  <div class="card-header"><span class="card-title">{{ title }}</span></div>
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">{{ form.product.label }} <span style="color:red;">*</span></label>
+          {{ form.product }}
+          {{ form.product.errors }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">{{ form.kind.label }} <span style="color:red;">*</span></label>
+          {{ form.kind }}
+          {{ form.kind.errors }}
+        </div>
+      </div>
+      
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">{{ form.status.label }} <span style="color:red;">*</span></label>
+          {{ form.status }}
+          {{ form.status.errors }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">{{ form.finish_at.label }} <span style="color:red;">*</span></label>
+          {{ form.finish_at }}
+          {{ form.finish_at.errors }}
+        </div>
+      </div>
+      
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">{{ form.total_cost.label }} <span style="color:red;">*</span></label>
+          {{ form.total_cost }}
+          {{ form.total_cost.errors }}
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">{{ form.notes.label }}</label>
+        {{ form.notes }}
+        {{ form.notes.errors }}
+      </div>
+      
+      <div class="form-actions" style="display:flex;gap:10px;margin-top:15px;">
+        <button type="submit" class="btn btn-primary">{% if is_edit %}تحديث{% else %}حفظ{% endif %}</button>
+        <a href="{% url 'repair_list' %}" class="btn btn-outline">إلغاء</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block nav_repairs %}active{% endblock %}
+
+{% block content %}
+<style>
+.table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.table-wrap .erp-table{min-width:860px;width:100%;}
+@media(max-width:768px){
+  .card-header{flex-direction:column;align-items:stretch;}
+  .btn-sm{min-height:40px;padding:8px 12px;}
+  form[method="get"]{flex-direction:column;}
+  form[method="get"] input,form[method="get"] select,form[method="get"] button,form[method="get"] a{width:100%;box-sizing:border-box;}
+  .desktop-table{display:none;}
+  .mobile-cards{display:block;}
+}
+@media(min-width:769px){
+  .mobile-cards{display:none;}
+}
+.repair-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;margin-bottom:10px;}
+.repair-card .rc-title{font-size:15px;font-weight:700;margin-bottom:6px;}
+.repair-card .rc-row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;border-bottom:1px solid #f1f5f9;}
+.repair-card .rc-row:last-of-type{border-bottom:none;}
+.repair-card .rc-label{color:#64748b;}
+.repair-card .rc-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.repair-card .rc-actions a{flex:1;min-height:40px;display:flex;align-items:center;justify-content:center;text-align:center;min-width:60px;}
+</style>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">{{ title }}</span>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <a href="{% url 'repair_create' %}" class="btn btn-primary btn-sm">+ إضافة </a>
+    </div>
+  </div>
+  
+  <div class="card-body">
+    <form method="get" style="display:flex;gap:10px;flex-wrap:wrap;">
+      <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="بحث باسم الفستان أو الباركود..." style="flex:1;min-width:150px;">
+      
+      <select name="kind" class="form-select" style="min-width:120px;">
+        <option value="">كل الأنواع</option>
+        {% for key, value in kind_choices %}
+        <option value="{{ key }}" {% if kind_filter == key %}selected{% endif %}>{{ value }}</option>
+        {% endfor %}
+      </select>
+      
+      <select name="status" class="form-select" style="min-width:120px;">
+        <option value="">كل الحالات</option>
+        {% for key, value in status_choices %}
+        <option value="{{ key }}" {% if status_filter == key %}selected{% endif %}>{{ value }}</option>
+        {% endfor %}
+      </select>
+      
+      <button type="submit" class="btn btn-primary">بحث</button>
+      <a href="{% url 'repair_list' %}" class="btn btn-outline">إعادة تعيين</a>
+    </form>
+  </div>
+
+  <div class="card-body" style="padding:0;">
+    <div class="desktop-table table-wrap">
+      <table class="erp-table">
+        <thead>
+          <tr>
+            <th>الفستان</th>
+            <th>النوع</th>
+            <th>الحالة</th>
+            <th>التكلفة</th>
+            <th>تاريخ الانتهاء</th>
+            <th>تاريخ الإضافة</th>
+            <th>الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for repair in repairs %}
+          <tr>
+            <td class="fw-600">{{ repair.product.name }}</td>
+            <td><span class="badge {% if repair.kind == 'clean' %}badge-info{% else %}badge-warning{% endif %}">{{ repair.get_kind_display }}</span></td>
+            <td><span class="badge {% if repair.status == 'finished' %}badge-success{% else %}badge-primary{% endif %}">{{ repair.get_status_display }}</span></td>
+            <td>{{ repair.total_cost|floatformat:2|intcomma }}</td>
+            <td>{{ repair.finish_at|date:"Y-m-d" }}</td>
+            <td>{{ repair.created_at|date:"Y-m-d" }}</td>
+            <td>
+              <div style="display:flex;gap:5px;flex-wrap:wrap;">
+                <a href="{% url 'repair_detail' repair.pk %}" class="btn btn-outline btn-icon btn-sm">عرض</a>
+                {% if user.is_main_admin %}
+                <a href="{% url 'repair_edit' repair.pk %}" class="btn btn-outline btn-icon btn-sm">تعديل</a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="text-center text-muted" style="padding:40px;">لا توجد طلبات صيانة</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mobile-cards" style="padding:12px;">
+      {% for repair in repairs %}
+      <div class="repair-card">
+        <div class="rc-title">{{ repair.product.name }}</div>
+        <div class="rc-row"><span class="rc-label">النوع</span><span class="badge {% if repair.kind == 'clean' %}badge-info{% else %}badge-warning{% endif %}">{{ repair.get_kind_display }}</span></div>
+        <div class="rc-row"><span class="rc-label">الحالة</span><span class="badge {% if repair.status == 'finished' %}badge-success{% else %}badge-primary{% endif %}">{{ repair.get_status_display }}</span></div>
+        <div class="rc-row"><span class="rc-label">التكلفة</span><span>{{ repair.total_cost|floatformat:2|intcomma }}</span></div>
+        <div class="rc-row"><span class="rc-label">تاريخ الانتهاء</span><span>{{ repair.finish_at|date:"Y-m-d" }}</span></div>
+        <div class="rc-row"><span class="rc-label">تاريخ الإضافة</span><span>{{ repair.created_at|date:"Y-m-d" }}</span></div>
+        <div class="rc-actions">
+          <a href="{% url 'repair_detail' repair.pk %}" class="btn btn-outline btn-sm">عرض</a>
+          {% if user.is_main_admin %}
+          <a href="{% url 'repair_edit' repair.pk %}" class="btn btn-outline btn-sm">تعديل</a>
+          {% endif %}
+        </div>
+      </div>
+      {% empty %}
+      <div style="text-align:center;padding:40px;color:#64748b;">لا توجد طلبات صيانة</div>
+      {% endfor %}
+    </div>
+  </div>
+  
+  {% if repairs.has_other_pages %}
+  <div class="card-footer">
+    <nav>
+      <ul class="pagination" style="justify-content:center;flex-wrap:wrap;gap:5px;">
+        {% if repairs.has_previous %}
+        <li><a href="?page=1{% if query %}&q={{ query }}{% endif %}{% if kind_filter %}&kind={{ kind_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-outline btn-sm">الأولى</a></li>
+        <li><a href="?page={{ repairs.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if kind_filter %}&kind={{ kind_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-outline btn-sm">السابق</a></li>
+        {% endif %}
+        
+        <li><span class="btn btn-primary btn-sm">صفحة {{ repairs.number }} من {{ repairs.paginator.num_pages }}</span></li>
+        
+        {% if repairs.has_next %}
+        <li><a href="?page={{ repairs.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if kind_filter %}&kind={{ kind_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-outline btn-sm">التالي</a></li>
+        <li><a href="?page={{ repairs.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}{% if kind_filter %}&kind={{ kind_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-outline btn-sm">الأخيرة</a></li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

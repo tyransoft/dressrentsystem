@@ -1,0 +1,363 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}تأكيد الاستلام{% endblock %}
+
+{% block content %}
+<style>
+.card {
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
+.card-header {
+    padding: 16px 20px;
+    font-weight: 600;
+}
+.card-header.bg-success {
+    background: #22c55e !important;
+}
+.card-header.bg-warning {
+    background: #f59e0b !important;
+}
+.card-header.bg-primary {
+    background: #D4AF37 !important;
+}
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+@media (max-width: 768px) {
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+.info-card {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 16px;
+}
+.info-card h5 {
+    color: #1e293b;
+    font-weight: 700;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e2e8f0;
+}
+.info-card .info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 14px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.info-card .info-row:last-child {
+    border-bottom: none;
+}
+.info-card .info-label {
+    color: #64748b;
+    font-weight: 500;
+}
+.info-card .info-value {
+    font-weight: 600;
+    color: #1e293b;
+}
+.info-card .info-value.text-primary { color: #D4AF37; }
+.info-card .info-value.text-success { color: #22c55e; }
+.info-card .info-value.text-danger { color: #dc2626; }
+.info-card .info-value.text-warning { color: #f59e0b; }
+.product-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 13px;
+}
+.product-item .pname { font-weight: 600; }
+.product-item .pprice { color: #D4AF37; }
+.amount-box {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+.amount-box.total { background: #e2e8f0; }
+.amount-box.paid { background: #dcfce7; color: #166534; }
+.amount-box.remaining { background: #fee2e2; color: #991b1b; }
+.amount-box.remaining.zero { background: #dcfce7; color: #166534; }
+.amount-box .label { font-weight: 500; }
+.amount-box .value { font-weight: 700; }
+.penalty-item {
+    background: #fef3c7;
+    border-radius: 6px;
+    padding: 6px 12px;
+    margin: 3px 0;
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+}
+.penalty-item .reason { color: #92400e; }
+.penalty-item .amount { color: #dc2626; font-weight: 700; }
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.action-buttons .btn {
+    flex: 1;
+    min-width: 120px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.3s;
+    border: none;
+    color: #fff;
+}
+.action-buttons .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.action-buttons .btn-success { background: #22c55e; }
+.action-buttons .btn-success:hover { background: #16a34a; }
+.action-buttons .btn-secondary { background: #6b7280; }
+.action-buttons .btn-secondary:hover { background: #4b5563; }
+.action-buttons .btn-warning { background: #f59e0b; }
+.action-buttons .btn-warning:hover { background: #d97706; }
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+.penalty-form {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 12px;
+}
+.penalty-form .form-control {
+    border: 2px solid #f59e0b;
+}
+.penalty-form .form-control:focus {
+    border-color: #d97706;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+}
+.penalties-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 2px solid #e2e8f0;
+}
+.penalties-section .penalty-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.penalties-section .penalty-header h6 {
+    margin: 0;
+    font-weight: 700;
+    color: #92400e;
+}
+.penalties-section .penalty-header .total-penalties {
+    font-weight: 700;
+    color: #dc2626;
+}
+.delay-info {
+    background: #fee2e2;
+    border: 1px solid #dc2626;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-top: 10px;
+}
+.delay-info .delay-title {
+    font-weight: 700;
+    color: #991b1b;
+}
+.delay-info .delay-detail {
+    color: #dc2626;
+    font-weight: 600;
+}
+</style>
+
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">
+                تأكيد استلام 
+                <span class="float-start badge bg-light text-dark" style="font-size:16px;padding:6px 16px;">
+                    {{ invoice.invoice_number }}
+                </span>
+            </h4>
+        </div>
+        
+        <div class="card-body">
+            <div class="info-grid">
+                <div class="info-card">
+                    <h5>معلومات الفاتورة</h5>
+                    <div class="info-row">
+                        <span class="info-label">رقم الفاتورة</span>
+                        <span class="info-value">{{ invoice.invoice_number }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">العميل</span>
+                        <span class="info-value">{{ invoice.customer_display_name }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">نوع الفاتورة</span>
+                        <span class="info-value">{{ invoice.get_invoice_type_display }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">تاريخ النهاية</span>
+                        <span class="info-value">{{ invoice.rent_end_date|default:"-" }}</span>
+                    </div>
+                    <div class="info-row" style="border-bottom:none;padding-top:8px;margin-top:4px;border-top:2px solid #e2e8f0;">
+                        <span class="info-label">الفساتين</span>
+                        <span class="info-value" style="text-align:left;width:60%;">
+                            {% for item in invoice.items.all %}
+                            <div class="product-item">
+                                <span class="pname">{{ item.product.name }}</span>
+                                <span class="pprice">{{ item.days|default:1 }} × {{ item.unit_price|floatformat:2|intcomma }} = {{ item.total_price|floatformat:2|intcomma }}</span>
+                            </div>
+                            {% empty %}
+                            <span class="text-muted">لا توجد فساتين</span>
+                            {% endfor %}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="info-card">
+                    <h5>المبالغ</h5>
+                    <div class="amount-box total">
+                        <span class="label">الإجمالي</span>
+                        <span class="value">{{ invoice.total_amount|floatformat:2|intcomma }} د.ل</span>
+                    </div>
+                    <div class="amount-box paid">
+                        <span class="label">المدفوع</span>
+                        <span class="value">{{ invoice.paid_amount|floatformat:2|intcomma }} د.ل</span>
+                    </div>
+                    <div class="amount-box remaining {% if invoice.remaining_amount <= 0 %}zero{% endif %}">
+                        <span class="label">المتبقي</span>
+                        <span class="value">{{ invoice.remaining_amount|floatformat:2|intcomma }} د.ل</span>
+                    </div>
+                    
+                    <div class="penalties-section">
+                        <div class="penalty-header">
+                            <h6>الغرامات</h6>
+                            <span class="total-penalties">{{ total_penalties|floatformat:2|intcomma }} د.ل</span>
+                        </div>
+                        {% if penalties %}
+                            {% for penalty in penalties %}
+                            <div class="penalty-item">
+                                <span class="reason">{{ penalty.reason }}</span>
+                                <span class="amount">{{ penalty.amount|floatformat:2|intcomma }} د.ل</span>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-muted" style="font-size:13px;padding:4px 0;">لا توجد غرامات</div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if delay_info.is_delayed %}
+                    <div class="delay-info">
+                        <div class="delay-title">تأخير في التسليم</div>
+                        <div class="delay-detail">مدة التأخير: {{ delay_info.delay_hours }} ساعة ({{ delay_info.delay_days }} يوم)</div>
+                    </div>
+                    {% endif %}
+                    
+                    <div style="margin-top:10px;padding-top:10px;border-top:2px solid #e2e8f0;">
+                        <div class="info-row">
+                            <span class="info-label">الحالة</span>
+                            <span class="info-value">
+                                <span class="badge {% if invoice.status == 'paid' %}bg-success
+                                         {% elif invoice.status == 'pending' %}bg-warning
+                                         {% elif invoice.status == 'partial' %}bg-info
+                                         {% elif invoice.status == 'cancelled' %}bg-danger
+                                         {% else %}bg-secondary{% endif %}" style="font-size:14px;padding:6px 14px;">
+                                    {{ invoice.get_status_display }}
+                                </span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-4" style="border-color:#f59e0b;">
+                <div class="card-header" style="background:#fef3c7;color:#92400e;font-weight:600;">
+                    إضافة غرامة
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{% url 'add_penalty' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="invoice_id" value="{{ invoice.id }}">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">قيمة الغرامة</label>
+                                <input type="number" step="0.01" name="amount" class="form-control" required placeholder="المبلغ">
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label">سبب الغرامة</label>
+                                <input type="text" name="reason" class="form-control" required placeholder="سبب الغرامة">
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button type="submit" class="btn btn-warning w-100">
+                                    إضافة غرامة
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-4 border-success" style="border-width:2px;">
+                
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="confirm_return" value="true">
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label"><strong>ملاحظات التسليم</strong></label>
+                                    <textarea name="notes" class="form-control" rows="3" 
+                                              placeholder="أضف ملاحظات عن حالة المنتج..."></textarea>
+                                </div>
+                            </div>
+                            <div class="col-md-6 d-flex flex-column justify-content-end">
+                                <label class="form-label">&nbsp;</label>
+                                <div class="action-buttons">
+                                    <button type="submit" class="btn btn-success">
+                                        تأكيد الاستلام والتسليم
+                                    </button>
+                                    <a href="{% url 'invoice_list' %}" class="btn btn-secondary">
+                                        العودة
+                                    </a>
+                                </div>
+                                {% if invoice.remaining_amount > 0 %}
+                                <small class="text-warning mt-2">
+                                    سيتم تسجيل دفعة بقيمة {{ invoice.remaining_amount|floatformat:2|intcomma }} د.ل لتسوية المتبقي
+                                </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media (max-width: 768px) {
+    .container { padding: 10px; }
+    .info-grid { grid-template-columns: 1fr; }
+    .action-buttons { flex-direction: column; }
+    .action-buttons .btn { width: 100%; }
+    .card-header h4 { font-size: 16px; }
+    .card-header .float-start { float: none !important; display: inline-block; margin-top: 6px; }
+    .row.g-3 .col-md-3 { margin-top: 0; }
+}
+</style>
+{% endblock %}

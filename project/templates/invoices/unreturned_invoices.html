@@ -1,0 +1,156 @@
+<!-- templates/core/unreturned_invoices.html -->
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}الفواتير غير المستلمة{% endblock %}
+{% block page_title %}الفواتير غير المستلمة{% endblock %}
+
+{% block content %}
+<style>
+*{box-sizing:border-box;}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+.stat-card{background:#fff;border:1px solid #eaecf0;border-radius:12px;padding:14px 16px;text-align:center;}
+.stat-card .stat-number{font-size:24px;font-weight:800;color:#1a2236;}
+.stat-card .stat-label{font-size:11px;color:#6b7280;margin-top:4px;}
+.stat-card.danger .stat-number{color:#dc2626;}
+.stat-card.warning .stat-number{color:#f59e0b;}
+.stat-card.primary .stat-number{color:#D4AF37;}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.erp-table{min-width:800px;width:100%;font-size:13px;border-collapse:collapse;}
+.erp-table th{background:#f8fafc;font-weight:600;color:#374151;padding:8px 12px;text-align:center;border-bottom:2px solid #eaecf0;font-size:12px;}
+.erp-table td{padding:8px 12px;text-align:center;border-bottom:1px solid #f1f3f5;vertical-align:middle;}
+.erp-table tbody tr:hover{background:#f0f4ff;}
+.erp-table .text-danger{color:#dc2626;}
+.erp-table .text-success{color:#16a34a;}
+.erp-table .text-warning{color:#f59e0b;}
+.badge-status{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+.badge-delayed{background:#fee2e2;color:#991b1b;}
+.badge-ontime{background:#dcfce7;color:#166534;}
+.desktop-table{display:block;}
+.mobile-cards{display:none;}
+.invoice-card-m{background:#fff;border:1px solid #eaecf0;border-radius:12px;padding:12px 14px;margin-bottom:8px;border-right:4px solid #D4AF37;}
+.invoice-card-m .ic-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.invoice-card-m .ic-number{font-weight:700;font-size:14px;}
+.invoice-card-m .ic-status{font-size:11px;}
+.invoice-card-m .ic-row{display:flex;justify-content:space-between;font-size:12px;padding:2px 0;}
+.invoice-card-m .ic-label{color:#64748b;}
+.invoice-card-m .ic-value{font-weight:600;}
+.invoice-card-m .ic-products{font-size:12px;padding:4px 0;}
+.invoice-card-m .ic-products .pitem{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #f1f5f9;}
+.card{background:#fff;border-radius:12px;border:1px solid #eaecf0;box-shadow:0 1px 3px rgba(0,0,0,0.04);margin-bottom:16px;}
+.card-header{padding:14px 16px;border-bottom:1px solid #eaecf0;}
+.card-title{font-size:15px;font-weight:700;color:#1a2236;margin:0;}
+.card-body{padding:16px;}
+@media(max-width:768px){
+  .stats-grid{grid-template-columns:1fr 1fr;}
+  .desktop-table{display:none!important;}
+  .mobile-cards{display:block!important;}
+}
+@media(max-width:480px){
+  .stats-grid{grid-template-columns:1fr;}
+}
+</style>
+
+<div class="stats-grid">
+  <div class="stat-card primary">
+    <div class="stat-number">{{ total_count }}</div>
+    <div class="stat-label">إجمالي الفواتير غير المستلمة</div>
+  </div>
+  <div class="stat-card warning">
+    <div class="stat-number">{{ delayed_count }}</div>
+    <div class="stat-label">فواتير متأخرة</div>
+  </div>
+  <div class="stat-card danger">
+    <div class="stat-number">{{ total_count|add:delayed_count|floatformat:0 }}</div>
+    <div class="stat-label">إجمالي المتبقي</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><span class="card-title">قائمة الفواتير غير المستلمة</span></div>
+  <div class="card-body" style="padding:0;">
+    <div class="desktop-table">
+      <div class="table-wrap">
+        <table class="erp-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>رقم الفاتورة</th>
+              <th>العميل</th>
+              <th>المنتجات</th>
+              <th>تاريخ النهاية</th>
+              <th>المتبقي</th>
+              <th>الحالة</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for invoice in invoices %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td><strong>{{ invoice.invoice_number }}</strong></td>
+              <td>{{ invoice.customer_display_name }}</td>
+              <td style="font-size:12px;">
+                {% for item in invoice.items.all %}
+                {{ item.product.name }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+              </td>
+              <td>{{ invoice.rent_end_date|date:"Y-m-d" }}</td>
+              <td class="text-danger">{{ invoice.remaining_amount|floatformat:2|intcomma }}</td>
+              <td>
+                {% if invoice.is_delayed %}
+                <span class="badge-status badge-delayed">متأخرة {{ invoice.delay_days }} يوم</span>
+                {% else %}
+                <span class="badge-status badge-ontime">في الموعد</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" style="text-align:center;padding:30px;color:#6b7280;">لا توجد فواتير غير مستلمة</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="mobile-cards" style="padding:12px;">
+      {% for invoice in invoices %}
+      <div class="invoice-card-m">
+        <div class="ic-header">
+          <span class="ic-number">{{ invoice.invoice_number }}</span>
+          <span class="ic-status">
+            {% if invoice.is_delayed %}
+            <span class="badge-status badge-delayed">متأخرة {{ invoice.delay_days }} يوم</span>
+            {% else %}
+            <span class="badge-status badge-ontime">في الموعد</span>
+            {% endif %}
+          </span>
+        </div>
+        <div class="ic-row">
+          <span class="ic-label">العميل</span>
+          <span class="ic-value">{{ invoice.customer_display_name }}</span>
+        </div>
+        <div class="ic-row">
+          <span class="ic-label">تاريخ النهاية</span>
+          <span class="ic-value">{{ invoice.rent_end_date|date:"Y-m-d" }}</span>
+        </div>
+        <div class="ic-row">
+          <span class="ic-label">المتبقي</span>
+          <span class="ic-value text-danger">{{ invoice.remaining_amount|floatformat:2|intcomma }} د.ل</span>
+        </div>
+        <div class="ic-products">
+          <div style="font-weight:600;font-size:11px;color:#6b7280;margin-bottom:4px;">المنتجات:</div>
+          {% for item in invoice.items.all %}
+          <div class="pitem">
+            <span>{{ item.product.name }}</span>
+            <span>{{ item.days|default:1 }} يوم</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% empty %}
+      <div style="text-align:center;padding:30px;color:#6b7280;">لا توجد فواتير غير مستلمة</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

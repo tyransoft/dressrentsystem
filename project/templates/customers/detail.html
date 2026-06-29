@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}{{ customer.full_name }}{% endblock %}
+{% block page_title %}ملف العميل{% endblock %}
+{% block nav_customers %}active{% endblock %}
+
+{% block content %}
+<style>
+*{box-sizing:border-box;}
+.customer-layout{display:grid;grid-template-columns:260px 1fr;gap:20px;align-items:start;}
+.customer-sidebar{min-width:0;}
+.customer-main{min-width:0;}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.stat-card{background:#fff;border:1px solid #eaecf0;border-radius:12px;padding:14px 16px;text-align:center;}
+.stat-card .stat-number{font-size:22px;font-weight:800;color:#1a2236;}
+.stat-card .stat-label{font-size:11px;color:#6b7280;margin-top:4px;}
+.stat-card.primary .stat-number{color:#D4AF37;}
+.stat-card.success .stat-number{color:#16a34a;}
+.stat-card.warning .stat-number{color:#f59e0b;}
+.stat-card.danger .stat-number{color:#dc2626;}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;position:relative;}
+.erp-table{min-width:600px;width:100%;font-size:13px;border-collapse:collapse;}
+.erp-table th{background:#f8fafc;font-weight:600;color:#374151;padding:8px 12px;text-align:center;border-bottom:2px solid #eaecf0;font-size:12px;}
+.erp-table td{padding:8px 12px;text-align:center;border-bottom:1px solid #f1f3f5;vertical-align:middle;}
+.erp-table tbody tr:hover{background:#f0f4ff;}
+.desktop-table{display:block;}
+.mobile-cards{display:none;}
+.history-card-m{background:#fff;border:1px solid #eaecf0;border-radius:12px;padding:12px 14px;margin-bottom:8px;}
+.history-card-m .hc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.history-card-m .hc-type{font-weight:700;font-size:13px;}
+.history-card-m .hc-date{font-size:11px;color:#6b7280;}
+.history-card-m .hc-row{display:flex;justify-content:space-between;font-size:12px;padding:2px 0;}
+.history-card-m .hc-label{color:#64748b;}
+.history-card-m .hc-value{font-weight:600;}
+.badge-status{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+.badge-paid{background:#dcfce7;color:#16a34a;}
+.badge-pending{background:#fef3c7;color:#92400e;}
+.badge-partial{background:#dbeafe;color:#1e40af;}
+.badge-cancelled{background:#fee2e2;color:#991b1b;}
+.badge-recieved{background:#dcfce7;color:#16a34a;}
+.badge-penalty{background:#fee2e2;color:#991b1b;}
+.badge-payment{background:#dbeafe;color:#1e40af;}
+.btn-outline{background:transparent;border:1.5px solid #eaecf0;color:#374151;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;text-decoration:none;min-height:44px;display:inline-flex;align-items:center;justify-content:center;}
+.btn-outline:hover{background:#f8f9fb;}
+.card{background:#fff;border-radius:12px;border:1px solid #eaecf0;box-shadow:0 1px 3px rgba(0,0,0,0.04);margin-bottom:16px;}
+.card-header{padding:14px 16px;border-bottom:1px solid #eaecf0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+.card-title{font-size:15px;font-weight:700;color:#1a2236;margin:0;}
+.card-body{padding:16px;}
+.text-muted{color:#6b7280;font-size:12px;}
+.text-primary{color:#D4AF37;}
+.text-danger{color:#dc2626;}
+.text-success{color:#16a34a;}
+.fw-600{font-weight:600;}
+@media(max-width:900px){
+  .customer-layout{grid-template-columns:1fr;}
+  .customer-sidebar{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .customer-sidebar .card{margin-bottom:0;}
+  .stats-grid{grid-template-columns:repeat(2,1fr);}
+}
+@media(max-width:600px){
+  .customer-sidebar{grid-template-columns:1fr;}
+  .stats-grid{grid-template-columns:1fr 1fr;}
+  .card-body{padding:12px;}
+  .desktop-table{display:none!important;}
+  .mobile-cards{display:block!important;}
+  .erp-table{font-size:13px;}
+  .erp-table th,.erp-table td{padding:8px 10px;}
+}
+@media print{
+  .table-wrap{overflow:visible;}
+  .btn{display:none;}
+}
+</style>
+
+<div class="customer-layout">
+  <div class="customer-sidebar">
+    <div class="card">
+      <div class="card-body" style="text-align:center;padding:24px;">
+        <div style="width:64px;height:64px;background:#D4AF37;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 12px;color:white;font-weight:700;">{{ customer.full_name|first }}</div>
+        <h3 style="font-size:17px;font-weight:800;margin-bottom:4px;">{{ customer.full_name }}</h3>
+        <p class="text-muted">{{ customer.phone }}</p>
+        <a href="{% url 'customers_edit' customer.pk %}" class="btn-outline" style="width:100%;margin-top:10px;">تعديل</a>
+      </div>
+    </div>
+
+    <div class="card" >
+      <div class="card-body">
+        <div class="text-muted" style="font-size:12px;">رصيد الدين</div>
+        <div style="font-size:22px;font-weight:800;color:#dc2626;">{{ customer.debt_balance|floatformat:2|intcomma }} د.ل</div>
+      </div>
+    </div>
+
+    <div class="card"  >
+      <div class="card-body">
+        <div class="text-muted" style="font-size:12px;">الغرامات</div>
+        <div style="font-size:22px;font-weight:800;color:#f59e0b;">{{ total_penalties|floatformat:2|intcomma }} د.ل</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:4px;">عدد الغرامات: {{ penalties_count }}</div>
+      </div>
+    </div>
+
+    <div class="card" >
+      <div class="card-body">
+        <div class="text-muted" style="font-size:12px;">إجمالي التسديدات</div>
+        <div style="font-size:22px;font-weight:800;color:#16a34a;">{{ total_payments|floatformat:2|intcomma }} د.ل</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="customer-main">
+    <div class="stats-grid">
+      <div class="stat-card primary">
+        <div class="stat-number">{{ total_invoices }}</div>
+        <div class="stat-label">عدد الفواتير</div>
+      </div>
+      <div class="stat-card success">
+        <div class="stat-number">{{ total_purchases|floatformat:0|intcomma }}</div>
+        <div class="stat-label">إجمالي المشتريات</div>
+        <div style="font-size:11px;color:#6b7280;margin-top:2px;">{{ total_purchases|floatformat:2|intcomma }} د.ل</div>
+      </div>
+      <div class="stat-card warning">
+        <div class="stat-number">{{ total_paid|floatformat:0|intcomma }}</div>
+        <div class="stat-label">إجمالي المدفوع</div>
+        <div style="font-size:11px;color:#6b7280;margin-top:2px;">{{ total_paid|floatformat:2|intcomma }} د.ل</div>
+      </div>
+      <div class="stat-card danger">
+        <div class="stat-number">{{ total_remaining|floatformat:0|intcomma }}</div>
+        <div class="stat-label">إجمالي المتبقي</div>
+        <div style="font-size:11px;color:#6b7280;margin-top:2px;">{{ total_remaining|floatformat:2|intcomma }} د.ل</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">سجل العميل</span>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="desktop-table">
+          <div class="table-wrap">
+            <table class="erp-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>النوع</th>
+                  <th>التفاصيل</th>
+                  <th>المبلغ</th>
+                  <th>الحالة</th>
+                  <th>التاريخ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in history %}
+                <tr>
+                  <td>{{ forloop.counter }}</td>
+                  <td>
+                    <span class="badge-status {% if item.type == 'invoice' %}
+                             {% if item.status_class == 'paid' or item.status_class == 'recieved' %}badge-paid
+                             {% elif item.status_class == 'pending' %}badge-pending
+                             {% elif item.status_class == 'partial' %}badge-partial
+                             {% elif item.status_class == 'cancelled' %}badge-cancelled
+                             {% else %}badge-pending{% endif %}
+                             {% elif item.type == 'penalty' %}badge-penalty
+                             {% elif item.type == 'payment' %}badge-payment{% endif %}">
+                      {{ item.type_display }}
+                    </span>
+                  </td>
+                  <td style="text-align:right;">
+                    {% if item.type == 'invoice' %}
+                    {{ item.invoice_number }} - {{ item.invoice_type }}
+                    {% elif item.type == 'penalty' %}
+                    {{ item.reason }} ({{ item.invoice_number }})
+                    {% elif item.type == 'payment' %}
+                    إيصال {{ item.receipt_number }}
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if item.type == 'invoice' %}
+                    {{ item.total|floatformat:2|intcomma }}
+                    {% elif item.type == 'penalty' %}
+                    {{ item.amount|floatformat:2|intcomma }}
+                    {% elif item.type == 'payment' %}
+                    {{ item.amount|floatformat:2|intcomma }}
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if item.type == 'invoice' %}
+                    {{ item.status }}
+                    {% elif item.type == 'penalty' %}
+                    <span class="text-danger">غرامة</span>
+                    {% elif item.type == 'payment' %}
+                    <span class="text-success">تم التسديد</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ item.date|date:"Y-m-d" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" style="text-align:center;padding:30px;color:#6b7280;">لا يوجد سجل</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="mobile-cards" style="padding:12px;">
+          {% for item in history %}
+          <div class="history-card-m">
+            <div class="hc-header">
+              <span class="hc-type">
+                <span class="badge-status {% if item.type == 'invoice' %}
+                         {% if item.status_class == 'paid' or item.status_class == 'recieved' %}badge-paid
+                         {% elif item.status_class == 'pending' %}badge-pending
+                         {% elif item.status_class == 'partial' %}badge-partial
+                         {% elif item.status_class == 'cancelled' %}badge-cancelled
+                         {% else %}badge-pending{% endif %}
+                         {% elif item.type == 'penalty' %}badge-penalty
+                         {% elif item.type == 'payment' %}badge-payment{% endif %}">
+                  {{ item.type_display }}
+                </span>
+              </span>
+              <span class="hc-date">{{ item.date|date:"Y-m-d" }}</span>
+            </div>
+            <div class="hc-row">
+              <span class="hc-label">التفاصيل</span>
+              <span class="hc-value">
+                {% if item.type == 'invoice' %}
+                {{ item.invoice_number }}
+                {% elif item.type == 'penalty' %}
+                {{ item.reason }}
+                {% elif item.type == 'payment' %}
+                إيصال {{ item.receipt_number }}
+                {% endif %}
+              </span>
+            </div>
+            <div class="hc-row">
+              <span class="hc-label">المبلغ</span>
+              <span class="hc-value" style="color:#D4AF37;">
+                {% if item.type == 'invoice' %}
+                {{ item.total|floatformat:2|intcomma }} د.ل
+                {% elif item.type == 'penalty' %}
+                {{ item.amount|floatformat:2|intcomma }} د.ل
+                {% elif item.type == 'payment' %}
+                {{ item.amount|floatformat:2|intcomma }} د.ل
+                {% endif %}
+              </span>
+            </div>
+            <div class="hc-row">
+              <span class="hc-label">الحالة</span>
+              <span class="hc-value">
+                {% if item.type == 'invoice' %}
+                {{ item.status }}
+                {% elif item.type == 'penalty' %}
+                <span class="text-danger">غرامة</span>
+                {% elif item.type == 'payment' %}
+                <span class="text-success">تم التسديد</span>
+                {% endif %}
+              </span>
+            </div>
+          </div>
+          {% empty %}
+          <div style="text-align:center;padding:30px;color:#6b7280;">لا يوجد سجل</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.table-wrap').forEach(function(w) {
+  function c() { w.classList.toggle('has-scroll', w.scrollWidth > w.clientWidth); }
+  c(); window.addEventListener('resize', c);
+});
+</script>
+{% endblock %}

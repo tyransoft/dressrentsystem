@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>طباعة  QR</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 0;
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: white;
+      padding: 0;
+    }
+    .label-grid {
+      display: block;
+    }
+    .label-item {
+      width: 100%;
+      height: 100vh;
+      page-break-after: always;
+      break-after: page;
+      page-break-inside: avoid;
+      border: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: white;
+      padding: 20px;
+    }
+    .label-item:last-child {
+      page-break-after: auto;
+    }
+    .label-item .qr-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      min-height: 300px;
+    }
+    .label-item .qr-container img {
+      max-width: 300px;
+      max-height: 300px;
+      width: auto;
+      height: auto;
+    }
+    .label-item .product-name {
+      font-size: 28px;
+      font-weight: 800;
+      color: #1a2236;
+      margin-top: 16px;
+      text-align: center;
+      line-height: 1.3;
+    }
+    .label-item .product-info {
+      font-size: 20px;
+      color: #374151;
+      margin-top: 10px;
+      text-align: center;
+      line-height: 1.8;
+      width: 80%;
+      max-width: 500px;
+    }
+    .label-item .product-info .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 12px;
+      border-bottom: 1px dashed #e5e7eb;
+    }
+    .label-item .product-info .info-row:last-child {
+      border-bottom: none;
+    }
+    .label-item .product-info .label {
+      color: #6b7280;
+      font-weight: 500;
+    }
+    .label-item .product-info .value {
+      color: #1a2236;
+      font-weight: 600;
+    }
+    .label-item .product-price {
+      font-size: 24px;
+      color: #181716;
+      font-weight: 700;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 2px solid #e5e7eb;
+      width: 60%;
+      max-width: 400px;
+    }
+    
+    @media print {
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      .label-grid {
+        display: flex !important;
+        flex-direction: column !important;
+      }
+      .label-item {
+        width: 100%;
+        height: 100vh;
+        page-break-after: always;
+        break-after: page;
+        page-break-inside: avoid;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: none;
+        padding: 20px;
+      }
+      .label-item:last-child {
+        page-break-after: auto;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+    
+    @media (max-width: 600px) {
+      .label-item .qr-container img {
+        max-width: 200px;
+        max-height: 200px;
+      }
+      .label-item .product-name {
+        font-size: 20px;
+      }
+      .label-item .product-info {
+        font-size: 16px;
+      }
+      .label-item .product-price {
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="label-grid">
+  {% for product in products %}
+    {% for i in copies_range %}
+    <div class="label-item">
+      <div class="qr-container">
+        {% if product.qr %}
+          <img src="{{ product.qr.url }}" alt="QR Code">
+        {% else %}
+          <div style="font-size:20px;color:#999;">لا يوجد QR</div>
+        {% endif %}
+      </div>
+      <div class="product-name">{{ product.name }}</div>
+      <div class="product-info">
+        <div class="info-row">
+          <span class="label">المقاس</span>
+          <span class="value">{{ product.size|default:"-" }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">اللون</span>
+          <span class="value">{{ product.color|default:"-" }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">الباركود</span>
+          <span class="value">{{ product.barcode|default:"-" }}</span>
+        </div>
+      </div>
+      <div class="product-price">سعر الإيجار: {{ product.selling_price|floatformat:2 }} د.ل</div>
+    </div>
+    {% endfor %}
+  {% endfor %}
+</div>
+
+<div class="no-print" style="text-align:center;margin-top:20px;padding:20px;border-top:2px solid #ddd;">
+  <button onclick="window.print();" style="padding:12px 30px;background:#D4AF37;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;margin:0 5px;">
+     طباعة
+  </button>
+  <button onclick="window.close();" style="padding:12px 30px;background:#6b7280;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;margin:0 5px;">
+    ✕ إغلاق
+  </button>
+</div>
+
+</body>
+</html>

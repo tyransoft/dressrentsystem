@@ -1,0 +1,175 @@
+<!-- templates/core/select_barcodes.html -->
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}اختيار المنتجات للطباعة{% endblock %}
+{% block page_title %}اختيار المنتجات للطباعة{% endblock %}
+
+{% block content %}
+<style>
+*{box-sizing:border-box;}
+.card{background:#fff;border-radius:12px;border:1px solid #eaecf0;box-shadow:0 1px 3px rgba(0,0,0,0.04);margin-bottom:16px;}
+.card-header{padding:14px 16px;border-bottom:1px solid #eaecf0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.card-title{font-size:15px;font-weight:700;color:#1a2236;margin:0;}
+.card-body{padding:16px;}
+.form-group{margin-bottom:14px;}
+.form-label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;}
+.form-control{width:100%;padding:8px 12px;border:1.5px solid #eaecf0;border-radius:8px;font-size:14px;outline:none;}
+.form-control:focus{border-color:#D4AF37;box-shadow:0 0 0 3px rgba(212,175,55,0.1);}
+.form-select{width:100%;padding:8px 12px;border:1.5px solid #eaecf0;border-radius:8px;font-size:14px;outline:none;background:#fff;}
+.form-select:focus{border-color:#D4AF37;box-shadow:0 0 0 3px rgba(212,175,55,0.1);}
+.btn{padding:10px 24px;border:none;border-radius:8px;font-weight:600;cursor:pointer;transition:all 0.2s;text-decoration:none;display:inline-flex;align-items:center;gap:6px;}
+.btn-primary{background:#D4AF37;color:#fff;}
+.btn-primary:hover{background:#c9612a;}
+.btn-outline{background:transparent;border:1.5px solid #eaecf0;color:#374151;}
+.btn-outline:hover{background:#f8f9fb;}
+.btn-success{background:#16a34a;color:#fff;}
+.btn-success:hover{background:#15803d;}
+.btn-secondary{background:#6b7280;color:#fff;}
+.btn-secondary:hover{background:#4b5563;}
+.product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;max-height:500px;overflow-y:auto;padding:8px;}
+.product-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid #eaecf0;border-radius:8px;transition:all 0.2s;}
+.product-item:hover{background:#f8fafc;border-color:#D4AF37;}
+.product-item input[type="checkbox"]{width:18px;height:18px;cursor:pointer;flex-shrink:0;}
+.product-item .pinfo{flex:1;}
+.product-item .pname{font-weight:600;font-size:13px;}
+.product-item .pbarcode{font-size:11px;color:#6b7280;}
+.product-item .pprice{font-size:11px;color:#D4AF37;font-weight:600;}
+.select-all{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #eaecf0;flex-wrap:wrap;}
+.search-box{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+.search-box input{flex:1;min-width:200px;}
+.search-box select{min-width:150px;}
+.search-box .btn{min-height:40px;}
+.selected-count{font-size:12px;color:#6b7280;margin-right:auto;}
+@media(max-width:768px){
+  .product-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));}
+  .search-box{flex-direction:column;}
+  .search-box input,.search-box select{width:100%;}
+}
+</style>
+
+<form method="POST" action="{% url 'print_barcodes_preview' %}">
+  {% csrf_token %}
+  
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">اختر المنتجات</span>
+      <span class="selected-count">تم اختيار: <span id="selectedCount">0</span> منتج</span>
+    </div>
+    <div class="card-body">
+      <div class="search-box">
+        <input type="text" id="searchInput" class="form-control" placeholder="بحث بالاسم أو الباركود..." onkeyup="filterProducts()">
+        <select id="categoryFilter" class="form-select" onchange="filterProducts()">
+          <option value="">كل الفئات</option>
+          {% for category in categories %}
+          <option value="{{ category.id }}">{{ category.name }}</option>
+          {% endfor %}
+        </select>
+        <button type="button" class="btn btn-outline" onclick="clearFilters()">مسح</button>
+      </div>
+      
+      <div class="select-all">
+        <input type="checkbox" id="selectAll" onchange="toggleAll(this)">
+        <label for="selectAll" style="font-weight:600;font-size:13px;">تحديد الكل</label>
+        <span style="font-size:12px;color:#6b7280;margin-right:10px;">({{ products.count }} منتج)</span>
+      </div>
+      
+      <div class="product-grid" id="productGrid">
+        {% for product in products %}
+        <div class="product-item" data-name="{{ product.name|lower }}" data-barcode="{{ product.barcode|default:'' }}" data-category="{{ product.category.id|default:'' }}">
+          <input type="checkbox" name="product_ids" value="{{ product.id }}" id="product_{{ product.id }}" onchange="updateCount()">
+          <div class="pinfo">
+            <div class="pname">{{ product.name }}</div>
+            <div class="pbarcode">{{ product.barcode|default:"بدون باركود" }}</div>
+            <div class="pprice">{{ product.selling_price|floatformat:2 }} د.ل</div>
+          </div>
+        </div>
+        {% empty %}
+        <div style="text-align:center;padding:20px;color:#6b7280;grid-column:1/-1;">لا توجد منتجات</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">إعدادات الطباعة</span></div>
+    <div class="card-body">
+      <div class="row" style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+        <div class="form-group">
+          <label class="form-label">عدد النسخ لكل منتج</label>
+          <input type="number" name="copies" class="form-control" value="1" min="1" max="50">
+        </div>
+        <div class="form-group">
+          <label class="form-label">حجم الملصق</label>
+          <select name="label_size" class="form-select">
+            <option value="small">صغير (5×3 سم)</option>
+            <option value="medium" selected>متوسط (7×3.5 سم)</option>
+            <option value="large">كبير (10×5 سم)</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+        <button type="submit" class="btn btn-success" onclick="return validateSelection()">
+          <i class="fas fa-print"></i> معاينة وطباعة
+        </button>
+        <a href="{% url 'inventory_report' %}" class="btn btn-outline">إلغاء</a>
+      </div>
+    </div>
+  </div>
+</form>
+
+<script>
+function toggleAll(master) {
+  var checkboxes = document.querySelectorAll('input[name="product_ids"]');
+  checkboxes.forEach(function(cb) {
+    cb.checked = master.checked;
+  });
+  updateCount();
+}
+
+function updateCount() {
+  var checkboxes = document.querySelectorAll('input[name="product_ids"]:checked');
+  document.getElementById('selectedCount').textContent = checkboxes.length;
+}
+
+function validateSelection() {
+  var checkboxes = document.querySelectorAll('input[name="product_ids"]:checked');
+  if (checkboxes.length === 0) {
+    alert('الرجاء اختيار منتج واحد على الأقل');
+    return false;
+  }
+  return true;
+}
+
+function filterProducts() {
+  var search = document.getElementById('searchInput').value.toLowerCase();
+  var category = document.getElementById('categoryFilter').value;
+  var items = document.querySelectorAll('.product-item');
+  
+  items.forEach(function(item) {
+    var name = item.dataset.name || '';
+    var barcode = item.dataset.barcode || '';
+    var itemCategory = item.dataset.category || '';
+    
+    var matchSearch = name.includes(search) || barcode.includes(search);
+    var matchCategory = !category || itemCategory === category;
+    
+    if (matchSearch && matchCategory) {
+      item.style.display = 'flex';
+    } else {
+      item.style.display = 'none';
+    }
+  });
+}
+
+function clearFilters() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('categoryFilter').value = '';
+  filterProducts();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  updateCount();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block nav_repairs %}active{% endblock %}
+
+{% block content %}
+<style>
+@media(max-width:768px){
+  .detail-actions{flex-direction:column;}
+  .detail-actions a,.detail-actions button{width:100%;}
+}
+</style>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">{{ title }}</span>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <a href="{% url 'repair_list' %}" class="btn btn-outline btn-sm">← العودة للقائمة</a>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="grid-2">
+      <div><span class="text-muted">الفستان</span><br><strong>{{ repair.product.name }}</strong></div>
+      <div><span class="text-muted">الباركود</span><br><code>{{ repair.product.barcode }}</code></div>
+    </div>
+    <hr>
+    <div class="grid-2">
+      <div><span class="text-muted">نوع الصيانة</span><br><span class="badge {% if repair.kind == 'clean' %}badge-info{% else %}badge-warning{% endif %}" style="font-size:14px;padding:6px 12px;">{{ repair.get_kind_display }}</span></div>
+      <div><span class="text-muted">الحالة</span><br><span class="badge {% if repair.status == 'finished' %}badge-success{% else %}badge-primary{% endif %}" style="font-size:14px;padding:6px 12px;">{{ repair.get_status_display }}</span></div>
+    </div>
+    <hr>
+    <div class="grid-2">
+      <div><span class="text-muted">تكلفة الصيانة</span><br><strong class="text-primary">{{ repair.total_cost|floatformat:2|intcomma }}</strong></div>
+      <div><span class="text-muted">تاريخ الانتهاء</span><br><strong>{{ repair.finish_at|date:"Y-m-d" }}</strong></div>
+    </div>
+    <hr>
+    <div class="grid-2">
+      <div><span class="text-muted">تاريخ الإضافة</span><br><strong>{{ repair.created_at|date:"Y-m-d" }}</strong></div>
+      <div><span class="text-muted">آخر تحديث</span><br><strong>{{ repair.updated_at|date:"Y-m-d H:i" }}</strong></div>
+    </div>
+    {% if repair.notes %}
+    <hr>
+    <div><span class="text-muted">الملاحظات</span><br>{{ repair.notes|linebreaks }}</div>
+    {% endif %}
+  </div>
+  
+  <div class="card-footer">
+    <div class="detail-actions" style="display:flex;gap:10px;flex-wrap:wrap;">
+      {% if user.is_main_admin %}
+        <a href="{% url 'repair_edit' repair.pk %}" class="btn btn-primary">تعديل</a>
+        {% if repair.status == 'inwork' %}
+        <form method="post" action="{% url 'repair_finish' repair.pk %}" style="margin:0;">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-success">تأكيد الاستلام</button>
+        </form>
+        {% endif %}
+        <form method="post" action="{% url 'repair_delete' repair.pk %}" style="margin:0;" onsubmit="return confirm('هل أنت متأكد من حذف هذا الطلب؟');">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">حذف</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

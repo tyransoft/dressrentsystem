@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}الفساتين{% endblock %}
+{% block page_title %}إدارة الفساتين{% endblock %}
+{% block nav_products %}active{% endblock %}
+
+{% block content %}
+<style>
+.table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.table-wrap .erp-table{min-width:860px;width:100%;}
+@media(max-width:768px){
+  .card-header{flex-direction:column;align-items:stretch;}
+  .btn-sm{min-height:40px;padding:8px 12px;}
+  form[method="get"]{flex-direction:column;}
+  form[method="get"] input,form[method="get"] select,form[method="get"] button,form[method="get"] a{width:100%;box-sizing:border-box;}
+  .desktop-table{display:none;}
+  .mobile-cards{display:block;}
+}
+@media(min-width:769px){
+  .mobile-cards{display:none;}
+}
+.product-card-m{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;margin-bottom:10px;}
+.product-card-m .pc-name{font-size:15px;font-weight:700;margin-bottom:6px;}
+.product-card-m .pc-row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;border-bottom:1px solid #f1f5f9;}
+.product-card-m .pc-row:last-of-type{border-bottom:none;}
+.product-card-m .pc-label{color:#64748b;}
+.product-card-m .pc-actions{display:flex;gap:8px;margin-top:10px;}
+.product-card-m .pc-actions a{flex:1;text-align:center;min-height:40px;display:flex;align-items:center;justify-content:center;}
+</style>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">قائمة الفساتين</span>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      {% if user.is_main_admin%}
+      <a href="{% url 'products_create' %}" class="btn btn-primary btn-sm">+ إضافة فستان</a>
+      <a href="{% url 'products_bulk_price_update' %}" class="btn btn-primary btn-sm">تعديل الاسعار</a>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card-body">
+    <form method="get" style="display:flex;gap:10px;flex-wrap:wrap;">
+      <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="بحث باسم الفستان أو الكود...">
+      <select name="category" class="form-select">
+        <option value="">كل الفئات</option>
+        {% for cat in categories %}
+        <option value="{{ cat.pk }}" {% if selected_category == cat.pk|stringformat:'s' %}selected{% endif %}>{{ cat.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-primary">بحث</button>
+      <a href="{% url 'products_list' %}" class="btn btn-outline">إعادة تعيين</a>
+    </form>
+  </div>
+
+  <div class="card-body" style="padding:0;">
+    <div class="desktop-table table-wrap">
+      <table class="erp-table">
+        <thead>
+          <tr>
+            <th>الاسم</th><th>الكود</th><th>الفئة</th><th>سعر التكلفة</th>
+            <th>سعر البيع</th><th>الحالة</th><th>الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for product in products %}
+          <tr>
+            <td class="fw-600">{{ product.name }}</td>
+            <td><code style="background:var(--bg-light);padding:2px 6px;border-radius:4px;font-size:12px;">{{ product.barcode }}</code></td>
+            <td>{{ product.category.name|default:"-" }}</td>
+            <td>{{ product.cost_price|floatformat:2|intcomma }}</td>
+            <td class="fw-bold text-primary">{{ product.selling_price|floatformat:2|intcomma }}</td>
+            <td>{% if product.is_available %}<span class="badge badge-success">متاح</span>{% else %}<span class="badge badge-danger">{{ product.get_status_display }}</span>{% endif %}</td>
+            <td>
+              <div style="display:flex;gap:5px;">
+                <a href="{% url 'products_detail' product.pk %}" class="btn btn-outline btn-icon btn-sm">عرض</a>
+                {% if user.is_main_admin %}
+                <a href="{% url 'products_edit' product.pk %}" class="btn btn-outline btn-icon btn-sm">تعديل</a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="8" class="text-center text-muted" style="padding:40px;">لا توجد منتجات</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mobile-cards" style="padding:12px;">
+      {% for product in products %}
+      <div class="product-card-m">
+        <div class="pc-name">{{ product.name }}</div>
+        <div class="pc-row"><span class="pc-label">الكود</span><code style="font-size:12px;">{{ product.barcode }}</code></div>
+        <div class="pc-row"><span class="pc-label">الفئة</span><span>{{ product.category.name|default:"-" }}</span></div>
+        <div class="pc-row"><span class="pc-label">سعر التكلفة</span><span>{{ product.cost_price|floatformat:2|intcomma }}</span></div>
+        <div class="pc-row"><span class="pc-label">سعر البيع</span><span class="fw-bold text-primary">{{ product.selling_price|floatformat:2|intcomma }}</span></div>
+        <div class="pc-row"><span class="pc-label">الحالة</span><span>{% if product.is_available %}<span class="badge badge-success">متاح</span>{% else %}<span class="badge badge-danger">{{product.status}}</span>{% endif %}</span></div>
+        <div class="pc-actions">
+          <a href="{% url 'products_detail' product.pk %}" class="btn btn-outline btn-sm">عرض</a>
+          {% if user.is_mian_admin%}
+          <a href="{% url 'products_edit' product.pk %}" class="btn btn-outline btn-sm">تعديل</a>
+          {% endif %}
+        </div>
+      </div>
+      {% empty %}
+      <div style="text-align:center;padding:40px;color:#64748b;">لا توجد منتجات</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

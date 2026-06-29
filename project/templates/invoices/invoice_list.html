@@ -1,0 +1,394 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}قائمة الفواتير{% endblock %}
+
+{% block content %}
+<style>
+*{box-sizing:border-box;}
+
+.card{background:#fff;border-radius:12px;border:1px solid #eaecf0;box-shadow:0 1px 3px rgba(0,0,0,0.04);margin-bottom:20px;}
+.card-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding:14px 16px;border-bottom:1px solid #eaecf0;}
+.card-title{font-size:15px;font-weight:700;color:#1a2236;margin:0;display:flex;align-items:center;gap:8px;}
+.card-body{padding:16px;}
+.card-footer{padding:14px 16px;border-top:1px solid #eaecf0;background:#fafafa;}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;text-decoration:none;min-height:44px;min-width:44px;touch-action:manipulation;white-space:nowrap;}
+.btn-primary{background:#D4AF37;color:#fff;}
+.btn-primary:hover{background:#E6C76A;color:#fff;}
+.btn-success{background:#16a34a;color:#fff;}
+.btn-success:hover{background:#15803d;color:#fff;}
+.btn-danger{background:#ef4444;color:#fff;}
+.btn-danger:hover{background:#dc2626;color:#fff;}
+.btn-secondary{background:#6b7280;color:#fff;}
+.btn-secondary:hover{background:#4b5563;color:#fff;}
+.btn-outline{background:transparent;border:1.5px solid #eaecf0;color:#374151;}
+.btn-outline:hover{background:#f8f9fb;}
+.btn-sm{padding:6px 12px;font-size:12px;min-height:36px;min-width:36px;}
+.btn-icon{width:38px;height:38px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;}
+
+.form-control{width:100%;padding:12px 14px;border:1.5px solid #eaecf0;border-radius:8px;font-size:16px;background:#fff;color:#1a2236;box-sizing:border-box;}
+.form-control:focus{outline:none;border-color:#D4AF37;box-shadow:0 0 0 4px rgba(212,175,55,0.12);}
+.form-select{width:100%;padding:12px 14px;border:1.5px solid #eaecf0;border-radius:8px;font-size:16px;background:#fff;color:#1a2236;box-sizing:border-box;}
+
+.badge-status{display:inline-block;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap;}
+.badge-paid{background:#dcfce7;color:#166534;}
+.badge-pending{background:#fef3c7;color:#92400e;}
+.badge-partial{background:#dbeafe;color:#1e40af;}
+.badge-cancelled{background:#fee2e2;color:#991b1b;}
+.badge-recieved{background:#dcfce7;color:#166534;}
+.badge-other{background:#f3f4f6;color:#4b5563;}
+.badge-danger{background:#fee2e2;color:#dc2626;}
+.badge-success{background:#dcfce7;color:#16a34a;}
+
+.stats-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;}
+.stats-row .stat-box{background:#f8fafc;padding:6px 16px;border-radius:8px;font-size:13px;color:#4b5563;border:1px solid #eaecf0;}
+.stats-row .stat-box strong{color:#1a2236;}
+
+.text-danger{color:#dc2626;}
+.text-success{color:#16a34a;}
+.text-primary{color:#D4AF37;}
+.text-muted{color:#6b7280;}
+.fw-600{font-weight:600;}
+.text-center{text-align:center;}
+.mt-2{margin-top:8px;}
+.mb-2{margin-bottom:8px;}
+
+.actions-group{display:flex;gap:4px;flex-wrap:nowrap;}
+.actions-group .btn{padding:4px 10px;font-size:12px;border-radius:6px;min-width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border:none;cursor:pointer;transition:all 0.2s;text-decoration:none;color:#fff;}
+.actions-group .btn i{font-size:12px;}
+.actions-group .btn-success{background:#16a34a;}
+.actions-group .btn-success:hover{background:#15803d;}
+.actions-group .btn-danger{background:#ef4444;}
+.actions-group .btn-danger:hover{background:#dc2626;}
+.actions-group .btn-secondary{background:#6b7280;}
+.actions-group .btn-secondary:hover{background:#4b5563;}
+
+.search-form{display:flex;gap:10px;flex-wrap:wrap;}
+.search-form .form-control{flex:1;min-width:150px;}
+.search-form .form-select{min-width:130px;}
+.search-form .btn{min-height:44px;}
+
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;position:relative;}
+.table-wrap::after{content:'';position:absolute;top:0;right:0;bottom:0;width:30px;background:linear-gradient(to left,rgba(255,255,255,0.9),transparent);pointer-events:none;opacity:0;transition:opacity 0.2s;}
+.table-wrap.has-scroll::after{opacity:1;}
+.erp-table{min-width:700px;width:100%;font-size:14px;border-collapse:collapse;}
+.erp-table th{background:#f8fafc;font-weight:600;color:#374151;padding:10px 14px;text-align:center;border-bottom:2px solid #eaecf0;white-space:nowrap;font-size:12px;}
+.erp-table td{padding:10px 14px;text-align:center;border-bottom:1px solid #f1f3f5;vertical-align:middle;white-space:nowrap;}
+.erp-table tbody tr:nth-child(even){background:#fafafa;}
+.erp-table tbody tr:hover{background:#f0f4ff;}
+.erp-table .col-actions{min-width:130px;}
+
+.desktop-table{display:block;}
+.mobile-cards{display:none;}
+
+.invoice-card-m{background:#fff;border:1px solid #eaecf0;border-radius:12px;padding:14px 16px;margin-bottom:10px;border-right:4px solid #D4AF37;}
+.invoice-card-m .ic-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #f1f5f9;}
+.invoice-card-m .ic-number{font-size:15px;font-weight:700;color:#1a2236;}
+.invoice-card-m .ic-number i{color:#D4AF37;margin-left:6px;}
+.invoice-card-m .ic-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid #f1f5f9;}
+.invoice-card-m .ic-row:last-of-type{border-bottom:none;}
+.invoice-card-m .ic-label{color:#64748b;}
+.invoice-card-m .ic-value{font-weight:600;color:#1a2236;}
+.invoice-card-m .ic-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.invoice-card-m .ic-actions a,.invoice-card-m .ic-actions button{flex:1;text-align:center;min-height:40px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;text-decoration:none;gap:5px;min-width:80px;color:#fff;}
+.invoice-card-m .ic-actions .btn-success-sm{background:#16a34a;}
+.invoice-card-m .ic-actions .btn-success-sm:hover{background:#15803d;}
+.invoice-card-m .ic-actions .btn-danger-sm{background:#ef4444;}
+.invoice-card-m .ic-actions .btn-danger-sm:hover{background:#dc2626;}
+.invoice-card-m .ic-actions .btn-secondary-sm{background:#6b7280;}
+.invoice-card-m .ic-actions .btn-secondary-sm:hover{background:#4b5563;}
+
+.pagination{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;}
+.pagination .page-item .page-link{display:flex;align-items:center;justify-content:center;padding:6px 12px;border:1px solid #eaecf0;border-radius:6px;color:#1a2236;text-decoration:none;transition:all 0.2s;min-width:36px;min-height:36px;}
+.pagination .page-item .page-link:hover{background:#f1f5f9;}
+.pagination .page-item.active .page-link{background:#D4AF37;border-color:#D4AF37;color:#fff;}
+.pagination .page-item.disabled .page-link{opacity:0.5;cursor:not-allowed;}
+
+.empty-state{text-align:center;padding:40px 20px;}
+.empty-state i{font-size:40px;display:block;margin-bottom:10px;color:#d1d5db;}
+
+@media(max-width:768px){
+  .card-header{flex-direction:column;align-items:stretch;}
+  .card-header .btn{width:100%;justify-content:center;}
+  .card-body{padding:12px;}
+  .card-footer{padding:12px 16px;}
+  .search-form{flex-direction:column;}
+  .search-form .form-control,.search-form .form-select{min-width:unset;}
+  .search-form .btn{width:100%;justify-content:center;}
+  .stats-row{justify-content:center;}
+  .stats-row .stat-box{font-size:12px;padding:4px 12px;}
+  .desktop-table{display:none !important;}
+  .mobile-cards{display:block !important;}
+}
+
+@media(max-width:480px){
+  .invoice-card-m .ic-actions{flex-direction:column;}
+  .invoice-card-m .ic-actions a,.invoice-card-m .ic-actions button{width:100%;min-width:unset;}
+  .stats-row .stat-box{width:100%;text-align:center;}
+  .btn{font-size:15px;padding:12px 16px;min-height:48px;}
+  .btn-sm{font-size:13px;padding:8px 14px;min-height:40px;}
+  .btn-icon{width:44px;height:44px;}
+}
+
+@media print{.table-wrap{overflow:visible;}.table-wrap::after{display:none;}.btn{display:none;}}
+</style>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">
+      قائمة الفواتير
+    </span>
+    <a href="{% url 'create_invoice' %}" class="btn btn-primary btn-sm">
+      <i class="fas fa-plus"></i> فاتورة جديدة
+    </a>
+  </div>
+
+  <div class="card-body">
+    <form method="get" class="search-form">
+      <input type="text" name="search" value="{{ search_query }}" class="form-control" placeholder="بحث برقم الفاتورة أو اسم العميل">
+      <select name="status" class="form-select">
+        <option value="">كل الحالات</option>
+        {% for status, label in status_choices %}
+        <option value="{{ status }}" {% if current_status == status %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-search"></i> بحث
+      </button>
+      {% if search_query or current_status %}
+      <a href="{% url 'invoice_list' %}" class="btn btn-outline">
+        <i class="fas fa-times"></i> إعادة
+      </a>
+      {% endif %}
+    </form>
+
+    <div class="stats-row">
+      <div class="stat-box">اجمالي الفواتير: <strong>{{ invoices.paginator.count }}</strong></div>
+      <div class="stat-box">المدفوعة: <strong>{{ paid_count|default:0 }}</strong></div>
+      <div class="stat-box">المعلقة: <strong>{{ pending_count|default:0 }}</strong></div>
+      <div class="stat-box">الجزئية: <strong>{{ partial_count|default:0 }}</strong></div>
+    </div>
+  </div>
+
+  <div style="padding:0;">
+    <div class="desktop-table">
+      <div class="table-wrap">
+        <table class="erp-table">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th style="min-width:120px;">رقم الفاتورة</th>
+              <th style="min-width:130px;">العميل</th>
+              <th style="min-width:90px;">الإجمالي</th>
+              <th style="min-width:90px;">المدفوع</th>
+              <th style="min-width:90px;">المتبقي</th>
+              <th style="min-width:110px;">الحالة</th>
+              <th style="min-width:95px;">التاريخ</th>
+              <th class="col-actions">الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for invoice in invoices %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td><strong>{{ invoice.invoice_number }}</strong></td>
+              <td>{{ invoice.customer_display_name }}</td>
+              <td>{{ invoice.total_amount|floatformat:2|intcomma }}</td>
+              <td>{{ invoice.paid_amount|floatformat:2|intcomma }}</td>
+              <td>
+                {% if invoice.remaining_amount > 0 %}
+                <span class="text-danger fw-600">{{ invoice.remaining_amount|floatformat:2|intcomma }}</span>
+                {% else %}
+                <span class="text-success">0.00</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="badge-status {% if invoice.status == 'paid' %}badge-paid
+                         {% elif invoice.status == 'pending' %}badge-pending
+                         {% elif invoice.status == 'partial' %}badge-partial
+                         {% elif invoice.status == 'cancelled' %}badge-cancelled
+                         {% elif invoice.status == 'recieved' %}badge-recieved
+                         {% else %}badge-other{% endif %}">
+                  {{ invoice.get_status_display }}
+                </span>
+              </td>
+              <td>{{ invoice.created_at|date:"Y-m-d" }}</td>
+              <td>
+                <div class="actions-group">
+                  {% if invoice.status != 'cancelled' and invoice.status != 'recieved' %}
+                  <a href="{% url 'confirm_return' invoice.id %}" class="btn btn-success" title="تسليم">
+                    <i class="fas fa-check"></i>
+                  </a>
+                  <button class="btn btn-danger" onclick="cancelInvoice({{ invoice.id }})" title="إلغاء">
+                    <i class="fas fa-times"></i>
+                  </button>
+                  {% endif %}
+                  <a href="{% url 'print_receipt' invoice.id %}" target="_blank" class="btn btn-secondary" title="طباعة">
+                    <i class="fas fa-print"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="9">
+                <div class="empty-state">
+                  <i class="fas fa-inbox"></i>
+                  <p class="text-muted">لا توجد فواتير</p>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="mobile-cards" style="padding:12px;">
+      {% for invoice in invoices %}
+      <div class="invoice-card-m">
+        <div class="ic-header">
+          <span class="ic-number"><i class="fas fa-file-invoice"></i> {{ invoice.invoice_number }}</span>
+          <span class="badge-status {% if invoice.status == 'paid' %}badge-paid
+                   {% elif invoice.status == 'pending' %}badge-pending
+                   {% elif invoice.status == 'partial' %}badge-partial
+                   {% elif invoice.status == 'cancelled' %}badge-cancelled
+                   {% elif invoice.status == 'recieved' %}badge-recieved
+                   {% else %}badge-other{% endif %}">
+            {{ invoice.get_status_display }}
+          </span>
+        </div>
+        <div class="ic-row">
+          <span class="ic-label">العميل</span>
+          <span class="ic-value">{{ invoice.customer_display_name }}</span>
+        </div>
+        <div class="ic-row">
+          <span class="ic-label">الإجمالي</span>
+          <span class="ic-value text-primary">{{ invoice.total_amount|floatformat:2|intcomma }}</span>
+        </div>
+        <div class="ic-row">
+          <span class="ic-label">المدفوع</span>
+          <span class="ic-value">{{ invoice.paid_amount|floatformat:2|intcomma }}</span>
+        </div>
+        <div class="ic-row">
+          <span class="ic-label">المتبقي</span>
+          <span class="ic-value {% if invoice.remaining_amount > 0 %}text-danger{% else %}text-success{% endif %}">
+            {{ invoice.remaining_amount|floatformat:2|intcomma }}
+          </span>
+        </div>
+        <div class="ic-row">
+          <span class="ic-label">التاريخ</span>
+          <span class="ic-value">{{ invoice.created_at|date:"Y-m-d" }}</span>
+        </div>
+        <div class="ic-actions">
+          {% if invoice.status != 'cancelled' and invoice.status != 'recieved' %}
+          <a href="{% url 'confirm_return' invoice.id %}" class="btn-success-sm">
+            <i class="fas fa-check"></i> تسليم
+          </a>
+          <button class="btn-danger-sm" onclick="cancelInvoice({{ invoice.id }})">
+            <i class="fas fa-times"></i> إلغاء
+          </button>
+          {% endif %}
+          <a href="{% url 'print_receipt' invoice.id %}" target="_blank" class="btn-secondary-sm">
+            <i class="fas fa-print"></i> طباعة
+          </a>
+        </div>
+      </div>
+      {% empty %}
+      <div class="empty-state">
+        <i class="fas fa-inbox"></i>
+        <p class="text-muted">لا توجد فواتير</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% if invoices.has_other_pages %}
+  <div class="card-footer">
+    <ul class="pagination">
+      {% if invoices.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ invoices.previous_page_number }}">
+          <i class="fas fa-chevron-right"></i>
+        </a>
+      </li>
+      {% else %}
+      <li class="page-item disabled">
+        <span class="page-link"><i class="fas fa-chevron-right"></i></span>
+      </li>
+      {% endif %}
+
+      {% for num in invoices.paginator.page_range %}
+      <li class="page-item {% if invoices.number == num %}active{% endif %}">
+        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+      </li>
+      {% endfor %}
+
+      {% if invoices.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ invoices.next_page_number }}">
+          <i class="fas fa-chevron-left"></i>
+        </a>
+      </li>
+      {% else %}
+      <li class="page-item disabled">
+        <span class="page-link"><i class="fas fa-chevron-left"></i></span>
+      </li>
+      {% endif %}
+    </ul>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+function cancelInvoice(invoiceId) {
+    if (!confirm('هل أنت متأكد من إلغاء هذه الفاتورة؟\nلا يمكن التراجع عن هذا الإجراء.')) {
+        return;
+    }
+    
+    fetch(`/invoices/cancel/${invoiceId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('تم إلغاء الفاتورة بنجاح', 'success');
+            setTimeout(function() {
+                location.reload();
+            }, 1500);
+        } else {
+            showToast('حدث خطأ: ' + data.message, 'error');
+        }
+    })
+    .catch(function(error) {
+        showToast('حدث خطأ في الاتصال', 'error');
+    });
+}
+
+function showToast(message, type) {
+    var bg = type === 'success' ? '#16a34a' : '#ef4444';
+    var toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;padding:14px 24px;border-radius:12px;color:#fff;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.15);background:' + bg + ';animation:fadeOut 3s ease-in-out forwards;';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(function() {
+        if (toast.parentNode) toast.remove();
+    }, 3000);
+}
+
+var style = document.createElement('style');
+style.textContent = '@keyframes fadeOut { 0% { opacity: 1; transform: translateY(0); } 70% { opacity: 1; } 100% { opacity: 0; transform: translateY(-20px); } }';
+document.head.appendChild(style);
+
+document.querySelectorAll('.table-wrap').forEach(function(w) {
+  function c() { w.classList.toggle('has-scroll', w.scrollWidth > w.clientWidth); }
+  c(); window.addEventListener('resize', c);
+});
+</script>
+{% endblock %}

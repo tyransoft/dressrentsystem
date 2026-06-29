@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block nav_repairs %}active{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:500px;">
+  <div class="card-header"><span class="card-title">{{ title }}</span></div>
+  <div class="card-body">
+    <p style="font-size:16px;">هل تم استلام الفستان <strong>{{ repair.product.name }}</strong> بعد الصيانة؟</p>
+    <p class="text-muted">النوع: {{ repair.get_kind_display }} | التكلفة: {{ repair.total_cost }}</p>
+    <form method="post">
+      {% csrf_token %}
+      <div style="display:flex;gap:10px;">
+        <button type="submit" class="btn btn-success">نعم، تم الاستلام</button>
+        <a href="{% url 'repair_detail' repair.pk %}" class="btn btn-outline">إلغاء</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

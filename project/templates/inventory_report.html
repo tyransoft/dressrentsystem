@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}تقرير الجرد{% endblock %}
+{% block page_title %}تقرير جرد الفساتين{% endblock %}
+
+{% block content %}
+<style>
+*{box-sizing:border-box;}
+.stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;}
+.stat-card{background:#fff;border:1px solid #eaecf0;border-radius:12px;padding:14px 16px;text-align:center;}
+.stat-card .stat-number{font-size:24px;font-weight:800;color:#1a2236;}
+.stat-card .stat-label{font-size:11px;color:#6b7280;margin-top:4px;}
+.stat-card .stat-sub{font-size:12px;color:#D4AF37;font-weight:600;margin-top:2px;}
+.stat-card.primary .stat-number{color:#D4AF37;}
+.stat-card.success .stat-number{color:#16a34a;}
+.stat-card.warning .stat-number{color:#f59e0b;}
+.stat-card.danger .stat-number{color:#dc2626;}
+.stat-card.info .stat-number{color:#3b82f6;}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.erp-table{min-width:800px;width:100%;font-size:13px;border-collapse:collapse;}
+.erp-table th{background:#f8fafc;font-weight:600;color:#374151;padding:8px 12px;text-align:center;border-bottom:2px solid #eaecf0;font-size:12px;}
+.erp-table td{padding:8px 12px;text-align:center;border-bottom:1px solid #f1f3f5;vertical-align:middle;}
+.erp-table tbody tr:hover{background:#f0f4ff;}
+.erp-table .text-danger{color:#dc2626;}
+.erp-table .text-success{color:#16a34a;}
+.erp-table .text-warning{color:#f59e0b;}
+.erp-table .text-primary{color:#D4AF37;}
+.badge-status{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+.badge-available{background:#dcfce7;color:#166534;}
+.badge-rented{background:#fef3c7;color:#92400e;}
+.badge-sold{background:#fee2e2;color:#991b1b;}
+.badge-clean{background:#dbeafe;color:#1e40af;}
+.badge-repair{background:#fef3c7;color:#92400e;}
+.desktop-table{display:block;}
+.mobile-cards{display:none;}
+.inventory-card-m{background:#fff;border:1px solid #eaecf0;border-radius:12px;padding:12px 14px;margin-bottom:8px;border-right:4px solid #D4AF37;}
+.inventory-card-m .ic-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.inventory-card-m .ic-name{font-weight:700;font-size:14px;}
+.inventory-card-m .ic-status{font-size:11px;}
+.inventory-card-m .ic-row{display:flex;justify-content:space-between;font-size:12px;padding:2px 0;}
+.inventory-card-m .ic-label{color:#64748b;}
+.inventory-card-m .ic-value{font-weight:600;}
+.card{background:#fff;border-radius:12px;border:1px solid #eaecf0;box-shadow:0 1px 3px rgba(0,0,0,0.04);margin-bottom:16px;}
+.card-header{padding:14px 16px;border-bottom:1px solid #eaecf0;}
+.card-title{font-size:15px;font-weight:700;color:#1a2236;margin:0;}
+.card-body{padding:16px;}
+@media(max-width:900px){
+  .stats-grid{grid-template-columns:repeat(3,1fr);}
+}
+@media(max-width:768px){
+  .stats-grid{grid-template-columns:repeat(2,1fr);}
+  .desktop-table{display:none!important;}
+  .mobile-cards{display:block!important;}
+}
+@media(max-width:480px){
+  .stats-grid{grid-template-columns:1fr 1fr;}
+}
+</style>
+
+<div class="stats-grid">
+  <div class="stat-card primary">
+    <div class="stat-number">{{ total_products }}</div>
+    <div class="stat-label">إجمالي الفساتين</div>
+  </div>
+  <div class="stat-card success">
+    <div class="stat-number">{{ available_count }}</div>
+    <div class="stat-label">متاح</div>
+  </div>
+  <div class="stat-card warning">
+    <div class="stat-number">{{ rented_count }}</div>
+    <div class="stat-label">مؤجر</div>
+  </div>
+  <div class="stat-card danger">
+    <div class="stat-number">{{ sold_count }}</div>
+    <div class="stat-label">مباع</div>
+  </div>
+  <div class="stat-card info">
+    <div class="stat-number">{{ inclean_count|add:inrepair_count }}</div>
+    <div class="stat-label">صيانة/تنظيف</div>
+  </div>
+  <div class="stat-card success" style="grid-column:span 2;">
+    <div class="stat-number">{{ total_rental_revenue|floatformat:0|intcomma }}</div>
+    <div class="stat-label">إجمالي إيرادات الإيجار</div>
+    <div class="stat-sub">{{ total_rental_revenue|floatformat:2|intcomma }} د.ل</div>
+  </div>
+  <div class="stat-card warning" style="grid-column:span 2;">
+    <div class="stat-number">{{ total_profit|floatformat:0|intcomma }}</div>
+    <div class="stat-label">إجمالي الأرباح</div>
+    <div class="stat-sub">{{ total_profit|floatformat:2|intcomma }} د.ل</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><span class="card-title">جرد الفساتين</span></div>
+  <div class="card-body" style="padding:0;">
+    <div class="desktop-table">
+      <div class="table-wrap">
+        <table class="erp-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>الاسم</th>
+              <th>الباركود</th>
+              <th>التكلفة</th>
+              <th>سعر الإيجار</th>
+              <th>عدد الإيجارات</th>
+              <th>إيرادات الإيجار</th>
+              <th>الربح</th>
+              <th>الحالة</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for product in products %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td style="text-align:right;font-weight:600;">{{ product.name }}</td>
+              <td>{{ product.barcode|default:"-" }}</td>
+              <td>{{ product.cost_price|floatformat:2|intcomma }}</td>
+              <td class="text-primary">{{ product.selling_price|floatformat:2|intcomma }}</td>
+              <td>{{ product.rental_count }}</td>
+              <td class="text-primary">{{ product.rental_revenue|floatformat:2|intcomma }}</td>
+              <td class="{% if product.profit > 0 %}text-success{% else %}text-danger{% endif %}">
+                {{ product.profit|floatformat:2|intcomma }}
+              </td>
+              <td>
+                <span class="badge-status {% if product.status == 'available' %}badge-available
+                         {% elif product.status == 'rented' %}badge-rented
+                         {% elif product.status == 'sold' %}badge-sold
+                         {% elif product.status == 'inclean' %}badge-clean
+                         {% elif product.status == 'inrepair' %}badge-repair{% endif %}">
+                  {{ product.get_status_display }}
+                </span>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="9" style="text-align:center;padding:30px;color:#6b7280;">لا توجد منتجات</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="mobile-cards" style="padding:12px;">
+      {% for product in products %}
+      <div class="inventory-card-m">
+        <div class="ic-header">
+          <span class="ic-name">{{ product.name }}</span>
+          <span class="ic-status">
+            <span class="badge-status {% if product.status == 'available' %}badge-available
+                     {% elif product.status == 'rented' %}badge-rented
+                     {% elif product.status == 'sold' %}badge-sold
+                     {% elif product.status == 'inclean' %}badge-clean
+                     {% elif product.status == 'inrepair' %}badge-repair{% endif %}">
+              {{ product.get_status_display }}
+            </span>
+          </span>
+        </div>
+        <div class="ic-row">
+          <span class="ic-label">الباركود</span>
+          <span class="ic-value">{{ product.barcode|default:"-" }}</span>
+        </div>
+        <div class="ic-row">
+          <span class="ic-label">التكلفة</span>
+          <span class="ic-value">{{ product.cost_price|floatformat:2|intcomma }}</span>
+        </div>
+        <div class="ic-row">
+          <span class="ic-label">سعر الإيجار</span>
+          <span class="ic-value text-primary">{{ product.selling_price|floatformat:2|intcomma }}</span>
+        </div>
+        <div class="ic-row">
+          <span class="ic-label">عدد الإيجارات</span>
+          <span class="ic-value">{{ product.rental_count }}</span>
+        </div>
+        <div class="ic-row">
+          <span class="ic-label">إيرادات الإيجار</span>
+          <span class="ic-value text-primary">{{ product.rental_revenue|floatformat:2|intcomma }}</span>
+        </div>
+        <div class="ic-row">
+          <span class="ic-label">الربح</span>
+          <span class="ic-value {% if product.profit > 0 %}text-success{% else %}text-danger{% endif %}">
+            {{ product.profit|floatformat:2|intcomma }}
+          </span>
+        </div>
+      </div>
+      {% empty %}
+      <div style="text-align:center;padding:30px;color:#6b7280;">لا توجد منتجات</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block nav_products %}active{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:700px;">
+  <div class="card-header"><span class="card-title">{{ title }}</span></div>
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data" id="productForm">
+      {% csrf_token %}
+      
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">{{ form.name.label }} <span style="color:red;">*</span></label>
+          {{ form.name }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">{{ form.barcode.label }}</label>
+          {{ form.barcode }}
+        </div>
+      </div>
+      
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">{{ form.category.label }}</label>
+          {{ form.category }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">{{ form.status.label }} </label>
+          {{ form.status }}
+        </div>
+      </div>
+      
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">{{ form.size.label }} </label>
+          {{ form.size }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">{{ form.color.label }} </label>
+          {{ form.color }}
+        </div>
+      </div>
+      
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">{{ form.cost_price.label }} </label>
+          {{ form.cost_price }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">{{ form.selling_price.label }} <span style="color:red;">*</span></label>
+          {{ form.selling_price }}
+        </div>
+      </div>
+      
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">{{ form.image.label }}</label>
+          {{ form.image }}
+          {% if form.instance.image %}
+            <div style="margin-top:5px;">
+              <img src="{{ form.instance.image.url }}" alt="" style="max-width:100px;max-height:100px;border-radius:5px;">
+            </div>
+          {% endif %}
+        </div>
+        <div class="form-group">
+          <label class="form-label">{{ form.image_2.label }}</label>
+          {{ form.image_2 }}
+          {% if form.instance.image_2 %}
+            <div style="margin-top:5px;">
+              <img src="{{ form.instance.image_2.url }}" alt="" style="max-width:100px;max-height:100px;border-radius:5px;">
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">{{ form.image_3.label }}</label>
+          {{ form.image_3 }}
+          {% if form.instance.image_3 %}
+            <div style="margin-top:5px;">
+              <img src="{{ form.instance.image_3.url }}" alt="" style="max-width:100px;max-height:100px;border-radius:5px;">
+            </div>
+          {% endif %}
+        </div>
+        <div class="form-group" style="display:flex;align-items:center;gap:10px;margin-top:20px;">
+          <label class="form-label" style="margin:0;">{{ form.is_active.label }}</label>
+          {{ form.is_active }}
+        </div>
+      </div>
+      
+      <div style="display:flex;gap:10px;margin-top:15px;">
+        <button type="submit" class="btn btn-primary">حفظ</button>
+        <a href="{% url 'products_list' %}" class="btn btn-outline">إلغاء</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const barcodeField = document.getElementById('id_barcode');
+    let barcodeBuffer = '';
+    let lastKeyTime = 0;
+    let isProcessing = false;
+
+    if (barcodeField) {
+        barcodeField.addEventListener('change', function() {
+            const barcode = this.value.trim();
+            if (barcode && !isProcessing) {
+                checkProductExists(barcode);
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.target.tagName === 'INPUT' && e.target.id !== 'id_barcode') {
+                barcodeBuffer = '';
+                return;
+            }
+
+            if (e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            const currentTime = new Date().getTime();
+            const timeDiff = currentTime - lastKeyTime;
+
+            if (timeDiff < 50 && timeDiff > 0) {
+                barcodeBuffer += e.key;
+            } else if (timeDiff >= 50 && timeDiff < 1000) {
+                if (barcodeBuffer.length > 0) {
+                    barcodeBuffer += e.key;
+                } else {
+                    barcodeBuffer = e.key;
+                }
+            } else if (timeDiff >= 1000 || barcodeBuffer.length === 0) {
+                barcodeBuffer = e.key;
+            }
+
+            lastKeyTime = currentTime;
+
+            if (e.key === 'Enter' && barcodeBuffer.length > 3) {
+                e.preventDefault();
+                let barcode = barcodeBuffer.replace(/Enter$/, '').trim();
+                barcode = barcode.replace(/[\r\n]/g, '').trim();
+                if (barcode) {
+                    barcodeField.value = barcode;
+                }
+                barcodeBuffer = '';
+            }
+
+            if (barcodeBuffer.length >= 12 && barcodeBuffer.length <= 14) {
+                if (!isNaN(barcodeBuffer[barcodeBuffer.length - 1])) {
+                    setTimeout(function() {
+                        if (barcodeBuffer.length >= 12) {
+                            let barcode = barcodeBuffer.trim();
+                            barcodeField.value = barcode;
+                            if (!isProcessing) {
+                                checkProductExists(barcode);
+                            }
+                            barcodeBuffer = '';
+                        }
+                    }, 200);
+                }
+            }
+        });
+
+        barcodeField.addEventListener('focus', function() {
+            barcodeBuffer = '';
+            this.select();
+        });
+    }
+});
+</script>
+{% endblock %}

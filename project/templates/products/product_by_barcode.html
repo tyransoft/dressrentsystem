@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ product.name }}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f4f6fb;padding:20px;direction:rtl;}
+    .product-container{max-width:800px;margin:0 auto;}
+    .product-card{background:#fff;border-radius:16px;border:1px solid #eaecf0;box-shadow:0 2px 12px rgba(0,0,0,0.06);overflow:hidden;}
+    .product-header{padding:20px 24px;border-bottom:1px solid #eaecf0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+    .product-header h2{margin:0;font-size:20px;font-weight:800;color:#1a2236;}
+    .product-body{padding:24px;}
+    .image-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:20px;}
+    .image-item{background:#f8fafc;border-radius:12px;overflow:hidden;border:1px solid #eaecf0;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;}
+    .image-item img{width:100%;height:100%;object-fit:cover;}
+    .image-item .no-image{font-size:14px;color:#6b7280;text-align:center;padding:20px;}
+    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+    .info-item{background:#f8fafc;border-radius:10px;padding:12px 16px;}
+    .info-item .label{font-size:11px;color:#6b7280;font-weight:500;}
+    .info-item .value{font-size:16px;font-weight:700;color:#1a2236;margin-top:4px;}
+    .info-item .value.price{color:#D4AF37;}
+    .badge-status{padding:4px 14px;border-radius:20px;font-size:13px;font-weight:600;display:inline-block;}
+    .badge-available{background:#dcfce7;color:#166534;}
+    .badge-rented{background:#fef3c7;color:#92400e;}
+    .badge-sold{background:#fee2e2;color:#991b1b;}
+    .badge-clean{background:#dbeafe;color:#1e40af;}
+    .badge-repair{background:#fef3c7;color:#92400e;}
+    .product-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;padding-top:20px;border-top:2px solid #eaecf0;}
+    .product-actions .btn{flex:1;min-width:120px;padding:12px 20px;border:none;border-radius:10px;font-weight:600;cursor:pointer;transition:all 0.2s;text-decoration:none;text-align:center;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:14px;}
+    .btn-success{background:#16a34a;color:#fff;}
+    .btn-success:hover{background:#15803d;}
+    .btn-primary{background:#D4AF37;color:#fff;}
+    .btn-primary:hover{background:#c9612a;}
+    .btn-outline{background:transparent;border:1.5px solid #eaecf0;color:#374151;}
+    .btn-outline:hover{background:#f8f9fb;}
+    .back-link{display:inline-block;margin-bottom:16px;color:#6b7280;text-decoration:none;font-size:14px;}
+    .back-link:hover{color:#1a2236;}
+    @media(max-width:600px){
+      .info-grid{grid-template-columns:1fr;}
+      .image-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));}
+      .product-header{flex-direction:column;align-items:stretch;}
+      .product-header h2{text-align:center;}
+      .product-actions .btn{min-width:100%;}
+      body{padding:10px;}
+      .product-body{padding:16px;}
+    }
+  </style>
+</head>
+<body>
+
+
+<div class="product-container">
+  <div class="product-card">
+    <div class="product-header">
+      <h2>{{ product.name }}</h2>
+      <span class="badge-status {% if product.status == 'available' %}badge-available
+               {% elif product.status == 'rented' %}badge-rented
+               {% elif product.status == 'sold' %}badge-sold
+               {% elif product.status == 'inclean' %}badge-clean
+               {% elif product.status == 'inrepair' %}badge-repair{% endif %}">
+        {{ product.get_status_display }}
+      </span>
+    </div>
+    
+    <div class="product-body">
+      <div class="image-grid">
+        {% if product.image %}
+        <div class="image-item">
+          <img src="{{ product.image.url }}" alt="{{ product.name }}">
+        </div>
+        {% endif %}
+        {% if product.image_2 %}
+        <div class="image-item">
+          <img src="{{ product.image_2.url }}" alt="{{ product.name }} - 2">
+        </div>
+        {% endif %}
+        {% if product.image_3 %}
+        <div class="image-item">
+          <img src="{{ product.image_3.url }}" alt="{{ product.name }} - 3">
+        </div>
+        {% endif %}
+        {% if not product.image and not product.image_2 and not product.image_3 %}
+        <div class="image-item">
+          <div class="no-image">لا توجد صور</div>
+        </div>
+        {% endif %}
+      </div>
+      
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="label">اسم المنتج</div>
+          <div class="value">{{ product.name }}</div>
+        </div>
+        <div class="info-item">
+          <div class="label">الباركود</div>
+          <div class="value" style="font-family:monospace;font-size:14px;">{{ product.barcode|default:"-" }}</div>
+        </div>
+        <div class="info-item">
+          <div class="label">سعر الإيجار</div>
+          <div class="value price">{{ product.selling_price|floatformat:2 }} د.ل</div>
+        </div>
+        <div class="info-item">
+          <div class="label">الفئة</div>
+          <div class="value">{{ product.category.name|default:"-" }}</div>
+        </div>
+        <div class="info-item">
+          <div class="label">المقاس</div>
+          <div class="value">{{ product.size|default:"-" }}</div>
+        </div>
+        <div class="info-item">
+          <div class="label">اللون</div>
+          <div class="value">{{ product.color|default:"-" }}</div>
+        </div>
+      </div>
+      
+      <div class="product-actions">
+        {% if user %}
+        <a href="{% url 'create_invoice' %}?barcode={{ product.barcode }}" class="btn btn-success">
+          انشاء فاتورة
+        </a>
+       
+     
+        {% endif %}
+       
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
