@@ -21,14 +21,14 @@ def home(request):
     if not request.user.is_authenticated:
         return redirect('user_login')
     if user.is_accountant():
-        return redirect('dashboard_accountant')
+        return redirect('statistics')
     if user.can_see_all_data():
-        return redirect('users_list')
+        return redirect('statistics')
     return redirect('/')
 
 def login_view(request):
     if request.user.is_authenticated:
-        return redirect('dashboard_home')
+        return redirect('statistics')
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
@@ -38,7 +38,7 @@ def login_view(request):
             if user and user.is_active:
                 login(request, user)
               
-                return redirect('dashboard_home')
+                return redirect('statistics')
             else:
                 messages.error(request, 'اسم المستخدم أو كلمة المرور غير صحيحة')
     else:
@@ -57,7 +57,7 @@ def logout_view(request):
 def users_list(request):
     if not request.user.can_see_all_data():
         messages.error(request, 'ليس لديك صلاحية للوصول لهذه الصفحة')
-        return redirect('dashboard')
+        return redirect('statistics')
     users = CustomUser.objects.all().order_by('username')
     return render(request, 'accounts/users_list.html', {'users': users})
 
@@ -66,7 +66,7 @@ def users_list(request):
 def user_create(request):
     if not request.user.can_see_all_data():
         messages.error(request, 'ليس لديك صلاحية للوصول لهذه الصفحة')
-        return redirect('dashboard')
+        return redirect('statistics')
     if request.method == 'POST':
         form = UserCreateForm(request.POST)
         if form.is_valid():
@@ -83,7 +83,7 @@ def user_create(request):
 def user_edit(request, pk):
     if not request.user.can_see_all_data():
         messages.error(request, 'ليس لديك صلاحية للوصول لهذه الصفحة')
-        return redirect('dashboard')
+        return redirect('statistics')
     user = get_object_or_404(CustomUser, pk=pk)
     if request.method == 'POST':
         form = UserEditForm(request.POST, instance=user)
