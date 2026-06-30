@@ -28,7 +28,9 @@ SECRET_KEY = 'django-insecure-^fnuj#%%un7^16h@w002qi6+lj)s6#w(pgmkz+ih4e46&*w*$a
 DEBUG = True
 
 ALLOWED_HOSTS = ['dressrent.tip2.libyanspider.cloud']
-
+CSRF_TRUSTED_ORIGINS = [
+    'https://dressrent.tip2.libyanspider.cloud',
+]
 SITE_URL = "https://dressrent.tip2.libyanspider.cloud/"
 # Application definition
 
