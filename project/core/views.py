@@ -13,17 +13,7 @@ from datetime import datetime, timedelta,time
 from django.utils import timezone
 
 
-import os
-from io import BytesIO
-from django.http import HttpResponse
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import landscape, A4
-from reportlab.lib.units import cm, mm
-from reportlab.graphics.barcode import code128
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-import arabic_reshaper
-from bidi.algorithm import get_display
+
 
 @login_required
 def home(request):
