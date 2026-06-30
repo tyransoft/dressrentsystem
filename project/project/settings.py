@@ -22,14 +22,14 @@ TEMP=BASE_DIR / 'templates'
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-^fnuj#%%un7^16h@w002qi6+lj)s6#w(pgmkz+ih4e46&*w*$a'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['dressrent.tip2.libyanspider.cloud']
 
-SITE_URL = "http://127.0.0.1:8000"
+SITE_URL = "https://dressrent.tip2.libyanspider.cloud/"
 # Application definition
 
 INSTALLED_APPS = [
