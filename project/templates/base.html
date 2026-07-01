@@ -705,13 +705,15 @@ textarea.form-control { resize: vertical; min-height: 90px; }
         </div>
 
         <nav class="sidebar-nav">
+            {% if user.can_see_all_data or user.is_accountant %}
             <div class="nav-section">الرئيسية</div>
             <a href="{% url 'statistics' %}" class="nav-link {% block nav_dashboard %}{% endblock %}">
                 لوحة التحكم
             </a>
-       
+            {% endif %}
 
             {% if user.can_see_all_data %}
+
             <div class="nav-section">الإدارة</div>
             
             <a href="{% url 'users_list' %}" class="nav-link {% block nav_users %}{% endblock %}">
