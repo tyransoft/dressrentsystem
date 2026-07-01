@@ -94,7 +94,7 @@
         <div class="pc-row"><span class="pc-label">الفئة</span><span>{{ product.category.name|default:"-" }}</span></div>
         <div class="pc-row"><span class="pc-label">سعر التكلفة</span><span>{{ product.cost_price|floatformat:2|intcomma }}</span></div>
         <div class="pc-row"><span class="pc-label">سعر البيع</span><span class="fw-bold text-primary">{{ product.selling_price|floatformat:2|intcomma }}</span></div>
-        <div class="pc-row"><span class="pc-label">الحالة</span><span>{% if product.is_available %}<span class="badge badge-success">متاح</span>{% else %}<span class="badge badge-danger">{{product.status}}</span>{% endif %}</span></div>
+        <div class="pc-row"><span class="pc-label">الحالة</span><span>{% if product.is_available %}<span class="badge badge-success">متاح</span>{% else %}<span class="badge badge-danger">{{product.get_status_display}}</span>{% endif %}</span></div>
         <div class="pc-actions">
           <a href="{% url 'products_detail' product.pk %}" class="btn btn-outline btn-sm">عرض</a>
           {% if user.is_mian_admin%}
