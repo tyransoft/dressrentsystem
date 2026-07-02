@@ -468,15 +468,11 @@ def reservations_list(request):
     
     total_pending = reservations.count()
     today_reservations = reservations.filter(rent_start_date=today).count()
-    reserved_count = Invoice.objects.filter(status=InvoiceStatus.RESERVED).count()
-    overdue_count = Invoice.objects.filter(status=InvoiceStatus.OVERDUE).count()
     
     context = {
         'reservations': reservations,
         'total_pending': total_pending,
         'today_reservations': today_reservations,
-        'reserved_count': reserved_count,
-        'overdue_count': overdue_count,
         'today': today.strftime('%Y-%m-%d'),
     }
     return render(request, 'reservations_list.html', context)
