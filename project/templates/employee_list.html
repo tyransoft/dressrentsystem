@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block page_title %}إدارة الموظفين{% endblock %}
+{% block mobile_title %}الموظفين{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h5 class="mb-0">قائمة الموظفين</h5>
+    <a href="{% url 'employee_create' %}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg"></i> موظف جديد
+    </a>
+</div>
+
+<div class="table-card">
+    <table class="table table-hover mb-0">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>الاسم</th>
+                <th>الوظيفة</th>
+                <th>نظام الدفع</th>
+                <th>الراتب/أجر الساعة</th>
+                <th>الحالة</th>
+                <th>الإجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for emp in employees %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ emp.full_name }}</td>
+                <td>{{ emp.position }}</td>
+                <td>
+                    <span class="badge bg-primary">شهري</span>
+                 
+                </td>
+                <td>
+                    {{ emp.monthly_salary|floatformat:0 }}د.ل
+                    
+                </td>
+                <td>
+                    {% if emp.status == 'active' %}
+                        <span class="badge bg-success">نشط</span>
+                    {% elif emp.status == 'inactive' %}
+                        <span class="badge bg-secondary">غير نشط</span>
+                    {% else %}
+                        <span class="badge bg-warning">في إجازة</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <a href="{% url 'employee_edit' emp.pk %}" class="btn btn-outline-primary">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                            <a href="{% url 'monthly_salary_statement' emp.pk %}" class="btn btn-outline-info">
+                                <i class="bi bi-receipt"></i>
+                            </a>
+                            <a href="{% url 'monthly_salary_payment' emp.pk %}" class="btn btn-outline-success">
+                                <i class="bi bi-cash"></i>
+                            </a>
+                       
+                        <a href="{% url 'employee_delete' emp.pk %}" class="btn btn-outline-danger" onclick="return confirm('هل أنت متأكد؟')">
+                            <i class="bi bi-trash3"></i>
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center text-muted py-4">
+                    <i class="bi bi-people fs-1 d-block mb-2"></i>
+                    لا يوجد موظفين
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

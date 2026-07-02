@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block page_title %}حذف غياب{% endblock %}
+{% block mobile_title %}حذف غياب{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                تأكيد حذف غياب
+            </div>
+            <div class="card-body text-center">
+                <p>هل أنت متأكد من حذف تسجيل الغياب التالي؟</p>
+                <div class="alert alert-warning">
+                    <strong>{{ absence.employee.full_name }}</strong><br>
+                    التاريخ: {{ absence.absence_date|date:"Y-m-d" }}<br>
+                    الخصم: {{ absence.deduction_amount|floatformat:0 }} د.ل
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">نعم، احذف</button>
+                    <a href="{% url 'absence_list' %}" class="btn btn-secondary">إلغاء</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

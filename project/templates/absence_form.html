@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block page_title %}{{ title }}{% endblock %}
+{% block mobile_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-white fw-bold">
+        <i class="bi bi-calendar-x me-2"></i>{{ title }}
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">الموظف *</label>
+                    <select name="employee" class="form-select" required>
+                        <option value="">اختر الموظف</option>
+                        {% for emp in employees %}
+                        <option value="{{ emp.pk }}">{{ emp.full_name }} - {{ emp.position }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">تاريخ الغياب *</label>
+                    <input type="date" name="absence_date" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">قيمة الخصم *</label>
+                    <input type="number" name="deduction_amount" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">سبب الغياب</label>
+                    <input type="text" name="reason" class="form-control">
+                </div>
+            </div>
+            
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> حفظ
+                </button>
+                <a href="{% url 'absence_list' %}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> إلغاء
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

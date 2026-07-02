@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block page_title %}{{ title }}{% endblock %}
+{% block mobile_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-white fw-bold">
+        <i class="bi bi-person-badge me-2"></i>{{ title }}
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">الاسم الكامل *</label>
+                    <input type="text" name="full_name" class="form-control" value="{{ employee.full_name|default:'' }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">الوظيفة *</label>
+                    <input type="text" name="position" class="form-control" value="{{ employee.position|default:'' }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">رقم الهاتف</label>
+                    <input type="text" name="phone" class="form-control" value="{{ employee.phone|default:'' }}">
+                </div>
+             
+                <div class="col-md-6" id="monthly_fields" {% if employee.payment_type == 'hourly' %}style="display:none;"{% endif %}>
+                    <label class="form-label">الراتب الشهري</label>
+                    <input type="number" name="monthly_salary" class="form-control" value="{{ employee.monthly_salary|default:0 }}">
+                </div>
+
+                {% if employee %}
+                <div class="col-md-6">
+                    <label class="form-label">الحالة</label>
+                    <select name="status" class="form-select">
+                        <option value="active" {% if employee.status == 'active' %}selected{% endif %}>نشط</option>
+                        <option value="inactive" {% if employee.status == 'inactive' %}selected{% endif %}>غير نشط</option>
+                        <option value="on_leave" {% if employee.status == 'on_leave' %}selected{% endif %}>في إجازة</option>
+                    </select>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> حفظ
+                </button>
+                <a href="{% url 'employee_list' %}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> إلغاء
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+{% endblock %}

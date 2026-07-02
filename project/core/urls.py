@@ -21,7 +21,7 @@ urlpatterns = [
     path('categories/create/', category_create, name='category_create'),
     path('products/search/', product_search_ajax, name='search_ajax'),
     path('products/bulk-price-update/', products_bulk_price_update, name='products_bulk_price_update'),
-
+    path('api/check-product-availability/', check_product_availability_api, name='check_product_availability'),
 
     path('payment-methods/', payment_methods_list, name='payment_methods_list'),
     path('payment-methods/create/', payment_method_create, name='payment_method_create'),
@@ -59,6 +59,31 @@ urlpatterns = [
     path('print-barcodes/', print_qr_preview, name='print_barcodes_preview'),
     path('unreturned-invoices/', unreturned_invoices, name='unreturned_invoices'),
     path('select-barcodes/',select_barcodes, name='print_barcodes'),
+
+    path('reservations/', reservations_list, name='reservations_list'),
+    path('invoice/deliver/<int:invoice_id>/', mark_as_delivered, name='mark_as_delivered'),
+
+
+    path('expenses/',expense_list, name='expense_list'),
+    path('expenses/add/',expense_add, name='expense_add'),
+    path('expenses/<int:pk>/edit/',expense_edit, name='expense_edit'),
+    path('expenses/<int:pk>/delete/',expense_delete, name='expense_delete'),
+    path('expense-categories/',expense_category_list, name='expense_category_list'),
+    path('expense-categories/add/',expense_category_add, name='expense_category_add'),
+
+    path('hr/employees/', employee_list, name='employee_list'),
+    path('hr/employees/create/', employee_create, name='employee_create'),
+    path('hr/employees/<int:pk>/edit/', employee_edit, name='employee_edit'),
+    path('hr/employees/<int:pk>/delete/', employee_delete, name='employee_delete'),
+    
+    path('hr/absences/', absence_list, name='absence_list'),
+    path('hr/absences/create/', absence_create, name='absence_create'),
+    path('hr/absences/<int:pk>/delete/', absence_delete, name='absence_delete'),
+    
+    path('hr/monthly/<int:employee_id>/payment/', monthly_salary_payment, name='monthly_salary_payment'),
+    path('hr/monthly/<int:employee_id>/statement/', monthly_salary_statement, name='monthly_salary_statement'),
+    
+
 ]
 
 

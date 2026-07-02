@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}{% if object %}تعديل المصروف{% else %}إضافة المصروف{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header d-flex align-items-center gap-3">
+  <a href="{% url 'expense_list' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-right"></i></a>
+  <div><h2>{% if object %}تعديل المصروف{% else %}إضافة المصروف جديد{% endif %}</h2></div>
+</div>
+<div class="table-card p-4" style="max-width:600px;">
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% for field in form %}
+    <div class="mb-3">
+      <label class="form-label fw-semibold">{{ field.label }}</label>
+      {{ field }}
+      {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+      {% if field.help_text %}<div class="text-muted small mt-1">{{ field.help_text }}</div>{% endif %}
+    </div>
+    {% endfor %}
+    <hr class="my-3">
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-lg me-1"></i> حفظ</button>
+      <a href="{% url 'expense_list' %}" class="btn btn-outline-secondary">إلغاء</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

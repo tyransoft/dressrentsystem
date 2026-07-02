@@ -742,6 +742,9 @@ textarea.form-control { resize: vertical; min-height: 90px; }
             <a href="{% url 'invoice_list' %}" class="nav-link {% block nav_sale_invoices %}{% endblock %}">
                 فواتير المبيعات
             </a>
+            <a href="{% url 'reservations_list' %}" class="nav-link {% block nav_invoices %}{% endblock %}">
+                الحجوزات 
+            </a>     
             <a href="{% url 'unreturned_invoices' %}" class="nav-link {% block nav_sale_unreturn %}{% endblock %}">
                 فساتين مستأجرة
             </a>
@@ -759,7 +762,19 @@ textarea.form-control { resize: vertical; min-height: 90px; }
                 عميل جديد
             </a>
 
-          
+                
+      <a href="{% url 'expense_list' %}" class="nav-link {% if 'expense' in request.resolver_match.url_name %}active{% endif %}">
+         المصروفات
+      </a>
+       {% if user_role == 'admin' or user_role == 'accountant' %}
+      <p class="nav-section-label">الموارد البشرية</p>
+
+<a href="{% url 'employee_list' %}" class="nav-link {% if 'employee' in request.resolver_match.url_name %}active{% endif %}">
+     الموظفون
+</a>
+<a href="{% url 'absence_list' %}" class="nav-link">
+     الغيابات
+</a>
 
             
 

@@ -3,6 +3,22 @@ from django.contrib.auth.forms import UserCreationForm
 from .models import *
 from django.utils import timezone
 
+WIDGET_ATTRS = {
+    'class': 'form-control',
+    'placeholder': 'أدخل النص هنا'
+}
+
+SELECT_ATTRS = {
+    'class': 'form-select'
+}
+
+DATE_ATTRS = {
+    'class': 'form-control',
+    'type': 'date'
+      
+}
+
+
 
 class LoginForm(forms.Form):
     username = forms.CharField(
@@ -148,14 +164,19 @@ class PaymentMethodForm(forms.ModelForm):
         }        
 
 
+
 class RepairAndCleanForm(forms.ModelForm):
     class Meta:
         model = RepairAndClean
-        fields = ['product', 'kind', 'status', 'finish_at', 'total_cost', 'notes']
+        fields = ['product', 'kind', 'status', 'start_date', 'finish_at', 'total_cost', 'notes']
         widgets = {
             'product': forms.Select(attrs={'class': 'form-select'}),
             'kind': forms.Select(attrs={'class': 'form-select'}),
             'status': forms.Select(attrs={'class': 'form-select'}),
+            'start_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
             'finish_at': forms.DateInput(attrs={
                 'class': 'form-control',
                 'type': 'date'
@@ -175,14 +196,17 @@ class RepairAndCleanForm(forms.ModelForm):
             'product': 'الفستان',
             'kind': 'نوع الصيانة',
             'status': 'الحالة',
-            'finish_at': 'تاريخ الانتهاء',
+            'start_date': 'تاريخ بداية الصيانة',
+            'finish_at': 'تاريخ انتهاء الصيانة',
             'total_cost': 'تكلفة الصيانة',
             'notes': 'ملاحظات',
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['finish_at'].initial = timezone.now().date()
+        today = timezone.now().date()
+        self.fields['start_date'].initial = today
+        self.fields['finish_at'].initial = today
         self.fields['status'].initial = 'inwork'
         
         for field in self.fields:
@@ -190,6 +214,28 @@ class RepairAndCleanForm(forms.ModelForm):
                 self.fields[field].required = False
             else:
                 self.fields[field].required = True
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        finish_at = cleaned_data.get('finish_at')
+        
+        if start_date and start_date < timezone.now().date():
+            self.add_error('start_date', 'تاريخ البداية لا يمكن أن يكون في الماضي')
+        
+        if finish_at and finish_at < timezone.now().date():
+            self.add_error('finish_at', 'تاريخ الانتهاء لا يمكن أن يكون في الماضي')
+        
+        if start_date and finish_at and start_date > finish_at:
+            self.add_error('finish_at', 'تاريخ الانتهاء يجب أن يكون بعد تاريخ البداية')
+        
+        return cleaned_data
+    
+    def clean_start_date(self):
+        start_date = self.cleaned_data.get('start_date')
+        if start_date and start_date < timezone.now().date():
+            raise forms.ValidationError('تاريخ البداية لا يمكن أن يكون في الماضي')
+        return start_date
     
     def clean_finish_at(self):
         finish_at = self.cleaned_data.get('finish_at')
@@ -201,8 +247,7 @@ class RepairAndCleanForm(forms.ModelForm):
         total_cost = self.cleaned_data.get('total_cost')
         if total_cost and total_cost < 0:
             raise forms.ValidationError('التكلفة لا يمكن أن تكون سالبة')
-        return total_cost        
-
+        return total_cost
 
 class CustomerForm(forms.ModelForm):
     class Meta:
@@ -218,4 +263,58 @@ class CustomerForm(forms.ModelForm):
             'phone': 'رقم الهاتف',
             'is_active': 'نشط',
         }
+
+
+
+
+
+class ExpenseForm(forms.ModelForm):
+    class Meta:
+        model = Expense
+        fields = ['title', 'amount', 'expense_date', 'category', 'description']
+        widgets = {
+            'title': forms.TextInput(attrs=WIDGET_ATTRS),
+            'amount': forms.NumberInput(attrs=WIDGET_ATTRS),
+            'expense_date': forms.DateInput(attrs=DATE_ATTRS),
+            'category': forms.Select(attrs=SELECT_ATTRS),
+            'description': forms.Textarea(attrs={**WIDGET_ATTRS, 'rows': 3}),
+        }
+        labels = {
+            'title': 'عنوان المصروف',
+            'amount': 'المبلغ (دينار)',
+            'expense_date': 'التاريخ',
+            'category': 'الفئة',
+            'description': 'الوصف',
+        }
+
+
+class ExpenseCategoryForm(forms.ModelForm):
+    class Meta:
+        model = ExpenseCategory
+        fields = ['name', 'description']
+        widgets = {
+            'name': forms.TextInput(attrs=WIDGET_ATTRS),
+            'description': forms.Textarea(attrs={**WIDGET_ATTRS, 'rows': 3}),
+        }
+        labels = {'name': 'اسم الفئة', 'description': 'الوصف'}            
+
+
+class EmployeeForm(forms.ModelForm):
+    class Meta:
+        model = Employee
+        fields = '__all__'
+        exclude = ['employee_number', 'created_at']
+     
     
+    def clean(self):
+        cleaned_data = super().clean()
+        payment_type = cleaned_data.get('payment_type')
+        
+        if payment_type == 'monthly' and cleaned_data.get('monthly_salary', 0) <= 0:
+            self.add_error('monthly_salary', 'الراتب الشهري مطلوب للموظف الشهري')
+
+        
+        return cleaned_data
+
+
+                                    

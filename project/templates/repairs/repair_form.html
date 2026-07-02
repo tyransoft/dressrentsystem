@@ -9,59 +9,191 @@
   .form-actions{flex-direction:column;}
   .form-actions button,.form-actions a{width:100%;}
 }
+
+.errorlist {
+    color: #dc3545;
+    list-style: none;
+    padding: 0;
+    margin: 5px 0 0 0;
+    font-size: 0.875rem;
+}
+
+.errorlist li {
+    background: #f8d7da;
+    padding: 5px 10px;
+    border-radius: 4px;
+    margin-top: 3px;
+}
+
+.required-field::after {
+    content: " *";
+    color: #dc3545;
+    font-weight: bold;
+}
 </style>
 
-<div class="card" style="max-width:700px;">
-  <div class="card-header"><span class="card-title">{{ title }}</span></div>
-  <div class="card-body">
-    <form method="post">
-      {% csrf_token %}
-      
-      <div class="grid-2">
-        <div class="form-group">
-          <label class="form-label">{{ form.product.label }} <span style="color:red;">*</span></label>
-          {{ form.product }}
-          {{ form.product.errors }}
-        </div>
-        <div class="form-group">
-          <label class="form-label">{{ form.kind.label }} <span style="color:red;">*</span></label>
-          {{ form.kind }}
-          {{ form.kind.errors }}
-        </div>
-      </div>
-      
-      <div class="grid-2">
-        <div class="form-group">
-          <label class="form-label">{{ form.status.label }} <span style="color:red;">*</span></label>
-          {{ form.status }}
-          {{ form.status.errors }}
-        </div>
-        <div class="form-group">
-          <label class="form-label">{{ form.finish_at.label }} <span style="color:red;">*</span></label>
-          {{ form.finish_at }}
-          {{ form.finish_at.errors }}
-        </div>
-      </div>
-      
-      <div class="grid-2">
-        <div class="form-group">
-          <label class="form-label">{{ form.total_cost.label }} <span style="color:red;">*</span></label>
-          {{ form.total_cost }}
-          {{ form.total_cost.errors }}
-        </div>
-      </div>
-      
-      <div class="form-group">
-        <label class="form-label">{{ form.notes.label }}</label>
-        {{ form.notes }}
-        {{ form.notes.errors }}
-      </div>
-      
-      <div class="form-actions" style="display:flex;gap:10px;margin-top:15px;">
-        <button type="submit" class="btn btn-primary">{% if is_edit %}تحديث{% else %}حفظ{% endif %}</button>
-        <a href="{% url 'repair_list' %}" class="btn btn-outline">إلغاء</a>
-      </div>
-    </form>
-  </div>
+<div class="card" style="max-width:750px; margin: 0 auto;">
+    <div class="card-header">
+        <span class="card-title">
+            <i class="fas fa-tools"></i> {{ title }}
+        </span>
+    </div>
+    <div class="card-body">
+        <form method="post" id="repairForm">
+            {% csrf_token %}
+            
+            <div class="row">
+                <div class="col-md-6 form-group">
+                    <label class="form-label required-field">{{ form.product.label }}</label>
+                    {{ form.product }}
+                    {% if form.product.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.product.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+                <div class="col-md-6 form-group">
+                    <label class="form-label required-field">{{ form.kind.label }}</label>
+                    {{ form.kind }}
+                    {% if form.kind.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.kind.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 form-group">
+                    <label class="form-label required-field">{{ form.status.label }}</label>
+                    {{ form.status }}
+                    {% if form.status.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.status.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 form-group">
+                    <label class="form-label required-field">{{ form.start_date.label }}</label>
+                    {{ form.start_date }}
+                    {% if form.start_date.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.start_date.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    
+                </div>
+                <div class="col-md-6 form-group">
+                    <label class="form-label required-field">{{ form.finish_at.label }}</label>
+                    {{ form.finish_at }}
+                    {% if form.finish_at.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.finish_at.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 form-group">
+                    <label class="form-label required-field">{{ form.total_cost.label }}</label>
+                    {{ form.total_cost }}
+                    {% if form.total_cost.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.total_cost.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i> التكلفة الإجمالية 
+                    </small>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">{{ form.notes.label }}</label>
+                {{ form.notes }}
+                {% if form.notes.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.notes.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+            
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger mt-3">
+                    <i class="fas fa-exclamation-circle"></i>
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <div class="form-actions" style="display:flex; gap:10px; margin-top:20px; padding-top:20px; border-top: 1px solid #e9ecef;">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> {% if is_edit %}تحديث{% else %}حفظ{% endif %}
+                </button>
+                <a href="{% url 'repair_list' %}" class="btn btn-outline">
+                    <i class="fas fa-times"></i> إلغاء
+                </a>
+                {% if is_edit %}
+                <button type="reset" class="btn btn-outline">
+                    <i class="fas fa-undo"></i> إعادة تعيين
+                </button>
+                {% endif %}
+            </div>
+        </form>
+    </div>
 </div>
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    const today = new Date().toISOString().split('T')[0];
+    $('#id_start_date').attr('min', today);
+    $('#id_finish_at').attr('min', today);
+    
+    $('#id_start_date').change(function() {
+        const startDate = $(this).val();
+        if (startDate) {
+            $('#id_finish_at').attr('min', startDate);
+            const finishDate = $('#id_finish_at').val();
+            if (finishDate && finishDate < startDate) {
+                $('#id_finish_at').val(startDate);
+            }
+        }
+    });
+    
+    $('#repairForm').submit(function(e) {
+        const startDate = $('#id_start_date').val();
+        const finishDate = $('#id_finish_at').val();
+        
+        if (startDate && finishDate && finishDate < startDate) {
+            e.preventDefault();
+            alert(' تاريخ الانتهاء يجب أن يكون بعد تاريخ البداية');
+            $('#id_finish_at').focus();
+            return false;
+        }
+        return true;
+    });
+});
+</script>
+{% endblock %}
 {% endblock %}

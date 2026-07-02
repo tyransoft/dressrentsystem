@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block page_title %}تسديد راتب {{ employee.full_name }}{% endblock %}
+{% block mobile_title %}تسديد راتب{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-white fw-bold">
+        <i class="bi bi-cash-stack me-2"></i>تسديد راتب
+    </div>
+    <div class="card-body">
+        <div class="alert alert-info mb-3">
+            <strong>{{ employee.full_name }}</strong><br>
+            <small>الراتب الشهري: {{ employee.monthly_salary|floatformat:0 }} د.ل</small><br>
+            <small>إجمالي الخصومات: {{ employee.total_absence_deductions|floatformat:0 }} د.ل</small><br>
+            <small>صافي المستحق: {{ employee.net_monthly_salary|floatformat:0 }} د.ل</small><br>
+            <small>المتبقي: {{ employee.monthly_remaining|floatformat:0 }} د.ل</small>
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">المبلغ المدفوع *</label>
+                    <input type="number" name="amount" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">تاريخ الدفع *</label>
+                    <input type="date" name="payment_date" class="form-control" value="{% now 'Y-m-d' %}" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">طريقة الدفع *</label>
+                    <select name="payment_method" class="form-select" required>
+                        <option value="cash">نقداً</option>
+                        <option value="bank_transfer">تحويل بنكي</option>
+                        <option value="check">شيك</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">ملاحظات</label>
+                    <textarea name="notes" class="form-control" rows="2"></textarea>
+                </div>
+            </div>
+            
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check-circle"></i> تسديد
+                </button>
+                <a href="{% url 'monthly_salary_statement' employee.pk %}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> إلغاء
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

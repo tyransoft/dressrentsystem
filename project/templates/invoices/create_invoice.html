@@ -56,6 +56,7 @@ display: flex;
 align-items: center;
 gap: 15px;
 justify-content: center;
+flex-wrap: wrap;
 }
 .page-search-bar input {
 width: 60%;
@@ -503,6 +504,7 @@ animation: fadeOut 2.5s ease-in-out forwards;
 <input type="hidden" name="commission" id="form_commission" value="0">
 <input type="hidden" name="identity_verified" id="form_identity_verified" value="true">
 <input type="hidden" name="rent_end_date" id="form_rent_end_date" value="">
+<input type="hidden" name="rent_start_date" id="form_rent_start_date" value="">
 <input type="hidden" name="rent_days" id="form_rent_days" value="0">
 <input type="hidden" name="rent_price_per_day" id="form_rent_price_per_day" value="0">
 <input type="hidden" name="sale_price" id="form_sale_price" value="0">
@@ -516,11 +518,11 @@ animation: fadeOut 2.5s ease-in-out forwards;
 
 <div class="search-type-group" id="type-selector">
 <label class="active-label" id="rent-label">
-<input type="radio" name="invoice_type" value="rent" checked onchange="toggleInvoiceType()">
+<input type="radio" name="invoice_type" value="RENT" checked onchange="toggleInvoiceType()">
 <span>ايجار</span>
 </label>
 <label id="sale-label">
-<input type="radio" name="invoice_type" value="sale" onchange="toggleInvoiceType()">
+<input type="radio" name="invoice_type" value="SALE" onchange="toggleInvoiceType()">
 <span>بيع</span>
 </label>
 </div>
@@ -584,6 +586,7 @@ data-search="{{ product.name|lower }} {{ product.barcode|default:'' }}">
 
 <div id="modal-rent-details" style="display:block;">
 <div class="order-summary-box">
+<div class="os-row"><span>تاريخ البداية</span><span id="modal-rent-start"></span></div>
 <div class="os-row"><span>تاريخ الانتهاء</span><span id="modal-rent-end"></span></div>
 <div class="os-row"><span>اجمالي الايام</span><span id="modal-rent-days"></span></div>
 <div class="os-row"><span>السعر اليومي</span><span id="modal-rent-price"></span></div>
@@ -673,13 +676,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (cardBarcode === barcode) {
                         var productId = parseInt(card.dataset.id);
                         addToCart(productId);
-                        showToast('تم إضافة المنتج: ' + card.dataset.name, 'success');
+                        showToast('تم اضافة المنتج: ' + card.dataset.name, 'success');
                     }
                 });
             }, 500);
         }
     }
-});    
+});
+
 var cart = {};
 var customers = [
 {% for customer in customers %}
@@ -926,14 +930,19 @@ maxDays = cart[k].days;
 }
 });
 var today = new Date();
-var endDate = new Date(today);
-endDate.setDate(endDate.getDate() + maxDays);
+var startDate = new Date(today);
+startDate.setDate(startDate.getDate() + 1);
+var endDate = new Date(startDate);
+endDate.setDate(endDate.getDate() + maxDays - 1);
+var startDateStr = startDate.toISOString().split('T')[0];
 var endDateStr = endDate.toISOString().split('T')[0];
+document.getElementById('modal-rent-start').textContent = startDateStr;
 document.getElementById('modal-rent-end').textContent = endDateStr;
 document.getElementById('modal-rent-days').textContent = maxDays;
 document.getElementById('modal-rent-price').textContent = document.getElementById('form_rent_price_per_day').value || '0';
-document.getElementById('form_rent_days').value = maxDays;
+document.getElementById('form_rent_start_date').value = startDateStr;
 document.getElementById('form_rent_end_date').value = endDateStr;
+document.getElementById('form_rent_days').value = maxDays;
 document.getElementById('form_rent_price_per_day').value = document.getElementById('form_rent_price_per_day').value || '0';
 }
 

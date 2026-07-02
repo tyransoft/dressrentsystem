@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block page_title %}سجل الغيابات{% endblock %}
+{% block mobile_title %}الغيابات{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h5 class="mb-0">سجل الغيابات</h5>
+    <a href="{% url 'absence_create' %}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg"></i> تسجيل غياب
+    </a>
+</div>
+
+<div class="table-card">
+    <table class="table table-hover mb-0">
+        <thead>
+            <tr>
+                <th>الموظف</th>
+                <th>تاريخ الغياب</th>
+                <th>قيمة الخصم</th>
+                <th>السبب</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for absence in absences %}
+            <tr>
+                <td>{{ absence.employee.full_name }}</td>
+                <td>{{ absence.absence_date|date:"Y-m-d" }}</td>
+                <td>{{ absence.deduction_amount|floatformat:0 }} د.ل</td>
+                <td>{{ absence.reason|default:"--" }}</td>
+                <td>
+                    <a href="{% url 'absence_delete' absence.pk %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('حذف؟')">
+                        <i class="bi bi-trash3"></i>
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center text-muted py-4">لا توجد غيابات</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
