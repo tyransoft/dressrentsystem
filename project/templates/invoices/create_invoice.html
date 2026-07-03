@@ -487,12 +487,46 @@ animation: fadeOut 2.5s ease-in-out forwards;
 100% { opacity: 0; }
 }
 
+.date-control-group {
+display: flex;
+gap: 10px;
+margin-bottom: 14px;
+flex-wrap: wrap;
+}
+.date-control-group .form-group {
+flex: 1;
+min-width: 120px;
+margin-bottom: 0;
+}
+.date-control-group .form-group label {
+font-size: 12px;
+font-weight: 600;
+color: #374151;
+display: block;
+margin-bottom: 4px;
+}
+.date-control-group .form-group input {
+width: 100%;
+padding: 8px 10px;
+border: 1.5px solid #e5e7eb;
+border-radius: 8px;
+font-size: 13px;
+outline: none;
+transition: border-color 0.2s;
+background: #fff;
+}
+.date-control-group .form-group input:focus {
+border-color: #D4AF37;
+}
+
 @media (max-width: 600px) {
 .products-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
 .floating-cart { min-width: unset; max-width: 98vw; left: 4px; bottom: 10px; }
 .page-search-bar { flex-direction: column; gap: 10px; }
 .page-search-bar input { width: 90%; }
 .search-type-group { width: 90%; justify-content: center; }
+.date-control-group { flex-direction: column; }
+.date-control-group .form-group { min-width: unset; }
 }
 </style>
 
@@ -586,10 +620,18 @@ data-search="{{ product.name|lower }} {{ product.barcode|default:'' }}">
 
 <div id="modal-rent-details" style="display:block;">
 <div class="order-summary-box">
-<div class="os-row"><span>تاريخ البداية</span><span id="modal-rent-start"></span></div>
-<div class="os-row"><span>تاريخ الانتهاء</span><span id="modal-rent-end"></span></div>
-<div class="os-row"><span>اجمالي الايام</span><span id="modal-rent-days"></span></div>
-<div class="os-row"><span>السعر اليومي</span><span id="modal-rent-price"></span></div>
+<div class="date-control-group">
+<div class="form-group">
+<label>تاريخ البداية</label>
+<input type="date" id="rent_start_date_input" value="{{ today|date:'Y-m-d' }}">
+</div>
+<div class="form-group">
+<label>تاريخ النهاية</label>
+<input type="date" id="rent_end_date_input">
+</div>
+</div>
+<div class="os-row"><span>اجمالي الايام</span><span id="modal-rent-days">0</span></div>
+<div class="os-row"><span>السعر اليومي</span><span id="modal-rent-price">0.00</span></div>
 </div>
 </div>
 
@@ -682,7 +724,60 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 500);
         }
     }
+    
+    var today = new Date().toISOString().split('T')[0];
+    document.getElementById('rent_start_date_input').value = today;
+    document.getElementById('rent_start_date_input').min = today;
+    document.getElementById('rent_end_date_input').min = today;
+    
+    document.getElementById('rent_start_date_input').addEventListener('change', function() {
+        var startDate = this.value;
+        document.getElementById('rent_end_date_input').min = startDate;
+        if (document.getElementById('rent_end_date_input').value && document.getElementById('rent_end_date_input').value < startDate) {
+            document.getElementById('rent_end_date_input').value = startDate;
+        }
+        calculateRentDays();
+    });
+    
+    document.getElementById('rent_end_date_input').addEventListener('change', function() {
+        calculateRentDays();
+    });
+    
+    document.getElementById('rent_start_date_input').addEventListener('change', updateRentDates);
+    document.getElementById('rent_end_date_input').addEventListener('change', updateRentDates);
 });
+
+function calculateRentDays() {
+    var startDate = document.getElementById('rent_start_date_input').value;
+    var endDate = document.getElementById('rent_end_date_input').value;
+    
+    if (startDate && endDate) {
+        var start = new Date(startDate);
+        var end = new Date(endDate);
+        var diffTime = Math.abs(end - start);
+        var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        document.getElementById('modal-rent-days').textContent = diffDays;
+        document.getElementById('form_rent_days').value = diffDays;
+        return diffDays;
+    }
+    return 0;
+}
+
+function updateRentDates() {
+    var startDate = document.getElementById('rent_start_date_input').value;
+    var endDate = document.getElementById('rent_end_date_input').value;
+    
+    if (startDate) {
+        document.getElementById('form_rent_start_date').value = startDate;
+        document.getElementById('modal-rent-start').textContent = startDate;
+    }
+    if (endDate) {
+        document.getElementById('form_rent_end_date').value = endDate;
+        document.getElementById('modal-rent-end').textContent = endDate;
+    }
+    
+    calculateRentDays();
+}
 
 var cart = {};
 var customers = [
@@ -731,6 +826,7 @@ var keys = Object.keys(cart);
 if (keys.length > 0) {
 var firstItem = cart[keys[0]];
 document.getElementById('form_rent_price_per_day').value = firstItem.price.toFixed(2);
+document.getElementById('modal-rent-price').textContent = firstItem.price.toFixed(2);
 }
 }
 
@@ -826,6 +922,7 @@ cart[id].days = newDays;
 cart[id].total = cart[id].days * cart[id].price;
 renderCart();
 calcModalTotals();
+updateRentDates();
 }
 
 function cartTotal() {
@@ -921,29 +1018,16 @@ var afterDiscount = subtotal - discount;
 var fees = afterDiscount * incPct / 100;
 var total = afterDiscount + fees;
 
-if (invoiceType === 'RENT') {
-var maxDays = 0;
-var keys = Object.keys(cart);
-keys.forEach(function(k) {
-if (cart[k].days > maxDays) {
-maxDays = cart[k].days;
+var startDate = document.getElementById('rent_start_date_input').value;
+var endDate = document.getElementById('rent_end_date_input').value;
+
+if (startDate) {
+document.getElementById('form_rent_start_date').value = startDate;
+document.getElementById('modal-rent-start').textContent = startDate;
 }
-});
-var today = new Date();
-var startDate = new Date(today);
-startDate.setDate(startDate.getDate() + 1);
-var endDate = new Date(startDate);
-endDate.setDate(endDate.getDate() + maxDays - 1);
-var startDateStr = startDate.toISOString().split('T')[0];
-var endDateStr = endDate.toISOString().split('T')[0];
-document.getElementById('modal-rent-start').textContent = startDateStr;
-document.getElementById('modal-rent-end').textContent = endDateStr;
-document.getElementById('modal-rent-days').textContent = maxDays;
-document.getElementById('modal-rent-price').textContent = document.getElementById('form_rent_price_per_day').value || '0';
-document.getElementById('form_rent_start_date').value = startDateStr;
-document.getElementById('form_rent_end_date').value = endDateStr;
-document.getElementById('form_rent_days').value = maxDays;
-document.getElementById('form_rent_price_per_day').value = document.getElementById('form_rent_price_per_day').value || '0';
+if (endDate) {
+document.getElementById('form_rent_end_date').value = endDate;
+document.getElementById('modal-rent-end').textContent = endDate;
 }
 
 var html = '<div class="os-row"><span>المجموع الفرعي</span><span>' + subtotal.toFixed(2) + '</span></div>' +
@@ -970,6 +1054,21 @@ if (!invoiceTypeRadio) {
 showToast('الرجاء اختيار نوع الفاتورة', 'error');
 return;
 }
+
+var startDate = document.getElementById('rent_start_date_input').value;
+var endDate = document.getElementById('rent_end_date_input').value;
+
+if (invoiceType === 'RENT') {
+if (!startDate || !endDate) {
+showToast('الرجاء تحديد تاريخ البداية والنهاية', 'error');
+return;
+}
+if (endDate < startDate) {
+showToast('تاريخ النهاية يجب ان يكون بعد تاريخ البداية', 'error');
+return;
+}
+}
+
 calcModalTotals();
 document.getElementById('order-modal-overlay').classList.add('visible');
 }
@@ -1053,6 +1152,20 @@ var invoiceTypeRadio = document.querySelector('input[name="invoice_type"]:checke
 if (!invoiceTypeRadio) {
 showToast('الرجاء اختيار نوع الفاتورة', 'error');
 return;
+}
+
+var startDate = document.getElementById('rent_start_date_input').value;
+var endDate = document.getElementById('rent_end_date_input').value;
+
+if (invoiceType === 'RENT') {
+if (!startDate || !endDate) {
+showToast('الرجاء تحديد تاريخ البداية والنهاية', 'error');
+return;
+}
+if (endDate < startDate) {
+showToast('تاريخ النهاية يجب ان يكون بعد تاريخ البداية', 'error');
+return;
+}
 }
 
 document.getElementById('form_customer_id').value = selectedCustomer ? selectedCustomer.id : '';
