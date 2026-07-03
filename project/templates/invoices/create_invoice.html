@@ -355,7 +355,7 @@ background: #fff;
 border-radius: 18px;
 box-shadow: 0 12px 60px rgba(0,0,0,0.22);
 width: 96vw;
-max-width: 550px;
+max-width: 580px;
 max-height: 92vh;
 overflow-y: auto;
 padding: 28px 24px 24px 24px;
@@ -487,25 +487,38 @@ animation: fadeOut 2.5s ease-in-out forwards;
 100% { opacity: 0; }
 }
 
-.date-control-group {
-display: flex;
-gap: 10px;
-margin-bottom: 14px;
-flex-wrap: wrap;
+.rent-dates-section {
+background: #f8fafc;
+border: 1px solid #e5e7eb;
+border-radius: 10px;
+padding: 14px;
+margin-bottom: 18px;
 }
-.date-control-group .form-group {
-flex: 1;
-min-width: 120px;
+.rent-dates-section .section-title {
+font-size: 14px;
+font-weight: 700;
+color: #1e293b;
+margin-bottom: 10px;
+}
+.rent-dates-grid {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 12px;
+}
+.rent-dates-grid .form-group {
 margin-bottom: 0;
 }
-.date-control-group .form-group label {
+.rent-dates-grid .form-group label {
 font-size: 12px;
 font-weight: 600;
 color: #374151;
 display: block;
 margin-bottom: 4px;
 }
-.date-control-group .form-group input {
+.rent-dates-grid .form-group label .required {
+color: #dc2626;
+}
+.rent-dates-grid .form-group input {
 width: 100%;
 padding: 8px 10px;
 border: 1.5px solid #e5e7eb;
@@ -515,8 +528,29 @@ outline: none;
 transition: border-color 0.2s;
 background: #fff;
 }
-.date-control-group .form-group input:focus {
+.rent-dates-grid .form-group input:focus {
 border-color: #D4AF37;
+}
+.rent-dates-grid .form-group input:disabled {
+background: #f3f4f6;
+cursor: not-allowed;
+}
+.rent-info-row {
+display: flex;
+justify-content: space-between;
+padding: 4px 0;
+font-size: 13px;
+color: #4b5563;
+border-top: 1px solid #e5e7eb;
+margin-top: 8px;
+padding-top: 8px;
+}
+.rent-info-row .label {
+color: #6b7280;
+}
+.rent-info-row .value {
+font-weight: 700;
+color: #1e293b;
 }
 
 @media (max-width: 600px) {
@@ -525,8 +559,9 @@ border-color: #D4AF37;
 .page-search-bar { flex-direction: column; gap: 10px; }
 .page-search-bar input { width: 90%; }
 .search-type-group { width: 90%; justify-content: center; }
-.date-control-group { flex-direction: column; }
-.date-control-group .form-group { min-width: unset; }
+.order-modal { padding: 20px 16px 16px 16px; }
+.rent-dates-grid { grid-template-columns: 1fr; }
+.rent-dates-grid .form-group { margin-bottom: 10px; }
 }
 </style>
 
@@ -616,24 +651,29 @@ data-search="{{ product.name|lower }} {{ product.barcode|default:'' }}">
 <button class="close-modal" type="button" onclick="closeOrderModal()">&#10005;</button>
 <h2>اتمام الطلب</h2>
 
-<div class="order-summary-box" id="order-summary-box"></div>
+<div id="rent-dates-section" class="rent-dates-section">
+<div class="section-title">تواريخ الايجار</div>
+<div class="rent-dates-grid">
+<div class="form-group">
+<label>تاريخ البداية <span class="required">*</span></label>
+<input type="date" id="rent_start_date_input" class="form-control">
+</div>
+<div class="form-group">
+<label>تاريخ النهاية <span class="required">*</span></label>
+<input type="date" id="rent_end_date_input" class="form-control">
+</div>
+</div>
+<div class="rent-info-row">
+<span class="label">اجمالي الايام</span>
+<span class="value" id="modal-rent-days">0</span>
+</div>
+<div class="rent-info-row">
+<span class="label">السعر اليومي</span>
+<span class="value" id="modal-rent-price">0.00</span>
+</div>
+</div>
 
-<div id="modal-rent-details" style="display:block;">
-<div class="order-summary-box">
-<div class="date-control-group">
-<div class="form-group">
-<label>تاريخ البداية</label>
-<input type="date" id="rent_start_date_input" value="{{ today|date:'Y-m-d' }}">
-</div>
-<div class="form-group">
-<label>تاريخ النهاية</label>
-<input type="date" id="rent_end_date_input">
-</div>
-</div>
-<div class="os-row"><span>اجمالي الايام</span><span id="modal-rent-days">0</span></div>
-<div class="os-row"><span>السعر اليومي</span><span id="modal-rent-price">0.00</span></div>
-</div>
-</div>
+<div class="order-summary-box" id="order-summary-box"></div>
 
 <div class="form-group" id="sale-price-group" style="display:none;">
 <label class="form-label">سعر البيع</label>
@@ -737,14 +777,13 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('rent_end_date_input').value = startDate;
         }
         calculateRentDays();
+        updateRentDates();
     });
     
     document.getElementById('rent_end_date_input').addEventListener('change', function() {
         calculateRentDays();
+        updateRentDates();
     });
-    
-    document.getElementById('rent_start_date_input').addEventListener('change', updateRentDates);
-    document.getElementById('rent_end_date_input').addEventListener('change', updateRentDates);
 });
 
 function calculateRentDays() {
@@ -769,14 +808,10 @@ function updateRentDates() {
     
     if (startDate) {
         document.getElementById('form_rent_start_date').value = startDate;
-        document.getElementById('modal-rent-start').textContent = startDate;
     }
     if (endDate) {
         document.getElementById('form_rent_end_date').value = endDate;
-        document.getElementById('modal-rent-end').textContent = endDate;
     }
-    
-    calculateRentDays();
 }
 
 var cart = {};
@@ -799,14 +834,14 @@ var saleRadio = document.querySelector('input[name="invoice_type"][value="SALE"]
 var rentLabel = document.getElementById('rent-label');
 var saleLabel = document.getElementById('sale-label');
 var salePriceGroup = document.getElementById('sale-price-group');
-var rentDetails = document.getElementById('modal-rent-details');
+var rentSection = document.getElementById('rent-dates-section');
 
 if (rentRadio.checked) {
 invoiceType = 'RENT';
 rentLabel.classList.add('active-label');
 saleLabel.classList.remove('active-label');
 salePriceGroup.style.display = 'none';
-rentDetails.style.display = 'block';
+rentSection.style.display = 'block';
 renderCart();
 updateRentPrice();
 } else {
@@ -814,7 +849,7 @@ invoiceType = 'SALE';
 saleLabel.classList.add('active-label');
 rentLabel.classList.remove('active-label');
 salePriceGroup.style.display = 'block';
-rentDetails.style.display = 'none';
+rentSection.style.display = 'none';
 renderCart();
 updateSalePrice();
 }
@@ -922,7 +957,6 @@ cart[id].days = newDays;
 cart[id].total = cart[id].days * cart[id].price;
 renderCart();
 calcModalTotals();
-updateRentDates();
 }
 
 function cartTotal() {
@@ -1018,18 +1052,6 @@ var afterDiscount = subtotal - discount;
 var fees = afterDiscount * incPct / 100;
 var total = afterDiscount + fees;
 
-var startDate = document.getElementById('rent_start_date_input').value;
-var endDate = document.getElementById('rent_end_date_input').value;
-
-if (startDate) {
-document.getElementById('form_rent_start_date').value = startDate;
-document.getElementById('modal-rent-start').textContent = startDate;
-}
-if (endDate) {
-document.getElementById('form_rent_end_date').value = endDate;
-document.getElementById('modal-rent-end').textContent = endDate;
-}
-
 var html = '<div class="os-row"><span>المجموع الفرعي</span><span>' + subtotal.toFixed(2) + '</span></div>' +
 '<div class="os-row"><span>الخصم</span><span>' + discount.toFixed(2) + '</span></div>' +
 '<div class="os-row"><span>رسوم اضافية</span><span>' + fees.toFixed(2) + '</span></div>' +
@@ -1053,20 +1075,6 @@ var invoiceTypeRadio = document.querySelector('input[name="invoice_type"]:checke
 if (!invoiceTypeRadio) {
 showToast('الرجاء اختيار نوع الفاتورة', 'error');
 return;
-}
-
-var startDate = document.getElementById('rent_start_date_input').value;
-var endDate = document.getElementById('rent_end_date_input').value;
-
-if (invoiceType === 'RENT') {
-if (!startDate || !endDate) {
-showToast('الرجاء تحديد تاريخ البداية والنهاية', 'error');
-return;
-}
-if (endDate < startDate) {
-showToast('تاريخ النهاية يجب ان يكون بعد تاريخ البداية', 'error');
-return;
-}
 }
 
 calcModalTotals();
@@ -1154,10 +1162,30 @@ showToast('الرجاء اختيار نوع الفاتورة', 'error');
 return;
 }
 
-var startDate = document.getElementById('rent_start_date_input').value;
-var endDate = document.getElementById('rent_end_date_input').value;
+var invoiceTypeValue = invoiceTypeRadio.value;
 
-
+if (invoiceTypeValue === 'RENT') {
+var startDate = document.getElementById('rent_start_date_input');
+var endDate = document.getElementById('rent_end_date_input');
+var rentSection = document.getElementById('rent-dates-section');
+    
+    if (rentSection.style.display === 'none' || rentSection.style.display === '') {
+        showToast('الرجاء التأكد من اختيار نوع الفاتورة ايجار', 'error');
+        return;
+    }
+    
+    if (!startDate || !startDate.value) {
+        showToast('الرجاء تحديد تاريخ البداية', 'error');
+        return;
+    }
+    if (!endDate || !endDate.value) {
+        showToast('الرجاء تحديد تاريخ النهاية', 'error');
+        return;
+    }
+    if (endDate.value < startDate.value) {
+        showToast('تاريخ النهاية يجب ان يكون بعد تاريخ البداية', 'error');
+        return;
+    }
 }
 
 document.getElementById('form_customer_id').value = selectedCustomer ? selectedCustomer.id : '';
@@ -1176,7 +1204,7 @@ Object.values(cart).forEach(function(p) {
 var fid = document.createElement('input');
 fid.type = 'hidden'; fid.name = 'product_' + p.id + '_id'; fid.value = p.id;
 var fdays = document.createElement('input');
-if (invoiceType === 'RENT') {
+if (invoiceTypeValue === 'RENT') {
 fdays.type = 'hidden'; fdays.name = 'product_' + p.id + '_days'; fdays.value = p.days;
 } else {
 fdays.type = 'hidden'; fdays.name = 'product_' + p.id + '_days'; fdays.value = 0;
