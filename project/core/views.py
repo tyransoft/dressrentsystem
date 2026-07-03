@@ -1665,17 +1665,17 @@ def employee_create(request):
         full_name = request.POST.get('full_name')
         position = request.POST.get('position')
         phone = request.POST.get('phone')
-        payment_type = request.POST.get('payment_type')
         monthly_salary = request.POST.get('monthly_salary', 0)
-        hourly_rate = request.POST.get('hourly_rate', 0)
         
         employee = Employee(
             full_name=full_name,
             position=position,
             phone=phone,
-            payment_type=payment_type,
+
+            payment_type='monthly',
+            
+
             monthly_salary=monthly_salary,
-            hourly_rate=hourly_rate
         )
         employee.save()
         messages.success(request, f'تم إضافة الموظف {full_name} بنجاح')
@@ -1690,9 +1690,7 @@ def employee_edit(request, pk):
         employee.full_name = request.POST.get('full_name')
         employee.position = request.POST.get('position')
         employee.phone = request.POST.get('phone')
-        employee.payment_type = request.POST.get('payment_type')
         employee.monthly_salary = request.POST.get('monthly_salary', 0)
-        employee.hourly_rate = request.POST.get('hourly_rate', 0)
         employee.status = request.POST.get('status')
         employee.save()
         messages.success(request, f'تم تعديل بيانات {employee.full_name}')
