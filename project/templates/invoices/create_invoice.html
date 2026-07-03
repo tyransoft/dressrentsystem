@@ -1157,15 +1157,7 @@ return;
 var startDate = document.getElementById('rent_start_date_input').value;
 var endDate = document.getElementById('rent_end_date_input').value;
 
-if (invoiceType === 'RENT') {
-if (!startDate || !endDate) {
-showToast('الرجاء تحديد تاريخ البداية والنهاية', 'error');
-return;
-}
-if (endDate < startDate) {
-showToast('تاريخ النهاية يجب ان يكون بعد تاريخ البداية', 'error');
-return;
-}
+
 }
 
 document.getElementById('form_customer_id').value = selectedCustomer ? selectedCustomer.id : '';
