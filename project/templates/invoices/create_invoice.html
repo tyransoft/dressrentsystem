@@ -552,6 +552,31 @@ color: #6b7280;
 font-weight: 700;
 color: #1e293b;
 }
+.availability-message {
+margin-top: 8px;
+padding: 6px 10px;
+border-radius: 6px;
+font-size: 12px;
+display: none;
+}
+.availability-message.available {
+display: block;
+background: #dcfce7;
+color: #166534;
+border: 1px solid #bbf7d0;
+}
+.availability-message.unavailable {
+display: block;
+background: #fee2e2;
+color: #991b1b;
+border: 1px solid #fca5a5;
+}
+.availability-message.checking {
+display: block;
+background: #fef3c7;
+color: #92400e;
+border: 1px solid #fcd34d;
+}
 
 @media (max-width: 600px) {
 .products-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
@@ -587,11 +612,11 @@ color: #1e293b;
 
 <div class="search-type-group" id="type-selector">
 <label class="active-label" id="rent-label">
-<input type="radio" name="invoice_type" value="RENT" checked onchange="toggleInvoiceType()">
+<input type="radio" name="invoice_type" value="rent" checked onchange="toggleInvoiceType()">
 <span>ايجار</span>
 </label>
 <label id="sale-label">
-<input type="radio" name="invoice_type" value="SALE" onchange="toggleInvoiceType()">
+<input type="radio" name="invoice_type" value="sale" onchange="toggleInvoiceType()">
 <span>بيع</span>
 </label>
 </div>
@@ -621,8 +646,8 @@ data-search="{{ product.name|lower }} {{ product.barcode|default:'' }}">
 </div>
 <div class="pprice">{{ product.selling_price }}</div>
 <button type="button" class="add-btn" onclick="addToCart({{ product.id }})" 
-{% if product.status != 'available' %}disabled{% endif %}>
-{% if product.status == 'available' %}اضافة{% else %}غير متاح{% endif %}
+>
+اضافة
 </button>
 </div>
 {% endfor %}
@@ -663,6 +688,7 @@ data-search="{{ product.name|lower }} {{ product.barcode|default:'' }}">
 <input type="date" id="rent_end_date_input" class="form-control">
 </div>
 </div>
+<div id="availability-message" class="availability-message"></div>
 <div class="rent-info-row">
 <span class="label">اجمالي الايام</span>
 <span class="value" id="modal-rent-days">0</span>
@@ -677,7 +703,7 @@ data-search="{{ product.name|lower }} {{ product.barcode|default:'' }}">
 
 <div class="form-group" id="sale-price-group" style="display:none;">
 <label class="form-label">سعر البيع</label>
-<input type="number" class="form-control" id="sale_price_display" value="0" step="0.01" onchange="updateSalePrice()">
+<input type="number" class="form-control" id="sale_price_display" value="0" step="1" onchange="updateSalePrice()">
 </div>
 
 <div class="form-group">
@@ -720,7 +746,7 @@ data-search="{{ product.name|lower }} {{ product.barcode|default:'' }}">
 
 <div class="form-group">
 <label class="form-label">المبلغ المدفوع</label>
-<input type="number" class="form-control" id="modal-paid-amount" step="0.01" value="0" min="0" oninput="calcModalTotals()">
+<input type="number" class="form-control" id="modal-paid-amount" step="1" value="0" min="0" oninput="calcModalTotals()">
 </div>
 
 <div class="form-group">
@@ -778,13 +804,74 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         calculateRentDays();
         updateRentDates();
+        checkAvailability();
     });
     
     document.getElementById('rent_end_date_input').addEventListener('change', function() {
         calculateRentDays();
         updateRentDates();
+        checkAvailability();
+    });
+    
+    document.getElementById('product-search').addEventListener('input', function() {
+        var q = this.value.trim().toLowerCase();
+        var cards = document.querySelectorAll('.product-card');
+        var visible = 0;
+        cards.forEach(function(card) {
+            var searchStr = card.dataset.search || '';
+            if (!q || searchStr.indexOf(q) !== -1) {
+                card.classList.remove('hidden-card');
+                visible++;
+            } else {
+                card.classList.add('hidden-card');
+            }
+        });
+        document.getElementById('no-results').style.display = (visible === 0 && q) ? 'block' : 'none';
     });
 });
+
+var selectedProductId = null;
+
+function checkAvailability() {
+    var productId = getFirstProductId();
+    var startDate = document.getElementById('rent_start_date_input').value;
+    var endDate = document.getElementById('rent_end_date_input').value;
+    var msgDiv = document.getElementById('availability-message');
+    
+    if (!productId || !startDate || !endDate) {
+        msgDiv.className = 'availability-message';
+        msgDiv.style.display = 'none';
+        return;
+    }
+    
+    msgDiv.className = 'availability-message checking';
+    msgDiv.textContent = 'جاري التحقق من التوفر...';
+    msgDiv.style.display = 'block';
+    
+    fetch('/api/check-product-availability/?product_id=' + productId + '&start_date=' + startDate + '&end_date=' + endDate)
+    .then(response => response.json())
+    .then(data => {
+        if (data.available) {
+            msgDiv.className = 'availability-message available';
+            msgDiv.textContent = 'المنتج متاح في هذه الفترة';
+        } else {
+            msgDiv.className = 'availability-message unavailable';
+            msgDiv.textContent = data.message;
+        }
+    })
+    .catch(function() {
+        msgDiv.className = 'availability-message unavailable';
+        msgDiv.textContent = 'حدث خطأ في التحقق من التوفر';
+    });
+}
+
+function getFirstProductId() {
+    var keys = Object.keys(cart);
+    if (keys.length > 0) {
+        return keys[0];
+    }
+    return null;
+}
 
 function calculateRentDays() {
     var startDate = document.getElementById('rent_start_date_input').value;
@@ -826,18 +913,18 @@ debt_balance: {{ customer.debt_balance|default:0 }}
 {% endfor %}
 ];
 var selectedCustomer = null;
-var invoiceType = 'RENT';
+var invoiceType = 'rent';
 
 function toggleInvoiceType() {
-var rentRadio = document.querySelector('input[name="invoice_type"][value="RENT"]');
-var saleRadio = document.querySelector('input[name="invoice_type"][value="SALE"]');
+var rentRadio = document.querySelector('input[name="invoice_type"][value="rent"]');
+var saleRadio = document.querySelector('input[name="invoice_type"][value="sale"]');
 var rentLabel = document.getElementById('rent-label');
 var saleLabel = document.getElementById('sale-label');
 var salePriceGroup = document.getElementById('sale-price-group');
 var rentSection = document.getElementById('rent-dates-section');
 
-if (rentRadio.checked) {
-invoiceType = 'RENT';
+if (rentRadio && rentRadio.checked) {
+invoiceType = 'rent';
 rentLabel.classList.add('active-label');
 saleLabel.classList.remove('active-label');
 salePriceGroup.style.display = 'none';
@@ -845,7 +932,7 @@ rentSection.style.display = 'block';
 renderCart();
 updateRentPrice();
 } else {
-invoiceType = 'SALE';
+invoiceType = 'sale';
 saleLabel.classList.add('active-label');
 rentLabel.classList.remove('active-label');
 salePriceGroup.style.display = 'block';
@@ -902,14 +989,14 @@ return;
 }
 
 if (cart[id]) {
-if (invoiceType === 'RENT') {
+if (invoiceType === 'rent') {
 cart[id].days += 1;
 } else {
 cart[id].qty += 1;
 }
 cart[id].total = cart[id].days * cart[id].price;
 } else {
-if (invoiceType === 'RENT') {
+if (invoiceType === 'rent') {
 cart[id] = {
 id: product.id,
 name: product.name,
@@ -934,6 +1021,9 @@ renderCart();
 updateRentPrice();
 updateSalePrice();
 showToast('تمت الاضافة: ' + product.name, 'success');
+if (invoiceType === 'rent') {
+checkAvailability();
+}
 }
 
 function removeFromCart(id) {
@@ -943,11 +1033,14 @@ if (card) card.classList.remove('in-cart');
 renderCart();
 updateRentPrice();
 updateSalePrice();
+if (invoiceType === 'rent') {
+checkAvailability();
+}
 }
 
 function changeDays(id, delta) {
 if (!cart[id]) return;
-if (invoiceType === 'SALE') {
+if (invoiceType === 'sale') {
 showToast('لا يمكن تغيير الايام في فاتورة بيع', 'error');
 return;
 }
@@ -957,6 +1050,9 @@ cart[id].days = newDays;
 cart[id].total = cart[id].days * cart[id].price;
 renderCart();
 calcModalTotals();
+if (invoiceType === 'rent') {
+checkAvailability();
+}
 }
 
 function cartTotal() {
@@ -964,7 +1060,7 @@ return Object.values(cart).reduce(function(s, p) { return s + p.total; }, 0);
 }
 
 function cartCount() {
-if (invoiceType === 'RENT') {
+if (invoiceType === 'rent') {
 return Object.values(cart).reduce(function(s, p) { return s + p.days; }, 0);
 } else {
 return Object.values(cart).reduce(function(s, p) { return s + p.qty; }, 0);
@@ -994,7 +1090,7 @@ var row = document.createElement('div');
 row.className = 'cart-item';
 
 var qtyDisplay = '';
-if (invoiceType === 'RENT') {
+if (invoiceType === 'rent') {
 qtyDisplay = 
 '<div class="cart-item-days">' +
 '<button class="cart-days-btn" type="button" onclick="changeDays(' + p.id + ',-1)">-</button>' +
@@ -1023,22 +1119,6 @@ var footer = document.getElementById('cart-footer');
 body.classList.toggle('collapsed');
 footer.style.display = body.classList.contains('collapsed') ? 'none' : '';
 this.textContent = body.classList.contains('collapsed') ? '\u2303' : '\u2964';
-});
-
-document.getElementById('product-search').addEventListener('input', function() {
-var q = this.value.trim().toLowerCase();
-var cards = document.querySelectorAll('.product-card');
-var visible = 0;
-cards.forEach(function(card) {
-var searchStr = card.dataset.search || '';
-if (!q || searchStr.indexOf(q) !== -1) {
-card.classList.remove('hidden-card');
-visible++;
-} else {
-card.classList.add('hidden-card');
-}
-});
-document.getElementById('no-results').style.display = (visible === 0 && q) ? 'block' : 'none';
 });
 
 function calcModalTotals() {
@@ -1164,12 +1244,13 @@ return;
 
 var invoiceTypeValue = invoiceTypeRadio.value;
 
-if (invoiceTypeValue === 'RENT') {
+if (invoiceTypeValue === 'rent') {
 var startDate = document.getElementById('rent_start_date_input');
 var endDate = document.getElementById('rent_end_date_input');
 var rentSection = document.getElementById('rent-dates-section');
+var msgDiv = document.getElementById('availability-message');
     
-    if (rentSection.style.display === 'none' || rentSection.style.display === '') {
+    if (rentSection.style.display === 'none') {
         showToast('الرجاء التأكد من اختيار نوع الفاتورة ايجار', 'error');
         return;
     }
@@ -1184,6 +1265,11 @@ var rentSection = document.getElementById('rent-dates-section');
     }
     if (endDate.value < startDate.value) {
         showToast('تاريخ النهاية يجب ان يكون بعد تاريخ البداية', 'error');
+        return;
+    }
+    
+    if (msgDiv.classList.contains('unavailable')) {
+        showToast('المنتج غير متاح في هذه الفترة', 'error');
         return;
     }
 }
@@ -1204,7 +1290,7 @@ Object.values(cart).forEach(function(p) {
 var fid = document.createElement('input');
 fid.type = 'hidden'; fid.name = 'product_' + p.id + '_id'; fid.value = p.id;
 var fdays = document.createElement('input');
-if (invoiceTypeValue === 'RENT') {
+if (invoiceTypeValue === 'rent') {
 fdays.type = 'hidden'; fdays.name = 'product_' + p.id + '_days'; fdays.value = p.days;
 } else {
 fdays.type = 'hidden'; fdays.name = 'product_' + p.id + '_days'; fdays.value = 0;
