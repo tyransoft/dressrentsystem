@@ -5,76 +5,378 @@
 {% block mobile_title %}الموظفين{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <h5 class="mb-0">قائمة الموظفين</h5>
-    <a href="{% url 'employee_create' %}" class="btn btn-primary btn-sm">
-        <i class="bi bi-plus-lg"></i> موظف جديد
-    </a>
-</div>
+<style>
+* {
+    box-sizing: border-box;
+}
+.page-container {
+    padding: 10px 15px 30px 15px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.page-header h5 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+.btn-primary-custom {
+    background: #D4AF37;
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn-primary-custom:hover {
+    background: #B8960F;
+    color: #fff;
+}
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 550px;
+}
+thead {
+    background: #f8fafc;
+    border-bottom: 2px solid #e5e7eb;
+}
+thead th {
+    padding: 12px 15px;
+    text-align: right;
+    font-weight: 700;
+    color: #4b5563;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+tbody tr {
+    border-bottom: 1px solid #f1f3f5;
+    transition: background 0.2s;
+}
+tbody tr:hover {
+    background: #fafafa;
+}
+tbody td {
+    padding: 10px 15px;
+    vertical-align: middle;
+}
+.text-muted {
+    color: #9ca3af;
+}
+.text-center {
+    text-align: center;
+}
+.py-4 {
+    padding-top: 30px;
+    padding-bottom: 30px;
+}
+.badge-status {
+    padding: 3px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-block;
+}
+.badge-active {
+    background: #dcfce7;
+    color: #166534;
+}
+.badge-inactive {
+    background: #f3f4f6;
+    color: #4b5563;
+}
+.badge-leave {
+    background: #fef3c7;
+    color: #92400e;
+}
+.actions-cell {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+.btn-action {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1.5px solid;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn-action:hover {
+    transform: translateY(-1px);
+}
+.btn-view {
+    background: transparent;
+    color: #3b82f6;
+    border-color: #3b82f6;
+}
+.btn-view:hover {
+    background: #3b82f6;
+    color: #fff;
+}
+.btn-pay {
+    background: transparent;
+    color: #16a34a;
+    border-color: #16a34a;
+}
+.btn-pay:hover {
+    background: #16a34a;
+    color: #fff;
+}
+.btn-edit {
+    background: transparent;
+    color: #f59e0b;
+    border-color: #f59e0b;
+}
+.btn-edit:hover {
+    background: #f59e0b;
+    color: #fff;
+}
+.btn-delete {
+    background: transparent;
+    color: #dc2626;
+    border-color: #dc2626;
+}
+.btn-delete:hover {
+    background: #dc2626;
+    color: #fff;
+}
+.cards-grid {
+    display: none;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 15px;
+}
+.employee-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    padding: 16px;
+    transition: all 0.3s;
+    border-right: 4px solid #D4AF37;
+}
+.employee-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    transform: translateY(-2px);
+}
+.employee-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f1f3f5;
+}
+.employee-card .card-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e293b;
+}
+.employee-card .card-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 12px;
+}
+.employee-card .card-item {
+    display: flex;
+    flex-direction: column;
+}
+.employee-card .card-item .label {
+    font-size: 10px;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.employee-card .card-item .value {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+}
+.employee-card .card-item .value .salary {
+    color: #D4AF37;
+}
+.employee-card .card-footer {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid #f1f3f5;
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+.employee-card .card-footer .btn-action {
+    font-size: 11px;
+    padding: 3px 10px;
+}
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #9ca3af;
+    grid-column: 1 / -1;
+}
+.empty-state h3 {
+    color: #4b5563;
+    margin-bottom: 8px;
+    font-size: 18px;
+}
 
-<div class="table-card">
-    <table class="table table-hover mb-0">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>الاسم</th>
-                <th>الوظيفة</th>
-                <th>نظام الدفع</th>
-                <th>الراتب/أجر الساعة</th>
-                <th>الحالة</th>
-                <th>الإجراءات</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for emp in employees %}
-            <tr>
-                <td>{{ forloop.counter }}</td>
-                <td>{{ emp.full_name }}</td>
-                <td>{{ emp.position }}</td>
-                <td>
-                    <span class="badge bg-primary">شهري</span>
-                 
-                </td>
-                <td>
-                    {{ emp.monthly_salary|floatformat:0 }}د.ل
-                    
-                </td>
-                <td>
-                    {% if emp.status == 'active' %}
-                        <span class="badge bg-success">نشط</span>
-                    {% elif emp.status == 'inactive' %}
-                        <span class="badge bg-secondary">غير نشط</span>
-                    {% else %}
-                        <span class="badge bg-warning">في إجازة</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <div class="btn-group btn-group-sm">
-                        <a href="{% url 'employee_edit' emp.pk %}" class="btn btn-outline-primary">
-                            <i class="bi bi-pencil"></i>
-                        </a>
-                            <a href="{% url 'monthly_salary_statement' emp.pk %}" class="btn btn-outline-info">
-                                <i class="bi bi-receipt"></i>
-                            </a>
-                            <a href="{% url 'monthly_salary_payment' emp.pk %}" class="btn btn-outline-success">
-                                <i class="bi bi-cash"></i>
-                            </a>
-                       
-                        <a href="{% url 'employee_delete' emp.pk %}" class="btn btn-outline-danger" onclick="return confirm('هل أنت متأكد؟')">
-                            <i class="bi bi-trash3"></i>
-                        </a>
-                    </div>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="7" class="text-center text-muted py-4">
-                    <i class="bi bi-people fs-1 d-block mb-2"></i>
-                    لا يوجد موظفين
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+@media (min-width: 769px) {
+    .cards-grid {
+        display: none !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .page-header h5 {
+        text-align: center;
+    }
+    .btn-primary-custom {
+        text-align: center;
+    }
+    .table-responsive {
+        display: none !important;
+    }
+    .cards-grid {
+        display: grid !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-container {
+        padding: 5px 8px 20px 8px;
+    }
+    .cards-grid {
+        grid-template-columns: 1fr;
+    }
+    .employee-card {
+        padding: 14px;
+    }
+    .employee-card .card-body {
+        grid-template-columns: 1fr 1fr;
+    }
+    .employee-card .card-footer {
+        justify-content: center;
+    }
+}
+</style>
+
+<div class="page-container">
+    <div class="page-header">
+        <h5>قائمة الموظفين</h5>
+        <a href="{% url 'employee_create' %}" class="btn-primary-custom">موظف جديد</a>
+    </div>
+
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>الاسم</th>
+                    <th>الوظيفة</th>
+                    <th>المرتب</th>
+                    <th>الحالة</th>
+                    <th>الاجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for emp in employees %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td class="fw-semibold">{{ emp.full_name }}</td>
+                    <td>{{ emp.position }}</td>
+                    <td>{{ emp.monthly_salary|floatformat:0 }} د.ل</td>
+                    <td>
+                        {% if emp.status == 'active' %}
+                        <span class="badge-status badge-active">نشط</span>
+                        {% elif emp.status == 'inactive' %}
+                        <span class="badge-status badge-inactive">غير نشط</span>
+                        {% else %}
+                        <span class="badge-status badge-leave">في اجازة</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="actions-cell">
+                            <a href="{% url 'employee_edit' emp.pk %}" class="btn-action btn-edit">تعديل</a>
+                            <a href="{% url 'monthly_salary_statement' emp.pk %}" class="btn-action btn-view">كشف</a>
+                            <a href="{% url 'monthly_salary_payment' emp.pk %}" class="btn-action btn-pay">دفع</a>
+                            <a href="{% url 'employee_delete' emp.pk %}" class="btn-action btn-delete" onclick="return confirm('هل انت متأكد من حذف هذا الموظف؟')">حذف</a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">لا يوجد موظفين</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="cards-grid">
+        {% for emp in employees %}
+        <div class="employee-card">
+            <div class="card-header">
+                <span class="card-name">{{ emp.full_name }}</span>
+                {% if emp.status == 'active' %}
+                <span class="badge-status badge-active">نشط</span>
+                {% elif emp.status == 'inactive' %}
+                <span class="badge-status badge-inactive">غير نشط</span>
+                {% else %}
+                <span class="badge-status badge-leave">في اجازة</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <div class="card-item">
+                    <span class="label">الوظيفة</span>
+                    <span class="value">{{ emp.position }}</span>
+                </div>
+                <div class="card-item">
+                    <span class="label">المرتب</span>
+                    <span class="value salary">{{ emp.monthly_salary|floatformat:0 }} د.ل</span>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'employee_edit' emp.pk %}" class="btn-action btn-edit">تعديل</a>
+                <a href="{% url 'monthly_salary_statement' emp.pk %}" class="btn-action btn-view">كشف</a>
+                <a href="{% url 'monthly_salary_payment' emp.pk %}" class="btn-action btn-pay">دفع</a>
+                <a href="{% url 'employee_delete' emp.pk %}" class="btn-action btn-delete" onclick="return confirm('هل انت متأكد من حذف هذا الموظف؟')">حذف</a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <h3>لا يوجد موظفين</h3>
+            <p>لا يوجد موظفين مسجلين حاليا</p>
+        </div>
+        {% endfor %}
+    </div>
 </div>
 {% endblock %}

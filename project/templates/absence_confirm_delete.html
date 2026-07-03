@@ -5,26 +5,162 @@
 {% block mobile_title %}حذف غياب{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card border-danger">
-            <div class="card-header bg-danger text-white">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                تأكيد حذف غياب
-            </div>
-            <div class="card-body text-center">
-                <p>هل أنت متأكد من حذف تسجيل الغياب التالي؟</p>
-                <div class="alert alert-warning">
-                    <strong>{{ absence.employee.full_name }}</strong><br>
-                    التاريخ: {{ absence.absence_date|date:"Y-m-d" }}<br>
-                    الخصم: {{ absence.deduction_amount|floatformat:0 }} د.ل
+<style>
+* {
+    box-sizing: border-box;
+}
+.page-container {
+    padding: 10px 15px 30px 15px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+.delete-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: 2px solid #dc2626;
+}
+.delete-card .card-header {
+    background: #dc2626;
+    color: #fff;
+    padding: 14px 20px;
+    border-radius: 10px 10px 0 0;
+    font-weight: 700;
+    font-size: 15px;
+}
+.delete-card .card-body {
+    padding: 25px 20px;
+    text-align: center;
+}
+.delete-card p {
+    font-size: 15px;
+    color: #4b5563;
+    margin-bottom: 15px;
+}
+.delete-card .info-box {
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    text-align: right;
+}
+.delete-card .info-box .info-row {
+    padding: 4px 0;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid #f1f3f5;
+}
+.delete-card .info-box .info-row:last-child {
+    border-bottom: none;
+}
+.delete-card .info-box .info-label {
+    font-size: 12px;
+    color: #6b7280;
+}
+.delete-card .info-box .info-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+.delete-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+.btn-danger-custom {
+    background: #dc2626;
+    color: #fff;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn-danger-custom:hover {
+    background: #b91c1c;
+}
+.btn-secondary-custom {
+    background: transparent;
+    color: #4b5563;
+    border: 1.5px solid #eaecf0;
+    padding: 10px 25px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn-secondary-custom:hover {
+    background: #f8fafc;
+}
+@media (max-width: 768px) {
+    .page-container {
+        padding: 5px 8px 20px 8px;
+    }
+    .delete-card .card-body {
+        padding: 18px 14px;
+    }
+    .delete-actions {
+        flex-direction: column;
+    }
+    .delete-actions .btn-danger-custom {
+        text-align: center;
+    }
+    .delete-actions .btn-secondary-custom {
+        text-align: center;
+    }
+    .delete-card .info-box .info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 6px 0;
+    }
+}
+@media (max-width: 480px) {
+    .delete-card p {
+        font-size: 14px;
+    }
+    .delete-card .info-box .info-value {
+        font-size: 13px;
+    }
+}
+</style>
+
+<div class="page-container">
+    <div class="delete-card">
+        <div class="card-header">تأكيد حذف غياب</div>
+        <div class="card-body">
+            <p>هل انت متأكد من حذف تسجيل الغياب التالي؟</p>
+
+            <div class="info-box">
+                <div class="info-row">
+                    <span class="info-label">الموظف</span>
+                    <span class="info-value">{{ absence.employee.full_name }}</span>
                 </div>
-                <form method="post">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-danger">نعم، احذف</button>
-                    <a href="{% url 'absence_list' %}" class="btn btn-secondary">إلغاء</a>
-                </form>
+                <div class="info-row">
+                    <span class="info-label">التاريخ</span>
+                    <span class="info-value" dir="ltr">{{ absence.absence_date|date:"Y-m-d" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">قيمة الخصم</span>
+                    <span class="info-value">{{ absence.deduction_amount|floatformat:0 }} د.ل</span>
+                </div>
             </div>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="delete-actions">
+                    <button type="submit" class="btn-danger-custom">نعم، احذف</button>
+                    <a href="{% url 'absence_list' %}" class="btn-secondary-custom">الغاء</a>
+                </div>
+            </form>
         </div>
     </div>
 </div>

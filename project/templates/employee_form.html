@@ -5,56 +5,247 @@
 {% block mobile_title %}{{ title }}{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header bg-white fw-bold">
-        <i class="bi bi-person-badge me-2"></i>{{ title }}
+<style>
+* {
+    box-sizing: border-box;
+}
+.page-container {
+    padding: 10px 15px 30px 15px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+}
+.page-header .back-link {
+    background: transparent;
+    color: #4b5563;
+    border: 1.5px solid #eaecf0;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+.page-header .back-link:hover {
+    background: #f8fafc;
+}
+.page-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+.form-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.form-card .card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #eaecf0;
+    font-weight: 700;
+    font-size: 15px;
+    color: #1e293b;
+}
+.form-card .card-body {
+    padding: 20px;
+}
+.form-group {
+    margin-bottom: 16px;
+}
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 5px;
+}
+.form-group label .required {
+    color: #dc2626;
+}
+.form-group .form-control {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid #eaecf0;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    background: #fff;
+}
+.form-group .form-control:focus {
+    border-color: #D4AF37;
+}
+.form-group .form-control:disabled {
+    background: #f8fafc;
+    cursor: not-allowed;
+}
+.form-group .form-control select {
+    appearance: none;
+}
+.form-group .error-text {
+    color: #dc2626;
+    font-size: 12px;
+    margin-top: 4px;
+    display: block;
+}
+.form-group .help-text {
+    color: #9ca3af;
+    font-size: 12px;
+    margin-top: 4px;
+    display: block;
+}
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+.btn-primary-custom {
+    background: #D4AF37;
+    color: #fff;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn-primary-custom:hover {
+    background: #B8960F;
+    color: #fff;
+}
+.btn-secondary-custom {
+    background: transparent;
+    color: #4b5563;
+    border: 1.5px solid #eaecf0;
+    padding: 10px 25px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn-secondary-custom:hover {
+    background: #f8fafc;
+}
+@media (max-width: 768px) {
+    .page-container {
+        padding: 5px 8px 20px 8px;
+    }
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+    .page-header .back-link {
+        text-align: center;
+    }
+    .form-card .card-body {
+        padding: 15px;
+    }
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+    .form-actions {
+        flex-direction: column;
+    }
+    .form-actions .btn-primary-custom {
+        text-align: center;
+    }
+    .form-actions .btn-secondary-custom {
+        text-align: center;
+    }
+}
+@media (max-width: 480px) {
+    .form-card .card-body {
+        padding: 12px;
+    }
+    .form-group .form-control {
+        font-size: 13px;
+        padding: 8px 10px;
+    }
+    .btn-primary-custom {
+        padding: 10px 20px;
+        font-size: 13px;
+    }
+    .btn-secondary-custom {
+        padding: 10px 20px;
+        font-size: 13px;
+    }
+}
+</style>
+
+<div class="page-container">
+    <div class="page-header">
+        <a href="{% url 'employee_list' %}" class="back-link">رجوع</a>
+        <h2>{{ title }}</h2>
     </div>
-    <div class="card-body">
-        <form method="post">
-            {% csrf_token %}
-            
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label">الاسم الكامل *</label>
-                    <input type="text" name="full_name" class="form-control" value="{{ employee.full_name|default:'' }}" required>
+
+    <div class="form-card">
+        <div class="card-header">{{ title }}</div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>الاسم الكامل <span class="required">*</span></label>
+                        <input type="text" name="full_name" class="form-control" value="{{ employee.full_name|default:'' }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>الوظيفة <span class="required">*</span></label>
+                        <input type="text" name="position" class="form-control" value="{{ employee.position|default:'' }}" required>
+                    </div>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label">الوظيفة *</label>
-                    <input type="text" name="position" class="form-control" value="{{ employee.position|default:'' }}" required>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">رقم الهاتف</label>
-                    <input type="text" name="phone" class="form-control" value="{{ employee.phone|default:'' }}">
-                </div>
-             
-                <div class="col-md-6" id="monthly_fields" {% if employee.payment_type == 'hourly' %}style="display:none;"{% endif %}>
-                    <label class="form-label">الراتب الشهري</label>
-                    <input type="number" name="monthly_salary" class="form-control" value="{{ employee.monthly_salary|default:0 }}">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>رقم الهاتف</label>
+                        <input type="text" name="phone" class="form-control" value="{{ employee.phone|default:'' }}">
+                    </div>
+                    <div class="form-group" id="monthly_fields">
+                        <label>الراتب الشهري</label>
+                        <input type="number" name="monthly_salary" class="form-control" value="{{ employee.monthly_salary|default:0 }}">
+                    </div>
                 </div>
 
                 {% if employee %}
-                <div class="col-md-6">
-                    <label class="form-label">الحالة</label>
-                    <select name="status" class="form-select">
+                <div class="form-group">
+                    <label>الحالة</label>
+                    <select name="status" class="form-control">
                         <option value="active" {% if employee.status == 'active' %}selected{% endif %}>نشط</option>
                         <option value="inactive" {% if employee.status == 'inactive' %}selected{% endif %}>غير نشط</option>
-                        <option value="on_leave" {% if employee.status == 'on_leave' %}selected{% endif %}>في إجازة</option>
+                        <option value="on_leave" {% if employee.status == 'on_leave' %}selected{% endif %}>في اجازة</option>
                     </select>
                 </div>
                 {% endif %}
-            </div>
-            
-            <div class="mt-4 d-flex gap-2">
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-save"></i> حفظ
-                </button>
-                <a href="{% url 'employee_list' %}" class="btn btn-secondary">
-                    <i class="bi bi-x-circle"></i> إلغاء
-                </a>
-            </div>
-        </form>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary-custom">حفظ</button>
+                    <a href="{% url 'employee_list' %}" class="btn-secondary-custom">الغاء</a>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
-
-
 {% endblock %}

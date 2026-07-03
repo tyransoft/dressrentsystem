@@ -1,26 +1,198 @@
 {% extends 'base.html' %}
-{% block title %}{% if object %}تعديل المصروف{% else %}إضافة المصروف{% endif %}{% endblock %}
+{% block title %}{% if object %}تعديل المصروف{% else %}اضافة المصروف{% endif %}{% endblock %}
 {% block content %}
-<div class="page-header d-flex align-items-center gap-3">
-  <a href="{% url 'expense_list' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-right"></i></a>
-  <div><h2>{% if object %}تعديل المصروف{% else %}إضافة المصروف جديد{% endif %}</h2></div>
-</div>
-<div class="table-card p-4" style="max-width:600px;">
-  <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {% for field in form %}
-    <div class="mb-3">
-      <label class="form-label fw-semibold">{{ field.label }}</label>
-      {{ field }}
-      {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
-      {% if field.help_text %}<div class="text-muted small mt-1">{{ field.help_text }}</div>{% endif %}
+<style>
+* {
+    box-sizing: border-box;
+}
+.page-container {
+    padding: 10px 15px 30px 15px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+}
+.page-header .back-link {
+    background: transparent;
+    color: #4b5563;
+    border: 1.5px solid #eaecf0;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+.page-header .back-link:hover {
+    background: #f8fafc;
+}
+.page-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+.form-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    padding: 25px;
+    max-width: 600px;
+}
+.form-card .form-group {
+    margin-bottom: 18px;
+}
+.form-card .form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 5px;
+}
+.form-card .form-group .form-control {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid #eaecf0;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    background: #fff;
+}
+.form-card .form-group .form-control:focus {
+    border-color: #D4AF37;
+}
+.form-card .form-group .form-control:disabled {
+    background: #f8fafc;
+    cursor: not-allowed;
+}
+.form-card .form-group .form-control select {
+    appearance: none;
+}
+.form-card .form-group .error-text {
+    color: #dc2626;
+    font-size: 12px;
+    margin-top: 4px;
+    display: block;
+}
+.form-card .form-group .help-text {
+    color: #9ca3af;
+    font-size: 12px;
+    margin-top: 4px;
+    display: block;
+}
+.form-card .form-divider {
+    border: none;
+    border-top: 1px solid #eaecf0;
+    margin: 20px 0;
+}
+.form-card .form-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.form-card .form-actions .btn-save {
+    background: #D4AF37;
+    color: #fff;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.form-card .form-actions .btn-save:hover {
+    background: #B8960F;
+}
+.form-card .form-actions .btn-cancel {
+    background: transparent;
+    color: #4b5563;
+    border: 1.5px solid #eaecf0;
+    padding: 10px 25px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+.form-card .form-actions .btn-cancel:hover {
+    background: #f8fafc;
+}
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+    .page-header .back-link {
+        text-align: center;
+    }
+    .form-card {
+        padding: 18px;
+        max-width: 100%;
+    }
+    .form-card .form-actions {
+        flex-direction: column;
+    }
+    .form-card .form-actions .btn-save {
+        text-align: center;
+    }
+    .form-card .form-actions .btn-cancel {
+        text-align: center;
+    }
+}
+@media (max-width: 480px) {
+    .page-container {
+        padding: 5px 8px 20px 8px;
+    }
+    .form-card {
+        padding: 14px;
+    }
+    .form-card .form-group label {
+        font-size: 12px;
+    }
+    .form-card .form-group .form-control {
+        font-size: 13px;
+        padding: 8px 10px;
+    }
+}
+</style>
+<div class="page-container">
+    <div class="page-header">
+        <a href="{% url 'expense_list' %}" class="back-link">رجوع</a>
+        <h2>{% if object %}تعديل المصروف{% else %}اضافة مصروف جديد{% endif %}</h2>
     </div>
-    {% endfor %}
-    <hr class="my-3">
-    <div class="d-flex gap-2">
-      <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-lg me-1"></i> حفظ</button>
-      <a href="{% url 'expense_list' %}" class="btn btn-outline-secondary">إلغاء</a>
+    <div class="form-card">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                <span class="error-text">{{ field.errors.0 }}</span>
+                {% endif %}
+                {% if field.help_text %}
+                <span class="help-text">{{ field.help_text }}</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <hr class="form-divider">
+            <div class="form-actions">
+                <button type="submit" class="btn-save">حفظ</button>
+                <a href="{% url 'expense_list' %}" class="btn-cancel">الغاء</a>
+            </div>
+        </form>
     </div>
-  </form>
 </div>
 {% endblock %}

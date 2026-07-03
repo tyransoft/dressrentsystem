@@ -5,54 +5,311 @@
 {% block mobile_title %}تسديد راتب{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header bg-white fw-bold">
-        <i class="bi bi-cash-stack me-2"></i>تسديد راتب
+<style>
+* {
+    box-sizing: border-box;
+}
+.page-container {
+    padding: 10px 15px 30px 15px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+}
+.page-header .back-link {
+    background: transparent;
+    color: #4b5563;
+    border: 1.5px solid #eaecf0;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+.page-header .back-link:hover {
+    background: #f8fafc;
+}
+.page-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+.payment-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.payment-card .card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #eaecf0;
+    font-weight: 700;
+    font-size: 15px;
+    color: #1e293b;
+}
+.payment-card .card-body {
+    padding: 20px;
+}
+.info-box {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+}
+.info-box .info-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+}
+.info-box .info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 0;
+    font-size: 13px;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.info-box .info-row .label {
+    color: #6b7280;
+}
+.info-box .info-row .value {
+    font-weight: 600;
+    color: #1e293b;
+}
+.info-box .info-row .value.primary {
+    color: #D4AF37;
+}
+.info-box .info-row .value.danger {
+    color: #dc2626;
+}
+.info-box .info-row .value.success {
+    color: #16a34a;
+}
+.info-box .info-row .value.warning {
+    color: #f59e0b;
+}
+.form-group {
+    margin-bottom: 16px;
+}
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 5px;
+}
+.form-group label .required {
+    color: #dc2626;
+}
+.form-group .form-control {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid #eaecf0;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    background: #fff;
+}
+.form-group .form-control:focus {
+    border-color: #D4AF37;
+}
+.form-group .form-control:disabled {
+    background: #f8fafc;
+    cursor: not-allowed;
+}
+.form-group .form-control select {
+    appearance: none;
+}
+.form-group .error-text {
+    color: #dc2626;
+    font-size: 12px;
+    margin-top: 4px;
+    display: block;
+}
+.form-group .help-text {
+    color: #9ca3af;
+    font-size: 12px;
+    margin-top: 4px;
+    display: block;
+}
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+.btn-success-custom {
+    background: #16a34a;
+    color: #fff;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn-success-custom:hover {
+    background: #15803d;
+}
+.btn-secondary-custom {
+    background: transparent;
+    color: #4b5563;
+    border: 1.5px solid #eaecf0;
+    padding: 10px 25px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn-secondary-custom:hover {
+    background: #f8fafc;
+}
+
+@media (max-width: 768px) {
+    .page-container {
+        padding: 5px 8px 20px 8px;
+    }
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+    .page-header .back-link {
+        text-align: center;
+    }
+    .payment-card .card-body {
+        padding: 15px;
+    }
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+    .form-actions {
+        flex-direction: column;
+    }
+    .form-actions .btn-success-custom {
+        text-align: center;
+    }
+    .form-actions .btn-secondary-custom {
+        text-align: center;
+    }
+    .info-box .info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 5px 0;
+        border-bottom: 1px solid #f1f3f5;
+    }
+    .info-box .info-row:last-child {
+        border-bottom: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .payment-card .card-body {
+        padding: 12px;
+    }
+    .info-box {
+        padding: 12px;
+    }
+    .form-group .form-control {
+        font-size: 13px;
+        padding: 8px 10px;
+    }
+    .btn-success-custom {
+        padding: 10px 20px;
+        font-size: 13px;
+    }
+    .btn-secondary-custom {
+        padding: 10px 20px;
+        font-size: 13px;
+    }
+}
+</style>
+
+<div class="page-container">
+    <div class="page-header">
+        <a href="{% url 'monthly_salary_statement' employee.pk %}" class="back-link">رجوع</a>
+        <h2>تسديد راتب</h2>
     </div>
-    <div class="card-body">
-        <div class="alert alert-info mb-3">
-            <strong>{{ employee.full_name }}</strong><br>
-            <small>الراتب الشهري: {{ employee.monthly_salary|floatformat:0 }} د.ل</small><br>
-            <small>إجمالي الخصومات: {{ employee.total_absence_deductions|floatformat:0 }} د.ل</small><br>
-            <small>صافي المستحق: {{ employee.net_monthly_salary|floatformat:0 }} د.ل</small><br>
-            <small>المتبقي: {{ employee.monthly_remaining|floatformat:0 }} د.ل</small>
-        </div>
-        
-        <form method="post">
-            {% csrf_token %}
-            
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label">المبلغ المدفوع *</label>
-                    <input type="number" name="amount" class="form-control" required>
+
+    <div class="payment-card">
+        <div class="card-header">تسديد راتب الموظف</div>
+        <div class="card-body">
+            <div class="info-box">
+                <div class="info-name">{{ employee.full_name }}</div>
+                <div class="info-row">
+                    <span class="label">الراتب الشهري</span>
+                    <span class="value primary">{{ employee.monthly_salary|floatformat:0 }} د.ل</span>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label">تاريخ الدفع *</label>
-                    <input type="date" name="payment_date" class="form-control" value="{% now 'Y-m-d' %}" required>
+                <div class="info-row">
+                    <span class="label">اجمالي الخصومات</span>
+                    <span class="value danger">{{ employee.total_absence_deductions|floatformat:0 }} د.ل</span>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label">طريقة الدفع *</label>
-                    <select name="payment_method" class="form-select" required>
-                        <option value="cash">نقداً</option>
+                <div class="info-row">
+                    <span class="label">صافي المستحق</span>
+                    <span class="value success">{{ employee.net_monthly_salary|floatformat:0 }} د.ل</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">المتبقي</span>
+                    <span class="value warning">{{ employee.monthly_remaining|floatformat:0 }} د.ل</span>
+                </div>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>المبلغ المدفوع <span class="required">*</span></label>
+                        <input type="number" name="amount" class="form-control" placeholder="ادخل المبلغ" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>تاريخ الدفع <span class="required">*</span></label>
+                        <input type="date" name="payment_date" class="form-control" value="{% now 'Y-m-d' %}" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>طريقة الدفع <span class="required">*</span></label>
+                    <select name="payment_method" class="form-control" required>
+                        <option value="cash">نقدا</option>
                         <option value="bank_transfer">تحويل بنكي</option>
                         <option value="check">شيك</option>
                     </select>
                 </div>
-                <div class="col-12">
-                    <label class="form-label">ملاحظات</label>
-                    <textarea name="notes" class="form-control" rows="2"></textarea>
+
+                <div class="form-group">
+                    <label>ملاحظات</label>
+                    <textarea name="notes" class="form-control" rows="2" placeholder="اضف ملاحظات اضافية..."></textarea>
                 </div>
-            </div>
-            
-            <div class="mt-4 d-flex gap-2">
-                <button type="submit" class="btn btn-success">
-                    <i class="bi bi-check-circle"></i> تسديد
-                </button>
-                <a href="{% url 'monthly_salary_statement' employee.pk %}" class="btn btn-secondary">
-                    <i class="bi bi-x-circle"></i> إلغاء
-                </a>
-            </div>
-        </form>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-success-custom">تسديد</button>
+                    <a href="{% url 'monthly_salary_statement' employee.pk %}" class="btn-secondary-custom">الغاء</a>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 {% endblock %}

@@ -5,47 +5,186 @@
 {% block mobile_title %}حذف موظف{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card border-danger">
-            <div class="card-header bg-danger text-white">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                تأكيد حذف موظف
+<style>
+* {
+    box-sizing: border-box;
+}
+.page-container {
+    padding: 10px 15px 30px 15px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+.delete-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: 2px solid #dc2626;
+}
+.delete-card .card-header {
+    background: #dc2626;
+    color: #fff;
+    padding: 14px 20px;
+    border-radius: 10px 10px 0 0;
+    font-weight: 700;
+    font-size: 15px;
+}
+.delete-card .card-body {
+    padding: 25px 20px;
+    text-align: center;
+}
+.delete-icon {
+    font-size: 56px;
+    color: #dc2626;
+    margin-bottom: 15px;
+    display: block;
+}
+.delete-card h5 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 15px;
+}
+.delete-card .info-box {
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 15px;
+}
+.delete-card .info-box .info-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+}
+.delete-card .info-box .info-position {
+    font-size: 13px;
+    color: #6b7280;
+}
+.delete-card .warning-box {
+    background: #fee2e2;
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 15px;
+    text-align: right;
+}
+.delete-card .warning-box .warning-title {
+    font-weight: 700;
+    color: #dc2626;
+    font-size: 14px;
+    display: block;
+    margin-bottom: 6px;
+}
+.delete-card .warning-box ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.delete-card .warning-box ul li {
+    padding: 3px 0;
+    font-size: 13px;
+    color: #4b5563;
+}
+.delete-card .warning-box ul li:before {
+    content: "- ";
+}
+.delete-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 5px;
+}
+.btn-danger-custom {
+    background: #dc2626;
+    color: #fff;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn-danger-custom:hover {
+    background: #b91c1c;
+}
+.btn-secondary-custom {
+    background: transparent;
+    color: #4b5563;
+    border: 1.5px solid #eaecf0;
+    padding: 10px 25px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn-secondary-custom:hover {
+    background: #f8fafc;
+}
+@media (max-width: 768px) {
+    .page-container {
+        padding: 5px 8px 20px 8px;
+    }
+    .delete-card .card-body {
+        padding: 18px 14px;
+    }
+    .delete-actions {
+        flex-direction: column;
+    }
+    .delete-actions .btn-danger-custom {
+        text-align: center;
+    }
+    .delete-actions .btn-secondary-custom {
+        text-align: center;
+    }
+}
+@media (max-width: 480px) {
+    .delete-icon {
+        font-size: 40px;
+    }
+    .delete-card h5 {
+        font-size: 16px;
+    }
+    .delete-card .info-box .info-name {
+        font-size: 14px;
+    }
+}
+</style>
+
+<div class="page-container">
+    <div class="delete-card">
+        <div class="card-header">تأكيد حذف موظف</div>
+        <div class="card-body">
+            <span class="delete-icon">&#9888;</span>
+            <h5>هل انت متأكد من حذف هذا الموظف؟</h5>
+
+            <div class="info-box">
+                <div class="info-name">{{ employee.full_name }}</div>
+                <div class="info-position">{{ employee.position }}</div>
             </div>
-            <div class="card-body text-center">
-                <div class="mb-4">
-                    <i class="bi bi-person-x-fill text-danger" style="font-size: 64px;"></i>
-                </div>
-                
-                <h5 class="mb-3">هل أنت متأكد من حذف الموظف؟</h5>
-                
-                <div class="alert alert-warning">
-                    <strong>{{ employee.full_name }}</strong><br>
-                    <small>{{ employee.position }}</small>
-                </div>
-                
-                <div class="alert alert-danger">
-                    <i class="bi bi-info-circle"></i>
-                    <strong>تحذير: سيتم حذف جميع البيانات المرتبطة</strong>
-                    <ul class="text-start mt-2 mb-0">
-                        <li>سجل الغيابات</li>
-                        <li>سجل المدفوعات</li>
-                        <li>سجل ساعات العمل (إن وجد)</li>
-                    </ul>
-                </div>
-                
-                <form method="post" class="mt-3">
-                    {% csrf_token %}
-                    <div class="d-flex gap-2 justify-content-center">
-                        <button type="submit" class="btn btn-danger">
-                            <i class="bi bi-trash3"></i> نعم، احذف
-                        </button>
-                        <a href="{% url 'employee_list' %}" class="btn btn-secondary">
-                            <i class="bi bi-x-circle"></i> إلغاء
-                        </a>
-                    </div>
-                </form>
+
+            <div class="warning-box">
+                <span class="warning-title">تحذير: سيتم حذف جميع البيانات المرتبطة</span>
+                <ul>
+                    <li>سجل الغيابات</li>
+                    <li>سجل المدفوعات</li>
+                    <li>سجل ساعات العمل (ان وجد)</li>
+                </ul>
             </div>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="delete-actions">
+                    <button type="submit" class="btn-danger-custom">نعم، احذف</button>
+                    <a href="{% url 'employee_list' %}" class="btn-secondary-custom">الغاء</a>
+                </div>
+            </form>
         </div>
     </div>
 </div>
