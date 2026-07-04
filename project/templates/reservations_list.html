@@ -598,8 +598,9 @@ tbody td {
                                             '{{ invoice.rent_end_date|date:"Y-m-d" }}'
                                         )" 
                                         style="background-color: #25D366; border-color: #25D366; color: #fff; border: none; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
-                                </button>
-                            {% if invoice.status == 'PENDING' %}
+                                    تنبيه
+                                    </button>
+                            {% if invoice.status == 'pending' %}
                                 <button class="btn-sm btn-deliver-sm" onclick="markAsDelivered({{ invoice.id }}, this)">تسليم</button>
                             {% endif %}
                         </div>
@@ -682,9 +683,9 @@ tbody td {
                                 '{{ invoice.rent_end_date|date:"Y-m-d" }}'
                             )" 
                             style="background-color: #25D366; border-color: #25D366; color: #fff; border: none; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
-                        
+                        تنبيه
                     </button>
-                {% if invoice.status == 'PENDING' %}
+                {% if invoice.status == 'pending' %}
                     <button class="btn-sm btn-deliver-sm" onclick="markAsDelivered({{ invoice.id }}, this)">تسليم</button>
                 {% endif %}
             </div>
@@ -819,7 +820,7 @@ function sendWhatsappReminder(phone, customerName, amount, invoiceNumber, startD
 رقم الفاتورة: ${invoiceNumber}
 تاريخ البداية: ${startDate}
 تاريخ النهاية: ${endDate}
-المبلغ المتبقي: ${amount} ريال
+المبلغ المتبقي: ${amount} 
 تاريخ التذكير: ${formattedDate}
 
 يرجى الحضور لاستلام الفستان في الموعد المحدد.
@@ -853,34 +854,21 @@ function markAsDelivered(invoiceId, button) {
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
-            button.textContent = 'تم التسليم';
-            button.className = 'btn-sm btn-delivered-sm';
-            showToast(data.message, 'success', 'نجاح');
-            
-            var row = button.closest('tr');
-            if (row) {
-                var statusCell = row.querySelector('.status-badge');
-                if (statusCell) {
-                    statusCell.className = 'status-badge status-delivered';
-                    statusCell.textContent = 'تم التسليم';
-                }
-            }
-            
-            var card = button.closest('.reservation-card');
-            if (card) {
-                var cardStatus = card.querySelector('.card-status');
-                if (cardStatus) {
-                    cardStatus.className = 'card-status status-badge status-delivered';
-                    cardStatus.textContent = 'تم التسليم';
-                }
-            }
-        } else {
-            button.disabled = false;
-            button.textContent = 'تسليم';
-            button.className = 'btn-sm btn-deliver-sm';
-            showToast(data.message, 'error', 'خطأ');
-        }
+     if (data.success) {
+        button.textContent = 'تم التسليم';
+        button.className = 'btn-sm btn-delivered-sm';
+        showToast(data.message, 'success', 'نجاح');
+
+  
+        window.location.href = data.redirect_url;
+        
+
+     } else {
+        button.disabled = false;
+        button.textContent = 'تسليم';
+        button.className = 'btn-sm btn-deliver-sm';
+        showToast(data.message, 'error', 'خطأ');
+     }
     })
     .catch(error => {
         button.disabled = false;

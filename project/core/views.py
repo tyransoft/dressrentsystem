@@ -11,7 +11,7 @@ from django.db.models import Q ,Sum, Count
 from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime, timedelta,time
 from django.utils import timezone
-
+from django.urls import reverse
 
 
 
@@ -1140,7 +1140,7 @@ def mark_as_delivered(request, invoice_id):
     
     try:
         invoice.status = InvoiceStatus.DELIVERED
-        invoice.delivered_at = timezone.now()
+        invoice.identity_verified = True
         invoice.save()
         
         for item in invoice.items.all():
@@ -1149,8 +1149,9 @@ def mark_as_delivered(request, invoice_id):
         
         return JsonResponse({
             'success': True,
-            'message': 'تم تسليم المنتج للعميل بنجاح',
-            'invoice_number': invoice.invoice_number
+            'message': 'تم تسليم الفستان للعميل بنجاح',
+            'invoice_number': invoice.invoice_number,
+            'redirect_url': reverse('print_receipt', args=[invoice.id])
         })
         
     except Exception as e:
@@ -1495,7 +1496,7 @@ def inventory_report(request):
 @login_required
 def unreturned_invoices(request):
     invoices = Invoice.objects.filter(
-        status__in=[InvoiceStatus.PENDING, InvoiceStatus.PARTIAL, InvoiceStatus.PAID],
+        status= InvoiceStatus.DELIVERED,
         invoice_type=InvoiceType.RENT
     ).order_by('rent_end_date')
     
