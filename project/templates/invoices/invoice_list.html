@@ -250,7 +250,7 @@
       {% for invoice in invoices %}
       <div class="invoice-card-m">
         <div class="ic-header">
-          <span class="ic-number"><i class="fas fa-file-invoice"></i> {{ invoice.invoice_number }}</span>
+          <span class="ic-number"> {{ invoice.invoice_number }}</span>
           <span class="badge-status {% if invoice.status == 'paid' %}badge-paid
                    {% elif invoice.status == 'pending' %}badge-pending
                    {% elif invoice.status == 'partial' %}badge-partial
