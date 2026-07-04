@@ -218,7 +218,7 @@
               <td>
                 <div class="actions-group">
                   {% if invoice.status != 'cancelled' and invoice.status != 'recieved' %}
-                  <a href="{% url 'confirm_return' invoice.id %}" class="btn btn-success" title="تسليم">
+                  <a href="{% url 'confirm_return' invoice.id %}" class="btn btn-success" title="استلام">
                     <i class="fas fa-check"></i>
                   </a>
                   <button class="btn btn-danger" onclick="cancelInvoice({{ invoice.id }})" title="إلغاء">
@@ -285,7 +285,7 @@
         <div class="ic-actions">
           {% if invoice.status != 'cancelled' and invoice.status != 'recieved' %}
           <a href="{% url 'confirm_return' invoice.id %}" class="btn-success-sm">
-            <i class="fas fa-check"></i> تسليم
+            <i class="fas fa-check"></i> استلام
           </a>
           <button class="btn-danger-sm" onclick="cancelInvoice({{ invoice.id }})">
             <i class="fas fa-times"></i> إلغاء

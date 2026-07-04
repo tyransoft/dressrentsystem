@@ -1132,7 +1132,7 @@ def mark_as_delivered(request, invoice_id):
             'message': 'الفاتورة ليست قيد الانتظار'
         })
     
-    if invoice.invoice_type != 'RENT':
+    if invoice.invoice_type != 'rent':
         return JsonResponse({
             'success': False,
             'message': 'هذه العملية مخصصة لفواتير الايجار فقط'
