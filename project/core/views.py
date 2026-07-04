@@ -791,7 +791,7 @@ def confirm_return(request, invoice_id):
                 CustomerPayment.objects.create(
                     customer=invoice.customer,
                     amount=remaining,
-                    notes=f'تسوية تلقائية عند استلام الفاتورة {invoice.invoice_number}'
+                    notes=f'تسوية  عند استلام الفاتورة {invoice.invoice_number}'
                 )
             
             for item in invoice.items.all():
@@ -799,6 +799,7 @@ def confirm_return(request, invoice_id):
                 item.product.save()
             
             invoice.status = InvoiceStatus.RECIEVED
+            invoice.identity_verified_return=True
             invoice.save()
             
             messages.success(request, 'تم تأكيد استلام جميع المنتجات بنجاح')
@@ -906,7 +907,6 @@ def print_receipt(request, invoice_id):
   
     }
     return render(request, 'invoices/print_receipt.html', context)
-
 
 
 @login_required
@@ -1063,7 +1063,7 @@ def create_invoice(request):
                     product.status = Dstatus.RENTED
                     product.save()
                     
-                    days = (rent_end_date - rent_start_date).days + 1
+                    days = cart_item.get('days', 1)
                     
                     invoice_item = InvoiceItem.objects.create(
                         invoice=invoice,
@@ -1073,7 +1073,7 @@ def create_invoice(request):
                     )
                     invoice.total_amount += invoice_item.days * invoice_item.unit_price
                     
-                else:  
+                else:
                     if product.status == Dstatus.RENTED:
                         invoice.delete()
                         messages.error(request, f'المنتج {product.name} مؤجر حالياً ولا يمكن بيعه')
@@ -1094,7 +1094,6 @@ def create_invoice(request):
             invoice.total_amount += invoice.commission
             
             invoice.remaining_amount = invoice.total_amount - invoice.paid_amount
-            
             
             invoice.status = InvoiceStatus.PENDING
             
