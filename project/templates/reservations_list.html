@@ -588,7 +588,6 @@ tbody td {
                     </td>
                     <td>
                         <div class="actions-cell">
-                            <a href="{% url 'invoice_detail' invoice.id %}" class="btn-sm btn-view">عرض</a>
                                 <button type="button" class="btn btn-sm btn-whatsapp" 
                                         onclick="sendWhatsappReminder(
                                             '{{ invoice.customer.phone }}', 

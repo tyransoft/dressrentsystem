@@ -645,8 +645,7 @@ data-search="{{ product.name|lower }} {{ product.barcode|default:'' }}">
 {{ product.get_status_display }}
 </div>
 <div class="pprice">{{ product.selling_price }}</div>
-<button type="button" class="add-btn" onclick="addToCart({{ product.id }})" 
->
+<button type="button" class="add-btn" onclick="addToCart({{ product.id }})">
 اضافة
 </button>
 </div>
@@ -802,13 +801,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (document.getElementById('rent_end_date_input').value && document.getElementById('rent_end_date_input').value < startDate) {
             document.getElementById('rent_end_date_input').value = startDate;
         }
-        calculateRentDays();
         updateRentDates();
         checkAvailability();
     });
     
     document.getElementById('rent_end_date_input').addEventListener('change', function() {
-        calculateRentDays();
         updateRentDates();
         checkAvailability();
     });
@@ -873,22 +870,6 @@ function getFirstProductId() {
     return null;
 }
 
-function calculateRentDays() {
-    var startDate = document.getElementById('rent_start_date_input').value;
-    var endDate = document.getElementById('rent_end_date_input').value;
-    
-    if (startDate && endDate) {
-        var start = new Date(startDate);
-        var end = new Date(endDate);
-        var diffTime = Math.abs(end - start);
-        var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-        document.getElementById('modal-rent-days').textContent = diffDays;
-        document.getElementById('form_rent_days').value = diffDays;
-        return diffDays;
-    }
-    return 0;
-}
-
 function updateRentDates() {
     var startDate = document.getElementById('rent_start_date_input').value;
     var endDate = document.getElementById('rent_end_date_input').value;
@@ -898,6 +879,13 @@ function updateRentDates() {
     }
     if (endDate) {
         document.getElementById('form_rent_end_date').value = endDate;
+    }
+    
+    var keys = Object.keys(cart);
+    if (keys.length > 0) {
+        var firstItem = cart[keys[0]];
+        document.getElementById('modal-rent-days').textContent = firstItem.days || 0;
+        document.getElementById('form_rent_days').value = firstItem.days || 0;
     }
 }
 
@@ -983,10 +971,6 @@ barcode: card.dataset.barcode
 function addToCart(id) {
 var product = getProductData(id);
 if (!product) return;
-if (product.status !== 'available') {
-showToast('هذا المنتج غير متاح', 'error');
-return;
-}
 
 if (cart[id]) {
 if (invoiceType === 'rent') {
@@ -1023,6 +1007,7 @@ updateSalePrice();
 showToast('تمت الاضافة: ' + product.name, 'success');
 if (invoiceType === 'rent') {
 checkAvailability();
+updateRentDates();
 }
 }
 
@@ -1035,6 +1020,7 @@ updateRentPrice();
 updateSalePrice();
 if (invoiceType === 'rent') {
 checkAvailability();
+updateRentDates();
 }
 }
 
@@ -1052,6 +1038,7 @@ renderCart();
 calcModalTotals();
 if (invoiceType === 'rent') {
 checkAvailability();
+updateRentDates();
 }
 }
 
