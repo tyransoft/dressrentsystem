@@ -466,17 +466,59 @@ def reservations_list(request):
         invoice_type=InvoiceType.RENT
     ).select_related('customer', 'payment_method').prefetch_related('items__product')
     
-    total_pending = reservations.count()
-    today_reservations = reservations.filter(rent_start_date=today).count()
+    if request.GET.get('today') == '1':
+        reservations = reservations.filter(rent_start_date=today)
+    
+    total_pending = Invoice.objects.filter(
+        status=InvoiceStatus.PENDING,
+        invoice_type=InvoiceType.RENT
+    ).count()
+    
+    today_reservations = Invoice.objects.filter(
+        status=InvoiceStatus.PENDING,
+        invoice_type=InvoiceType.RENT,
+        rent_start_date=today
+    ).count()
     
     context = {
         'reservations': reservations,
         'total_pending': total_pending,
         'today_reservations': today_reservations,
         'today': today.strftime('%Y-%m-%d'),
+        'is_today_filter': request.GET.get('today') == '1', 
     }
     return render(request, 'reservations_list.html', context)
 
+@login_required
+def reservation_detail(request, invoice_id):
+    try:
+        reservation = Invoice.objects.get(
+            id=invoice_id,
+            invoice_type=InvoiceType.RENT
+        ).select_related('customer', 'payment_method').prefetch_related('items__product')
+    except Invoice.DoesNotExist:
+        messages.error(request, 'الحجز غير موجود')
+        return redirect('reservations_list')
+    
+    rental_days = reservation.rental_days
+    
+    items_data = []
+    for item in reservation.items.all():
+        items_data.append({
+            'item': item,
+            'product': item.product,
+            'days': item.days,
+            'unit_price': item.unit_price,
+            'total_price': item.total_price,
+        })
+    
+    context = {
+        'reservation': reservation,
+        'items_data': items_data,
+        'rental_days': rental_days,
+        'total_items': reservation.items.count(),
+    }
+    return render(request, 'reservation_detail.html', context)
 
 @login_required
 def repair_create(request):

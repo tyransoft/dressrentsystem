@@ -27,7 +27,29 @@
 .btn-outline:hover{background:#f8f9fb;}
 .btn-sm{padding:6px 12px;font-size:12px;min-height:36px;min-width:36px;}
 .btn-icon{width:38px;height:38px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;}
-
+.btn-view {
+    background: #e5e7eb;
+    color: #374151;
+    border: none;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 32px;
+}
+.btn-view:hover {
+    background: #d1d5db;
+    color: #1a2236;
+}
+.btn-view i {
+    font-size: 12px;
+}
 .form-control{width:100%;padding:12px 14px;border:1.5px solid #eaecf0;border-radius:8px;font-size:16px;background:#fff;color:#1a2236;box-sizing:border-box;}
 .form-control:focus{outline:none;border-color:#D4AF37;box-shadow:0 0 0 4px rgba(212,175,55,0.12);}
 .form-select{width:100%;padding:12px 14px;border:1.5px solid #eaecf0;border-radius:8px;font-size:16px;background:#fff;color:#1a2236;box-sizing:border-box;}
@@ -217,6 +239,9 @@
               <td>{{ invoice.created_at|date:"Y-m-d" }}</td>
               <td>
                 <div class="actions-group">
+                  <a href="{% url 'reservation_detail' invoice.id %}" class="btn-view">
+                    <i class="fa-regular fa-eye"></i> عرض
+                  </a>
                   {% if invoice.status != 'cancelled' and invoice.status != 'recieved' %}
                   <a href="{% url 'confirm_return' invoice.id %}" class="btn btn-success" title="استلام">
                     <i class="fas fa-check"></i>
@@ -250,7 +275,7 @@
       {% for invoice in invoices %}
       <div class="invoice-card-m">
         <div class="ic-header">
-          <span class="ic-number"> {{ invoice.invoice_number }}</span>
+          <span class="ic-number">{{ invoice.invoice_number }}</span>
           <span class="badge-status {% if invoice.status == 'paid' %}badge-paid
                    {% elif invoice.status == 'pending' %}badge-pending
                    {% elif invoice.status == 'partial' %}badge-partial
@@ -283,6 +308,9 @@
           <span class="ic-value">{{ invoice.created_at|date:"Y-m-d" }}</span>
         </div>
         <div class="ic-actions">
+          <a href="{% url 'reservation_detail' invoice.id %}" class="btn-view">
+            <i class="fa-regular fa-eye"></i> عرض
+          </a>
           {% if invoice.status != 'cancelled' and invoice.status != 'recieved' %}
           <a href="{% url 'confirm_return' invoice.id %}" class="btn-success-sm">
             <i class="fas fa-check"></i> استلام

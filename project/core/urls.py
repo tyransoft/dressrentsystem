@@ -63,6 +63,7 @@ urlpatterns = [
     path('reservations/', reservations_list, name='reservations_list'),
     path('invoice/deliver/<int:invoice_id>/', mark_as_delivered, name='mark_as_delivered'),
 
+    path('reservation/<int:invoice_id>/', reservation_detail, name='reservation_detail'),
 
     path('expenses/',expense_list, name='expense_list'),
     path('expenses/add/',expense_add, name='expense_add'),

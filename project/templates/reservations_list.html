@@ -521,7 +521,18 @@ tbody td {
         </div>
        
     </div>
-
+{% if request.GET.today == '1' %}
+<div style="background: #dbeafe; border-radius: 8px; padding: 10px 15px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; border-right: 4px solid #2563eb;">
+    <span style="font-weight: 600; color: #1e40af;">
+        <i class="fa-solid fa-calendar-day"></i> 
+        عرض حجوزات اليوم: {{ today }}
+        <span style="background: #2563eb; color: #fff; border-radius: 50%; padding: 0 8px; font-size: 12px; margin-right: 6px;">{{ today_reservations }}</span>
+    </span>
+    <a href="{% url 'reservations_list' %}" class="btn-sm" style="background: #dc2626; color: #fff; border: none; padding: 4px 14px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600;">
+        <i class="fa-solid fa-times"></i> عرض الكل
+    </a>
+</div>
+{% endif %}
     <div class="filters-bar">
         <div class="filter-group">
             <label>بحث</label>
@@ -588,6 +599,9 @@ tbody td {
                     </td>
                     <td>
                         <div class="actions-cell">
+                            <a href="{% url 'reservation_detail' invoice.id %}" class="btn-sm btn-view">
+                              <i class="fa-regular fa-eye"></i> عرض
+                            </a>
                                 <button type="button" class="btn btn-sm btn-whatsapp" 
                                         onclick="sendWhatsappReminder(
                                             '{{ invoice.customer.phone }}', 
@@ -673,6 +687,9 @@ tbody td {
                 </div>
             </div>
             <div class="card-footer">
+                <a href="{% url 'reservation_detail' invoice.id %}" class="btn-sm btn-view">
+                   <i class="fa-regular fa-eye"></i> عرض
+                </a>
                     <button type="button" class="btn btn-sm btn-whatsapp" 
                             onclick="sendWhatsappReminder(
                                 '{{ invoice.customer.phone }}', 
@@ -710,7 +727,11 @@ function filterTable() {
     var rows = document.querySelectorAll('#tableBody tr');
     var cards = document.querySelectorAll('.reservation-card');
     var visible = 0;
-
+    var urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('today') === '1' && !startDate) {
+        startDate = '{{ today }}';
+        document.getElementById('startDateFilter').value = startDate;
+    }
     rows.forEach(function(row) {
         if (row.querySelector('.empty-state')) return;
 
@@ -789,6 +810,12 @@ function resetFilters() {
     document.getElementById('searchInput').value = '';
     document.getElementById('startDateFilter').value = '';
     document.getElementById('endDateFilter').value = '';
+    
+    var urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('today') === '1') {
+        window.location.href = window.location.pathname;  
+        return;
+    }
     filterTable();
 }
 
