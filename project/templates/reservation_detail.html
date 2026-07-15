@@ -532,15 +532,14 @@
 
 <div class="detail-container">
 
-    <!-- ===== HEADER ===== -->
     <div class="detail-header">
         <div>
             <div class="invoice-number">
-                <i class="fa-solid fa-receipt" style="color: #D4AF37; margin-left: 8px;"></i>
+                
                 #{{ reservation.invoice_number }}
             </div>
             <div class="invoice-date">
-                <i class="fa-regular fa-calendar"></i>
+            
                 تاريخ الإنشاء: {{ reservation.created_at|date:'Y-m-d H:i' }}
             </div>
         </div>
@@ -550,19 +549,17 @@
             </span>
             {% if reservation.is_overdue %}
             <span style="color: #dc2626; font-size: 12px; font-weight: 600;">
-                <i class="fa-solid fa-triangle-exclamation"></i> منتهي
+                 منتهي
             </span>
             {% endif %}
         </div>
     </div>
 
-    <!-- ===== DETAIL GRID ===== -->
     <div class="detail-grid">
 
-        <!-- Customer Info -->
         <div class="detail-card">
             <div class="card-title">
-                <i class="fa-solid fa-user"></i> معلومات العميل
+                 معلومات العميل
             </div>
             <div class="info-row">
                 <span class="label">الاسم</span>
@@ -586,10 +583,9 @@
             {% endif %}
         </div>
 
-        <!-- Reservation Info -->
         <div class="detail-card">
             <div class="card-title">
-                <i class="fa-solid fa-calendar-check"></i> معلومات الحجز
+                معلومات الحجز
             </div>
             <div class="info-row">
                 <span class="label">بداية الإيجار</span>
@@ -620,10 +616,9 @@
         </div>
     </div>
 
-    <!-- ===== FINANCIAL SUMMARY ===== -->
     <div class="detail-card" style="margin-bottom: 20px;">
         <div class="card-title">
-            <i class="fa-solid fa-coins"></i> الملخص المالي
+             الملخص 
         </div>
         <div class="summary-box">
             <div class="summary-row">
@@ -647,7 +642,6 @@
         </div>
     </div>
 
-    <!-- ===== PRODUCTS SECTION ===== -->
     <div class="products-section">
         <div class="section-header">
             <h3>
@@ -659,7 +653,6 @@
             </span>
         </div>
 
-        <!-- Desktop Table -->
         <div class="table-wrap">
             <table class="products-table">
                 <thead>
@@ -708,7 +701,6 @@
             </table>
         </div>
 
-        <!-- Mobile Cards -->
         <div class="product-mobile-cards">
             {% for item_data in items_data %}
             <div class="product-mobile-card">
@@ -751,7 +743,6 @@
         </div>
     </div>
 
-    <!-- ===== ACTIONS ===== -->
     <div class="detail-actions">
         <a href="{% url 'reservations_list' %}" class="btn-back">
             <i class="fa-solid fa-arrow-right"></i> العودة للحجوزات
