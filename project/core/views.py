@@ -488,22 +488,26 @@ def reservations_list(request):
         'is_today_filter': request.GET.get('today') == '1', 
     }
     return render(request, 'reservations_list.html', context)
-
 @login_required
 def reservation_detail(request, invoice_id):
     try:
         reservation = Invoice.objects.get(
             id=invoice_id,
             invoice_type=InvoiceType.RENT
-        ).select_related('customer', 'payment_method').prefetch_related('items__product')
+        )
+        
+
+        
     except Invoice.DoesNotExist:
         messages.error(request, 'الحجز غير موجود')
         return redirect('reservations_list')
     
-    rental_days = reservation.rental_days
+    rental_days = 0
+    if reservation.rent_start_date and reservation.rent_end_date:
+        rental_days = (reservation.rent_end_date - reservation.rent_start_date).days + 1
     
     items_data = []
-    for item in reservation.items.all():
+    for item in reservation.items.all():  
         items_data.append({
             'item': item,
             'product': item.product,
@@ -519,7 +523,6 @@ def reservation_detail(request, invoice_id):
         'total_items': reservation.items.count(),
     }
     return render(request, 'reservation_detail.html', context)
-
 @login_required
 def repair_create(request):
     if request.method == 'POST':
