@@ -20,10 +20,11 @@ def home(request):
     user = request.user
     if not request.user.is_authenticated:
         return redirect('user_login')
-    if user.is_accountant() or user.can_see_all_data():
+    else:  
+      if user.is_accountant() or user.can_see_all_data():
         return redirect('statistics')
-
-    return redirect('create_invoice')
+      else:
+        return redirect('create_invoice')
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -1267,6 +1268,7 @@ def cancel_invoice(request, invoice_id):
 
 @login_required
 def statistics(request):
+
     today = timezone.now().date()
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
