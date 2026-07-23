@@ -467,7 +467,7 @@ def reservations_list(request):
         invoice_type=InvoiceType.RENT
     ).select_related('customer', 'payment_method').prefetch_related('items__product')
 
-    if request.GET.get('start_date') == today:
+    if request.GET.get('start_date') :
         reservations = reservations.filter(rent_start_date=today)
     
 
