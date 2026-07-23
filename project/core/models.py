@@ -99,35 +99,30 @@ class Product(models.Model):
         verbose_name = 'فستان'
         verbose_name_plural = 'الفساتين'
         ordering = ['name']
-    def generate_qr(self):
-     base_url = getattr(settings, "SITE_URL", "http://127.0.0.1:8000")
+def generate_qr(self):
+    base_url = getattr(settings, "SITE_URL", "http://127.0.0.1:8000")
+    
+    product_url = f"{base_url}/products/qr/{self.barcode}/"
 
-     product_url = f"{base_url}/products/qr/{self.barcode}/"
-
-     qr_data = {
-        "product_id": self.id,
-        "barcode": self.barcode,
-        "url": product_url
-     }
-
-     qr = qrcode.QRCode(
+    
+    qr = qrcode.QRCode(
         version=1,
         box_size=10,
-         border=4
-     )
-
-     qr.add_data(json.dumps(qr_data))
-     qr.make(fit=True)
-
-     img = qr.make_image(fill_color="black", back_color="white")
-
-     buffer = BytesIO()
-     img.save(buffer, format="PNG")
-     buffer.seek(0)
-
-     filename = f"product_qr_{self.id}.png"
-
-     self.qr.save(filename, File(buffer), save=False)   
+        border=4
+    )
+    
+    qr.add_data(product_url)  
+    qr.make(fit=True)
+    
+    img = qr.make_image(fill_color="black", back_color="white")
+    
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+    
+    filename = f"product_qr_{self.id}.png"
+    
+    self.qr.save(filename, File(buffer), save=False)
     @staticmethod
     def generate_barcode():
         while True:
