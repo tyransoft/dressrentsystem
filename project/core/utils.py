@@ -19,5 +19,5 @@ def get_reservations_context_processor(request):
     today = timezone.now().date()
     
     if request.user.is_authenticated:
-        return {'today_reservations_count': get_today_reservations_count(),   'today': today.strftime('%Y-%m-%d')}
+        return {'today_reservations_count': get_today_reservations_count(),'today': today.strftime('%Y-%m-%d')}
     return {'today_reservations_count': 0,    'today': today.strftime('%Y-%m-%d')}
