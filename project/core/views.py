@@ -466,10 +466,11 @@ def reservations_list(request):
         status=InvoiceStatus.PENDING,
         invoice_type=InvoiceType.RENT
     ).select_related('customer', 'payment_method').prefetch_related('items__product')
-    
-    if request.GET.get('today') == '1':
+
+    if request.GET.get('start_date') == today:
         reservations = reservations.filter(rent_start_date=today)
     
+
     total_pending = Invoice.objects.filter(
         status=InvoiceStatus.PENDING,
         invoice_type=InvoiceType.RENT

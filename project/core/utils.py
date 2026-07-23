@@ -8,7 +8,7 @@ def get_today_reservations_count():
     
     count = Invoice.objects.filter(
         invoice_type='rent', 
-        status__in=InvoiceStatus.PENDING,
+        status=InvoiceStatus.PENDING,
         rent_start_date=today
     ).count()
     
