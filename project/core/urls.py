@@ -83,7 +83,7 @@ urlpatterns = [
     
     path('hr/monthly/<int:employee_id>/payment/', monthly_salary_payment, name='monthly_salary_payment'),
     path('hr/monthly/<int:employee_id>/statement/', monthly_salary_statement, name='monthly_salary_statement'),
-    
+    path('employees-performance/', employees_performance, name='employees_performance'),
 
 ]
 

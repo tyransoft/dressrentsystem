@@ -1055,7 +1055,7 @@ def create_invoice(request):
             invoice = Invoice()
             invoice.invoice_number = invoice.generate_invoice_number()
             invoice.invoice_type = invoice_type
-            
+            invoice.created_by=request.user 
             customer_id = data.get('customer_id')
             is_cash_customer = data.get('is_cash_customer', '0') == '1'
             
@@ -1929,3 +1929,63 @@ def expense_category_add(request):
     return render(request, 'expense_category_form.html', {'form': form})
 
 
+
+@login_required
+def employees_performance(request):
+    if not request.user.can_see_all_data():
+        messages.error(request, 'ليس لديك صلاحية لعرض هذه الصفحة')
+        return redirect('statistics')
+
+    employees = CustomUser.objects.filter(role=Role.EMPLOYEE).prefetch_related('invoices')
+
+    filter_type = request.GET.get('filter_type') 
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+    
+    start_date = None
+    end_date = None
+    
+    today = timezone.now().date()
+    
+    if filter_type == 'today':
+        start_date = today
+        end_date = today
+    elif filter_type == 'month':
+        start_date = today.replace(day=1)
+        end_date = today
+    elif filter_type == 'year':
+        start_date = today.replace(month=1, day=1)
+        end_date = today
+    elif filter_type == 'custom' and start_date_str and end_date_str:
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            start_date = None
+            end_date = None
+
+    employee_data = []
+    total_income_all = 0
+    total_invoices_all = 0
+
+    for emp in employees:
+        total = emp.get_invoices_total(start_date, end_date)
+        count = emp.get_invoices_count(start_date, end_date)
+        employee_data.append({
+            'user': emp,
+            'total_income': total,
+            'invoice_count': count,
+        })
+        total_income_all += total
+        total_invoices_all += count
+
+    context = {
+        'employee_data': employee_data,
+        'filter_type': filter_type,
+        'start_date': start_date_str if filter_type == 'custom' else start_date,
+        'end_date': end_date_str if filter_type == 'custom' else end_date,
+        'total_income_all': total_income_all,
+        'total_invoices_all': total_invoices_all,
+        'today': today,
+    }
+    return render(request, 'employees_performance.html', context)

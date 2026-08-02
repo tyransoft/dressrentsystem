@@ -14,6 +14,7 @@ from io import BytesIO
 from django.conf import settings
 from django.core.files import File
 from django.db import models
+from .models import *
 
 
 class Role(models.TextChoices):
@@ -47,8 +48,39 @@ class CustomUser(AbstractUser):
 
     def is_employee(self):
         return self.role == Role.EMPLOYEE
+    
+    def get_invoices_total(self, start_date=None, end_date=None):
+        qs = Invoice.objects.filter(invoice_type=InvoiceType.RENT)
+        if start_date:
+            qs = qs.filter(created_at__date__gte=start_date)
+        if end_date:
+            qs = qs.filter(created_at__date__lte=end_date)
+        result = qs.aggregate(total=Sum('total_amount'))['total']
+        return result or 0
 
+    def get_invoices_count(self, start_date=None, end_date=None):
+        qs = Invoice.objects.filter(invoice_type=InvoiceType.RENT)
+        if start_date:
+            qs = qs.filter(created_at__date__gte=start_date)
+        if end_date:
+            qs = qs.filter(created_at__date__lte=end_date)
+        return qs.count()
 
+    def get_today_income(self):
+        today = timezone.now().date()
+        return self.get_invoices_total(today, today)
+
+    def get_month_income(self):
+        today = timezone.now()
+        start = today.replace(day=1).date()
+        end = today.date()
+        return self.get_invoices_total(start, end)
+
+    def get_year_income(self):
+        today = timezone.now()
+        start = today.replace(month=1, day=1).date()
+        end = today.date()
+        return self.get_invoices_total(start, end)
 class Category(models.Model):
     name = models.CharField(max_length=200, verbose_name='اسم الفئة')
     is_active = models.BooleanField(default=True)
@@ -357,7 +389,14 @@ class Invoice(models.Model):
     notes = models.TextField(blank=True, verbose_name='ملاحظات')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
+    created_by = models.ForeignKey(
+        CustomUser, 
+        on_delete=models.PROTECT, 
+        null=True, 
+        blank=True, 
+        related_name='invoices', 
+        verbose_name='منشئ الفاتورة'
+    )
     class Meta:
         verbose_name = 'فاتورة'
         verbose_name_plural = 'الفواتير'

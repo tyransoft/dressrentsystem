@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}أداء الموظفين{% endblock %}
+{% block page_title %}أداء الموظفين والمبيعات{% endblock %}
+
+{% block content %}
+<style>
+.performance-container{max-width:1400px;margin:0 auto;padding:10px 15px 30px;}
+.filter-bar{background:#fff;border-radius:12px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.06);display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px;}
+.filter-bar .filter-group{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.filter-bar .filter-btn{padding:6px 16px;border-radius:8px;border:1.5px solid #eaecf0;background:#fff;color:#374151;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;text-decoration:none;}
+.filter-bar .filter-btn:hover{background:#f8fafc;}
+.filter-bar .filter-btn.active{background:#D4AF37;border-color:#D4AF37;color:#fff;}
+.filter-bar .filter-btn i{margin-left:4px;}
+.filter-bar input[type="date"]{padding:6px 10px;border:1.5px solid #eaecf0;border-radius:8px;font-size:13px;outline:none;}
+.filter-bar input[type="date"]:focus{border-color:#D4AF37;}
+.filter-bar .btn-primary{background:#D4AF37;color:#fff;border:none;padding:6px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;}
+.filter-bar .btn-primary:hover{background:#E6C76A;}
+
+.stats-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:15px;margin-bottom:20px;}
+.stat-box{background:#fff;border-radius:12px;padding:14px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.06);text-align:center;}
+.stat-box .stat-number{font-size:28px;font-weight:800;color:#1a2236;}
+.stat-box .stat-number.gold{color:#D4AF37;}
+.stat-box .stat-label{font-size:13px;color:#6b7280;margin-top:4px;}
+
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);}
+.performance-table{width:100%;border-collapse:collapse;font-size:14px;min-width:500px;}
+.performance-table th{background:#f8fafc;padding:12px 16px;text-align:right;font-weight:700;color:#4b5563;font-size:12px;text-transform:uppercase;border-bottom:2px solid #eaecf0;}
+.performance-table td{padding:12px 16px;border-bottom:1px solid #f1f3f5;vertical-align:middle;}
+.performance-table tbody tr:hover{background:#fafbfc;}
+.performance-table .user-cell{display:flex;align-items:center;gap:12px;}
+.performance-table .user-avatar{width:40px;height:40px;border-radius:50%;background:#D4AF37;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0;}
+.performance-table .user-name{font-weight:600;color:#1a2236;}
+.performance-table .income{font-weight:700;color:#D4AF37;}
+.performance-table .count{font-weight:600;color:#1a2236;}
+
+.empty-state{text-align:center;padding:40px 20px;color:#9ca3af;}
+
+.mobile-cards{display:none;padding:12px;}
+.employee-card{background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:10px;border:1px solid #eaecf0;}
+.employee-card .ec-header{display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+.employee-card .ec-avatar{width:40px;height:40px;border-radius:50%;background:#D4AF37;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;}
+.employee-card .ec-name{font-weight:700;font-size:15px;color:#1a2236;}
+.employee-card .ec-details{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;}
+.employee-card .ec-item{display:flex;justify-content:space-between;padding:4px 0;font-size:13px;}
+.employee-card .ec-item .label{color:#6b7280;}
+.employee-card .ec-item .value.income{color:#D4AF37;font-weight:700;}
+
+@media(max-width:768px){
+    .filter-bar{flex-direction:column;align-items:stretch;padding:12px 14px;}
+    .filter-bar .filter-group{flex-wrap:wrap;justify-content:center;}
+    .filter-bar .filter-group .filter-btn{flex:1;text-align:center;min-width:60px;}
+    .filter-bar input[type="date"]{width:100%;}
+    .stats-summary{grid-template-columns:repeat(2,1fr);}
+    .performance-table{display:none;}
+    .mobile-cards{display:block !important;}
+}
+
+@media(max-width:480px){
+    .stats-summary{grid-template-columns:1fr;}
+    .filter-bar .filter-group .filter-btn{font-size:12px;padding:4px 10px;}
+    .employee-card .ec-details{grid-template-columns:1fr;}
+}
+</style>
+
+<div class="performance-container">
+
+    <div class="filter-bar">
+        <div class="filter-group">
+            <a href="?filter_type=today" class="filter-btn {% if filter_type == 'today' %}active{% endif %}">
+                <i class="fa-regular fa-calendar-day"></i> اليوم
+            </a>
+            <a href="?filter_type=month" class="filter-btn {% if filter_type == 'month' %}active{% endif %}">
+                <i class="fa-regular fa-calendar"></i> هذا الشهر
+            </a>
+            <a href="?filter_type=year" class="filter-btn {% if filter_type == 'year' %}active{% endif %}">
+                <i class="fa-regular fa-calendar"></i> هذه السنة
+            </a>
+            <a href="?filter_type=custom" class="filter-btn {% if filter_type == 'custom' %}active{% endif %}">
+                <i class="fa-regular fa-calendar-plus"></i> مخصص
+            </a>
+        </div>
+        <div class="filter-group" style="flex:1;gap:6px;">
+            <input type="date" id="start_date" value="{{ start_date|date:'Y-m-d' }}" placeholder="من">
+            <input type="date" id="end_date" value="{{ end_date|date:'Y-m-d' }}" placeholder="إلى">
+            <button class="btn-primary" onclick="applyCustomFilter()">تطبيق</button>
+            <a href="{% url 'employees_performance' %}" class="filter-btn" style="border-color:#dc2626;color:#dc2626;">
+                <i class="fa-solid fa-times"></i> إعادة
+            </a>
+        </div>
+    </div>
+
+    <div class="stats-summary">
+        <div class="stat-box">
+            <div class="stat-number">{{ total_income_all|floatformat:0|intcomma }}</div>
+            <div class="stat-label">إجمالي الدخل</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-number gold">{{ total_invoices_all }}</div>
+            <div class="stat-label">إجمالي الفواتير</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-number">{{ employee_data|length }}</div>
+            <div class="stat-label">عدد الموظفين</div>
+        </div>
+        {% if filter_type == 'today' %}
+        <div class="stat-box" style="background:#dbeafe;border-color:#3b82f6;">
+            <div class="stat-number" style="color:#1e40af;">{{ today|date:'Y-m-d' }}</div>
+            <div class="stat-label">تاريخ اليوم</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="table-wrap">
+        <table class="performance-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>الموظف</th>
+                    <th>عدد الفواتير</th>
+                    <th>إجمالي الدخل</th>
+                    <th>متوسط الفاتورة</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for data in employee_data %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>
+                        <div class="user-cell">
+                            <div class="user-avatar">{{ data.user.first_name|first|default:data.user.username|first }}</div>
+                            <span class="user-name">{{ data.user.get_full_name|default:data.user.username }}</span>
+                        </div>
+                    </td>
+                    <td class="count">{{ data.invoice_count }}</td>
+                    <td class="income">{{ data.total_income|floatformat:2|intcomma }}</td>
+                    <td>
+                        {% if data.invoice_count > 0 %}
+                        {{ data.total_income|divisibleby:data.invoice_count|floatformat:2|intcomma }}
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5">
+                        <div class="empty-state">
+                            <i class="fa-regular fa-user"></i>
+                            <h4>لا يوجد موظفين</h4>
+                            <p>لم يتم إضافة أي موظفين حتى الآن</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mobile-cards">
+        {% for data in employee_data %}
+        <div class="employee-card">
+            <div class="ec-header">
+                <div class="ec-avatar">{{ data.user.first_name|first|default:data.user.username|first }}</div>
+                <span class="ec-name">{{ data.user.get_full_name|default:data.user.username }}</span>
+            </div>
+            <div class="ec-details">
+                <div class="ec-item"><span class="label">عدد الفواتير</span><span>{{ data.invoice_count }}</span></div>
+                <div class="ec-item"><span class="label">إجمالي الدخل</span><span class="value income">{{ data.total_income|floatformat:2|intcomma }}</span></div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <i class="fa-regular fa-user"></i>
+            <h4>لا يوجد موظفين</h4>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<script>
+function applyCustomFilter() {
+    var start = document.getElementById('start_date').value;
+    var end = document.getElementById('end_date').value;
+    if (!start || !end) {
+        alert('يرجى اختيار تاريخ البداية والنهاية');
+        return;
+    }
+    if (start > end) {
+        alert('تاريخ البداية يجب أن يكون قبل تاريخ النهاية');
+        return;
+    }
+    window.location.href = '?filter_type=custom&start_date=' + start + '&end_date=' + end;
+}
+
+{% if filter_type == 'custom' %}
+document.getElementById('start_date').value = '{{ start_date|date:"Y-m-d" }}';
+document.getElementById('end_date').value = '{{ end_date|date:"Y-m-d" }}';
+{% endif %}
+</script>
+{% endblock %}

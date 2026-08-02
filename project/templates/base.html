@@ -274,7 +274,6 @@ body {
     color: #fff;
 }
 
-/* ===== MAIN CONTENT ===== */
 .main-content {
     flex: 1;
     display: flex;
@@ -985,6 +984,9 @@ textarea.form-control { resize: vertical; min-height: 90px; }
         {% if user.can_see_all_data %}
         <a href="{% url 'users_list' %}" class="section-btn">
             <i class="fa-solid fa-user-group nav-icon"></i> المستخدمون
+        </a>
+         <a href="{% url 'employees_performance' %}" class="section-btn">
+            <i class="fa-solid fa-user-group nav-icon"></i> دخل المستخدمين
         </a>
         {% endif %}
         
