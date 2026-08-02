@@ -51,6 +51,7 @@ urlpatterns = [
     path('invoice/add-penalty/',add_penalty, name='add_penalty'),
     path('invoices/cancel/<int:invoice_id>/',cancel_invoice, name='cancel_invoice'),
     path('invoices/print-receipt/<int:invoice_id>/',print_receipt, name='print_receipt'),
+    path('employees-performance/', employees_performance, name='employees_performance'),
 
     path('dashboard/', statistics, name='statistics'),
 
@@ -83,7 +84,6 @@ urlpatterns = [
     
     path('hr/monthly/<int:employee_id>/payment/', monthly_salary_payment, name='monthly_salary_payment'),
     path('hr/monthly/<int:employee_id>/statement/', monthly_salary_statement, name='monthly_salary_statement'),
-    path('employees-performance/', employees_performance, name='employees_performance'),
 
 ]
 
