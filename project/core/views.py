@@ -1936,7 +1936,7 @@ def employees_performance(request):
         messages.error(request, 'ليس لديك صلاحية لعرض هذه الصفحة')
         return redirect('statistics')
 
-    employees = CustomUser.objects.filter(role=Role.EMPLOYEE).prefetch_related('invoices')
+    employees = CustomUser.objects.all().prefetch_related('invoices')
 
     filter_type = request.GET.get('filter_type') 
     start_date_str = request.GET.get('start_date')
