@@ -755,8 +755,8 @@ data-search="{{ product.name|lower }} {{ product.barcode|default:'' }}">
 </div>
 
 <div class="form-group">
-<label class="form-label">ملاحظات</label>
-<textarea class="form-control" id="modal-notes" rows="2"></textarea>
+    <label class="form-label">ملاحظات <span style="color:red;">*</span></label>
+    <textarea class="form-control" id="modal-notes" rows="2" required></textarea>
 </div>
 
 <div class="order-summary-box" id="order-final-totals" style="margin-top:10px;"></div>
@@ -1217,6 +1217,11 @@ var isCash = document.getElementById('modal-is-cash').checked;
 if (!isCash && !selectedCustomer) {
 showToast('الرجاء اختيار عميل او تحديد عميل نقدي', 'error');
 return;
+}
+var notes = document.getElementById('modal-notes').value.trim();
+if (!notes) {
+    showToast('الرجاء ادخال ملاحظة', 'error');
+    return;
 }
 if (Object.keys(cart).length === 0) {
 showToast('السلة فارغة', 'error');

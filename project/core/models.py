@@ -386,7 +386,7 @@ class Invoice(models.Model):
     identity_verified = models.BooleanField(default=True)
     identity_verified_return = models.BooleanField(default=False)   
     status = models.CharField(max_length=20, choices=InvoiceStatus.choices, default=InvoiceStatus.PENDING, verbose_name='حالة الفاتورة') 
-    notes = models.TextField(verbose_name='ملاحظات')
+    notes = models.TextField(blank=True,verbose_name='ملاحظات')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
