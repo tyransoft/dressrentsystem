@@ -75,6 +75,8 @@
                 <a href="{% url 'products_detail' product.pk %}" class="btn btn-outline btn-icon btn-sm">عرض</a>
                 {% if user.is_main_admin %}
                 <a href="{% url 'products_edit' product.pk %}" class="btn btn-outline btn-icon btn-sm">تعديل</a>
+                <a href="{% url 'products_delete' product.pk %}" class="btn btn-outline btn-sm">حذف</a>
+
                 {% endif %}
               </div>
             </td>
@@ -98,7 +100,10 @@
         <div class="pc-actions">
           <a href="{% url 'products_detail' product.pk %}" class="btn btn-outline btn-sm">عرض</a>
           {% if user.is_mian_admin%}
+          
           <a href="{% url 'products_edit' product.pk %}" class="btn btn-outline btn-sm">تعديل</a>
+          <a href="{% url 'products_delete' product.pk %}" class="btn btn-outline btn-sm">حذف</a>
+
           {% endif %}
         </div>
       </div>

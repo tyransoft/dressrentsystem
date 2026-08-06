@@ -228,9 +228,10 @@ def product_detail(request, pk):
 def product_delete(request, pk):
     if not request.user.is_main_admin():
         return JsonResponse({'error': 'غير مصرح'}, status=403)
+
     product = get_object_or_404(Product, pk=pk)
-    product.is_active = False
-    product.save()
+    product.delete()
+
     return JsonResponse({'success': True})
 
 
