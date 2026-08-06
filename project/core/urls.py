@@ -19,6 +19,7 @@ urlpatterns = [
     path('products/<int:pk>/delete/', product_delete, name='products_delete'),
     path('categories/', category_list, name='categories'),
     path('categories/create/', category_create, name='category_create'),
+    path('category/edit/<int:category_id>/', category_edit, name='category_edit'),
     path('products/search/', product_search_ajax, name='search_ajax'),
     path('products/bulk-price-update/', products_bulk_price_update, name='products_bulk_price_update'),
     path('api/check-product-availability/', check_product_availability_api, name='check_product_availability'),

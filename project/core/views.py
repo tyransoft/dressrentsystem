@@ -255,6 +255,28 @@ def category_create(request):
         form = CategoryForm()
     return render(request, 'products/category_form.html', {'form': form, 'title': 'إضافة فئة جديدة'})
 
+@login_required
+def category_edit(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+    
+    if not request.user.is_main_admin():
+        messages.error(request, 'ليس لديك صلاحية لتعديل الفئات')
+        return redirect('categories')
+    
+    if request.method == 'POST':
+        form = CategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'تم تحديث الفئة بنجاح')
+            return redirect('categories')
+    else:
+        form = CategoryForm(instance=category)
+    
+    return render(request, 'products/category_form.html', {
+        'form': form, 
+        'title': 'تعديل الفئة',
+        'category': category
+    })
 
 @login_required
 def product_search_ajax(request):

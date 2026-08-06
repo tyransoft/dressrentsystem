@@ -14,13 +14,18 @@
   <div class="card-body" style="padding:0;">
     <div class="table-responsive">
       <table class="erp-table">
-        <thead><tr><th>اسم الفئة</th><th>عدد الفساتين</th><th>الحالة</th></tr></thead>
+        <thead><tr><th>اسم الفئة</th><th>عدد الفساتين</th><th>الحالة</th><tr>الاجراء</th></tr></thead>
         <tbody>
           {% for cat in categories %}
           <tr>
             <td class="fw-600">{{ cat.name }}</td>
             <td>{{ cat.products.count }}</td>
             <td>{% if cat.is_active %}<span class="badge badge-success">نشطة</span>{% else %}<span class="badge badge-danger">معطلة</span>{% endif %}</td>
+            <td>
+              <a href="{% url 'category_edit' cat.id %}" class="btn btn-sm btn-primary">
+                <i class="fas fa-edit"></i> تعديل
+              </a>
+            </td>         
           </tr>
           {% empty %}
           <tr><td colspan="4" style="text-align:center;padding:40px;"><h5>لا توجد فئات</h5></td></tr>
