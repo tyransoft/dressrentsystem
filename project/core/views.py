@@ -1485,7 +1485,7 @@ def statistics(request):
         })
     
     total_cost_of_goods_sold = total_product_cost
-    total_operating_expenses = total_expenses + total_salaries_paid
+    total_operating_expenses = total_expenses 
     total_net_profit = total_profit - total_operating_expenses
     total_gross_profit = total_profit
     
@@ -2018,7 +2018,7 @@ def expense_delete(request, pk):
         expense.delete()
         messages.success(request, 'تم حذف المصروف')
         return redirect('expense_list')
-    return render(request, 'confirm_delete.html', {'object': expense})
+    return render(request, 'confirm_delete.html', {'expense': expense})
 
 
 @login_required
