@@ -36,6 +36,7 @@ urlpatterns = [
     path('repairs/<int:pk>/edit/', repair_edit, name='repair_edit'),
     path('repairs/<int:pk>/delete/', repair_delete, name='repair_delete'),
     path('repairs/<int:pk>/finish/', repair_finish, name='repair_finish'),
+    path('repairs/<int:pk>/payment/', repair_payment, name='repair_payment'),
 
     path('customers/', customer_list, name='customers_list'),
     path('customers/create/', customer_create, name='customers_create'),
@@ -73,6 +74,8 @@ urlpatterns = [
     path('expenses/<int:pk>/delete/',expense_delete, name='expense_delete'),
     path('expense-categories/',expense_category_list, name='expense_category_list'),
     path('expense-categories/add/',expense_category_add, name='expense_category_add'),
+    path('expense-category/<int:pk>/edit/', expense_category_edit, name='expense_category_edit'),
+    path('expense/print/', expense_print, name='expense_print'),
 
     path('hr/employees/', employee_list, name='employee_list'),
     path('hr/employees/create/', employee_create, name='employee_create'),
@@ -86,6 +89,21 @@ urlpatterns = [
     path('hr/monthly/<int:employee_id>/payment/', monthly_salary_payment, name='monthly_salary_payment'),
     path('hr/monthly/<int:employee_id>/statement/', monthly_salary_statement, name='monthly_salary_statement'),
 
+    path('providers/', provider_list, name='provider_list'),
+    path('providers/create/', provider_create, name='provider_create'),
+    path('providers/<int:pk>/edit/', provider_edit, name='provider_edit'),
+    path('providers/<int:pk>/', provider_detail, name='provider_detail'),
+    path('providers/<int:pk>/delete/', provider_delete, name='provider_delete'),
+    
+    path('providers/<int:provider_pk>/payment/create/', provider_payment_create, name='provider_payment_create'),
+    path('providers/payments/', provider_payment_list, name='provider_payment_list'),
+    path('providers/payment/<int:pk>/delete/', provider_payment_delete, name='provider_payment_delete'),
+
+    path('product-old-revenue/', product_old_revenue_list, name='product_old_revenue_list'),
+    path('product-old-revenue/add/', product_old_revenue_add, name='product_old_revenue_add'),
+    path('product-old-revenue/<int:pk>/edit/', product_old_revenue_edit, name='product_old_revenue_edit'),
+    path('product-old-revenue/<int:pk>/delete/', product_old_revenue_delete, name='product_old_revenue_delete'),
+    path('product-old-revenue/<int:pk>/', product_old_revenue_detail, name='product_old_revenue_detail'),
 ]
 
 

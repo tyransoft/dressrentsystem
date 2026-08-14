@@ -168,40 +168,29 @@ class PaymentMethodForm(forms.ModelForm):
 class RepairAndCleanForm(forms.ModelForm):
     class Meta:
         model = RepairAndClean
-        fields = ['product', 'kind', 'status', 'start_date', 'finish_at', 'total_cost', 'notes']
+        fields = ['product', 'kind', 'status', 'provider', 'start_date', 'finish_at', 'total_cost', 'paid_amount', 'notes']
         widgets = {
-            'product': forms.Select(attrs={'class': 'form-select'}),
-            'kind': forms.Select(attrs={'class': 'form-select'}),
-            'status': forms.Select(attrs={'class': 'form-select'}),
-            'start_date': forms.DateInput(attrs={
-                'class': 'form-control',
-                'type': 'date'
-            }),
-            'finish_at': forms.DateInput(attrs={
-                'class': 'form-control',
-                'type': 'date'
-            }),
-            'total_cost': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.01',
-                'min': '0'
-            }),
-            'notes': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 3,
-                'placeholder': 'أضف ملاحظات إضافية...'
-            }),
+            'product': forms.Select(attrs={'class': 'form-control'}),
+            'kind': forms.Select(attrs={'class': 'form-control'}),
+            'status': forms.Select(attrs={'class': 'form-control'}),
+            'provider': forms.Select(attrs={'class': 'form-control'}),
+            'start_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'finish_at': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'total_cost': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'paid_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
         labels = {
             'product': 'الفستان',
             'kind': 'نوع الصيانة',
             'status': 'الحالة',
-            'start_date': 'تاريخ بداية الصيانة',
-            'finish_at': 'تاريخ انتهاء الصيانة',
+            'provider': 'مزود الخدمة',
+            'start_date': 'تاريخ البداية',
+            'finish_at': 'تاريخ الانتهاء',
             'total_cost': 'تكلفة الصيانة',
+            'paid_amount': 'المبلغ المدفوع',
             'notes': 'ملاحظات',
         }
-    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         today = timezone.now().date()
@@ -317,4 +306,81 @@ class EmployeeForm(forms.ModelForm):
         return cleaned_data
 
 
-                                    
+
+class ProviderForm(forms.ModelForm):
+    class Meta:
+        model = repairandcleanprovider
+        fields = ['name', 'phone', 'address', 'notes']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'أدخل اسم مزود الخدمة'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'أدخل رقم الهاتف'}),
+            'address': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'أدخل العنوان'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'ملاحظات إضافية'}),
+        }
+        labels = {
+            'name': 'اسم مزود الخدمة',
+            'phone': 'رقم الهاتف',
+            'address': 'العنوان',
+            'notes': 'ملاحظات',
+        }
+
+
+class ProviderPaymentForm(forms.ModelForm):
+    class Meta:
+        model = ProviderPayment
+        fields = ['service', 'amount', 'payment_date', 'status', 'notes']
+        widgets = {
+            'service': forms.Select(attrs={'class': 'form-control'}),
+            'amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'payment_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'status': forms.Select(attrs={'class': 'form-control'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'ملاحظات'}),
+        }
+        labels = {
+            'service': 'الخدمة',
+            'amount': 'المبلغ',
+            'payment_date': 'تاريخ الدفع',
+            'status': 'الحالة',
+            'notes': 'ملاحظات',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['service'].queryset = RepairAndClean.objects.filter(status='finished')
+        self.fields['service'].required = False
+        self.fields['service'].empty_label = "بدون خدمة (دفعة عامة)"
+        self.fields['service'].label_from_instance = lambda obj: f"{obj.product.name} - {obj.get_kind_display()} - {obj.total_cost} د.ل"
+class RepairPaymentForm(forms.ModelForm):
+    class Meta:
+        model = RepairAndClean
+        fields = ['paid_amount']
+        widgets = {
+            'paid_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+        }
+        labels = {
+            'paid_amount': 'المبلغ المدفوع',
+        }
+
+
+
+class ProductOldRevenueForm(forms.ModelForm):
+    class Meta:
+        model = ProductOldRevenue
+        fields = ['product', 'amount', 'date', 'notes']
+        widgets = {
+            'product': forms.Select(attrs={'class': 'form-control'}),
+            'amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'ملاحظات إضافية'}),
+        }
+        labels = {
+            'product': 'الفستان',
+            'amount': 'المبلغ',
+            'date': 'التاريخ',
+            'notes': 'ملاحظات',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['product'].queryset = Product.objects.all().order_by('name')
+        self.fields['product'].label_from_instance = lambda obj: f"{obj.name} - {obj.barcode}"        

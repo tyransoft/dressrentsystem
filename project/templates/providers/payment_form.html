@@ -1,0 +1,294 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block page_title %}{{ title }}{% endblock %}
+{% block mobile_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<style>
+.page-container {
+    padding: 10px 15px 30px 15px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+.page-header {
+    margin-bottom: 20px;
+}
+.page-header h5 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+.page-header .provider-name {
+    color: #D4AF37;
+}
+.form-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.form-group {
+    margin-bottom: 18px;
+}
+.form-group label {
+    display: block;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+.form-group .form-control {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.3s;
+    background: #fff;
+    color: #1e293b;
+}
+.form-group .form-control:focus {
+    border-color: #D4AF37;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+}
+.form-group .form-control::placeholder {
+    color: #9ca3af;
+}
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+.btn-submit {
+    background: #D4AF37;
+    color: #fff;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.btn-submit:hover {
+    background: #B8960F;
+}
+.btn-cancel {
+    background: #f3f4f6;
+    color: #4b5563;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn-cancel:hover {
+    background: #e5e7eb;
+}
+.required-star {
+    color: #dc2626;
+}
+.help-text {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: 4px;
+}
+.service-info {
+    background: #f8fafc;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-top: 5px;
+    display: none;
+}
+.service-info .info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 0;
+    font-size: 13px;
+}
+.service-info .info-row .label {
+    color: #64748b;
+}
+.service-info .info-row .value {
+    font-weight: 600;
+}
+.service-info .info-row .value.remaining {
+    color: #dc2626;
+}
+
+@media (max-width: 480px) {
+    .page-container {
+        padding: 5px 8px 20px 8px;
+    }
+    .form-card {
+        padding: 15px;
+    }
+    .form-actions {
+        flex-direction: column;
+    }
+    .form-actions .btn-submit,
+    .form-actions .btn-cancel {
+        text-align: center;
+        width: 100%;
+    }
+}
+</style>
+
+<div class="page-container">
+    <div class="page-header">
+        <h5>
+            {{ title }}
+            <span class="provider-name">{{ provider.name }}</span>
+        </h5>
+    </div>
+
+    <div class="form-card">
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.service.id_for_label }}">الخدمة</label>
+                {{ form.service }}
+                {% if form.service.errors %}
+                <div style="color: #dc2626; font-size: 12px; margin-top: 4px;">
+                    {{ form.service.errors }}
+                </div>
+                {% endif %}
+                
+                <div class="service-info" id="serviceInfo">
+                    <div class="info-row">
+                        <span class="label">الفستان</span>
+                        <span class="value" id="serviceProduct">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">نوع الخدمة</span>
+                        <span class="value" id="serviceKind">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">التكلفة الإجمالية</span>
+                        <span class="value" id="serviceTotal">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">المدفوع</span>
+                        <span class="value" id="servicePaid">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">المتبقي</span>
+                        <span class="value remaining" id="serviceRemaining">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.amount.id_for_label }}">
+                    المبلغ <span class="required-star">*</span>
+                </label>
+                {{ form.amount }}
+                {% if form.amount.errors %}
+                <div style="color: #dc2626; font-size: 12px; margin-top: 4px;">
+                    {{ form.amount.errors }}
+                </div>
+                {% endif %}
+                <div class="help-text" id="maxAmountHelp">الحد الأقصى للدفع: المبلغ المتبقي للخدمة المختارة</div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.payment_date.id_for_label }}">
+                    تاريخ الدفع <span class="required-star">*</span>
+                </label>
+                {{ form.payment_date }}
+                {% if form.payment_date.errors %}
+                <div style="color: #dc2626; font-size: 12px; margin-top: 4px;">
+                    {{ form.payment_date.errors }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.status.id_for_label }}">
+                    الحالة <span class="required-star">*</span>
+                </label>
+                {{ form.status }}
+                {% if form.status.errors %}
+                <div style="color: #dc2626; font-size: 12px; margin-top: 4px;">
+                    {{ form.status.errors }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.notes.id_for_label }}">ملاحظات</label>
+                {{ form.notes }}
+                {% if form.notes.errors %}
+                <div style="color: #dc2626; font-size: 12px; margin-top: 4px;">
+                    {{ form.notes.errors }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-submit">حفظ</button>
+                <a href="{% url 'provider_detail' provider.pk %}" class="btn-cancel">إلغاء</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    const servicesData = {
+        {% for service in provider.services.all %}
+        "{{ service.id }}": {
+            product: "{{ service.product.name }}",
+            kind: "{{ service.get_kind_display }}",
+            total: {{ service.total_cost }},
+            paid: {{ service.paid_amount }},
+            remaining: {{ service.get_remaining_amount }}
+        },
+        {% endfor %}
+    };
+    
+    $('#id_service').change(function() {
+        const serviceId = $(this).val();
+        const infoBox = $('#serviceInfo');
+        const maxAmountHelp = $('#maxAmountHelp');
+        
+        if (serviceId && servicesData[serviceId]) {
+            const data = servicesData[serviceId];
+            infoBox.show();
+            $('#serviceProduct').text(data.product);
+            $('#serviceKind').text(data.kind);
+            $('#serviceTotal').text(data.total + ' د.ل');
+            $('#servicePaid').text(data.paid + ' د.ل');
+            $('#serviceRemaining').text(data.remaining + ' د.ل');
+            maxAmountHelp.text('الحد الأقصى للدفع: ' + data.remaining + ' د.ل');
+            
+            $('#id_amount').attr('max', data.remaining);
+        } else {
+            infoBox.hide();
+            maxAmountHelp.text('الحد الأقصى للدفع: المبلغ المتبقي للخدمة المختارة');
+            $('#id_amount').removeAttr('max');
+        }
+    });
+    
+    $('#id_amount').on('input', function() {
+        const serviceId = $('#id_service').val();
+        if (serviceId && servicesData[serviceId]) {
+            const maxAmount = servicesData[serviceId].remaining;
+            const value = parseFloat($(this).val()) || 0;
+            if (value > maxAmount) {
+                $(this).val(maxAmount.toFixed(2));
+                alert('المبلغ لا يمكن أن يتجاوز المبلغ المتبقي للخدمة (' + maxAmount + ' د.ل)');
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

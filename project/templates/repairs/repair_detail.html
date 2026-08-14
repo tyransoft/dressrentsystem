@@ -10,6 +10,75 @@
   .detail-actions{flex-direction:column;}
   .detail-actions a,.detail-actions button{width:100%;}
 }
+
+.payment-summary-detail {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin: 10px 0;
+}
+
+.payment-summary-detail .summary-card {
+    background: #f8fafc;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border-right: 4px solid #D4AF37;
+}
+
+.payment-summary-detail .summary-card .amount {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.payment-summary-detail .summary-card .amount.paid {
+    color: #16a34a;
+}
+
+.payment-summary-detail .summary-card .amount.remaining {
+    color: #dc2626;
+}
+
+.payment-summary-detail .summary-card .amount.partial {
+    color: #f59e0b;
+}
+
+.payment-summary-detail .summary-card .label {
+    font-size: 12px;
+    color: #64748b;
+    display: block;
+    margin-top: 2px;
+}
+
+.payment-summary-detail .summary-card.card-total {
+    border-right-color: #3b82f6;
+}
+
+.payment-summary-detail .summary-card.card-paid {
+    border-right-color: #16a34a;
+}
+
+.payment-summary-detail .summary-card.card-remaining {
+    border-right-color: #dc2626;
+}
+
+.payment-summary-detail .summary-card.card-status {
+    border-right-color: #8b5cf6;
+}
+
+.badge-payment-paid {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.badge-payment-partial {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.badge-payment-unpaid {
+    background: #fef2f2;
+    color: #991b1b;
+}
 </style>
 
 <div class="card">
@@ -35,6 +104,43 @@
       <div><span class="text-muted">تاريخ الانتهاء</span><br><strong>{{ repair.finish_at|date:"Y-m-d" }}</strong></div>
     </div>
     <hr>
+    
+    <div class="payment-summary-detail">
+      <div class="summary-card card-total">
+        <span class="amount">{{ repair.total_cost|floatformat:0 }} د.ل</span>
+        <span class="label">إجمالي التكلفة</span>
+      </div>
+      <div class="summary-card card-paid">
+        <span class="amount paid">{{ repair.paid_amount|floatformat:0 }} د.ل</span>
+        <span class="label">المبلغ المدفوع</span>
+      </div>
+      <div class="summary-card card-remaining">
+        <span class="amount remaining">{{ repair.get_remaining_amount|floatformat:0 }} د.ل</span>
+        <span class="label">المبلغ المتبقي</span>
+      </div>
+      <div class="summary-card card-status">
+        <span class="amount">
+          {% if repair.payment_status == 'paid' %}
+          <span class="badge badge-payment-paid" style="font-size:14px;padding:4px 12px;">مدفوعة بالكامل</span>
+          {% elif repair.payment_status == 'partial' %}
+          <span class="badge badge-payment-partial" style="font-size:14px;padding:4px 12px;">مدفوعة جزئياً</span>
+          {% else %}
+          <span class="badge badge-payment-unpaid" style="font-size:14px;padding:4px 12px;">غير مدفوعة</span>
+          {% endif %}
+        </span>
+        <span class="label">حالة الدفع</span>
+      </div>
+    </div>
+    
+    {% if repair.provider %}
+    <hr>
+    <div class="grid-2">
+      <div><span class="text-muted">مزود الخدمة</span><br><strong>{{ repair.provider.name }}</strong></div>
+      <div><span class="text-muted">رقم الهاتف</span><br><strong>{{ repair.provider.phone|default:'-' }}</strong></div>
+    </div>
+    {% endif %}
+    
+    <hr>
     <div class="grid-2">
       <div><span class="text-muted">تاريخ الإضافة</span><br><strong>{{ repair.created_at|date:"Y-m-d" }}</strong></div>
       <div><span class="text-muted">آخر تحديث</span><br><strong>{{ repair.updated_at|date:"Y-m-d H:i" }}</strong></div>
@@ -55,6 +161,7 @@
           <button type="submit" class="btn btn-success">تأكيد الاستلام</button>
         </form>
         {% endif %}
+        <a href="{% url 'repair_payment' repair.pk %}" class="btn btn-warning">تسجيل دفعة</a>
         <form method="post" action="{% url 'repair_delete' repair.pk %}" style="margin:0;" onsubmit="return confirm('هل أنت متأكد من حذف هذا الطلب؟');">
           {% csrf_token %}
           <button type="submit" class="btn btn-danger">حذف</button>

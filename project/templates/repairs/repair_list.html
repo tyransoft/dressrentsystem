@@ -7,7 +7,7 @@
 {% block content %}
 <style>
 .table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
-.table-wrap .erp-table{min-width:860px;width:100%;}
+.table-wrap .erp-table{min-width:960px;width:100%;}
 @media(max-width:768px){
   .card-header{flex-direction:column;align-items:stretch;}
   .btn-sm{min-height:40px;padding:8px 12px;}
@@ -26,17 +26,89 @@
 .repair-card .rc-label{color:#64748b;}
 .repair-card .rc-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
 .repair-card .rc-actions a{flex:1;min-height:40px;display:flex;align-items:center;justify-content:center;text-align:center;min-width:60px;}
+
+.badge-payment-paid {
+    background: #dcfce7;
+    color: #166534;
+}
+.badge-payment-partial {
+    background: #fef3c7;
+    color: #92400e;
+}
+.badge-payment-unpaid {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.stats-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.stats-summary .stat-box {
+    background: #f8fafc;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border-right: 4px solid #D4AF37;
+}
+
+.stats-summary .stat-box .number {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.stats-summary .stat-box .number.total {
+    color: #3b82f6;
+}
+
+.stats-summary .stat-box .number.paid {
+    color: #16a34a;
+}
+
+.stats-summary .stat-box .number.remaining {
+    color: #dc2626;
+}
+
+.stats-summary .stat-box .label {
+    font-size: 12px;
+    color: #64748b;
+    display: block;
+    margin-top: 2px;
+}
 </style>
 
 <div class="card">
   <div class="card-header">
     <span class="card-title">{{ title }}</span>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <a href="{% url 'repair_create' %}" class="btn btn-primary btn-sm">+ إضافة </a>
+      <a href="{% url 'repair_create' %}" class="btn btn-primary btn-sm">+ إضافة</a>
     </div>
   </div>
   
   <div class="card-body">
+    {% if total_stats %}
+    <div class="stats-summary">
+      <div class="stat-box">
+        <span class="number total">{{ total_stats.total_cost|floatformat:0 }} د.ل</span>
+        <span class="label">إجمالي التكلفة</span>
+      </div>
+      <div class="stat-box">
+        <span class="number paid">{{ total_stats.total_paid|floatformat:0 }} د.ل</span>
+        <span class="label">إجمالي المدفوع</span>
+      </div>
+      <div class="stat-box">
+        <span class="number remaining">{{ total_stats.total_remaining|floatformat:0 }} د.ل</span>
+        <span class="label">المتبقي للمزودين</span>
+      </div>
+      <div class="stat-box">
+        <span class="number">{{ total_stats.unpaid_count }}</span>
+        <span class="label">خدمات غير مدفوعة</span>
+      </div>
+    </div>
+    {% endif %}
+    
     <form method="get" style="display:flex;gap:10px;flex-wrap:wrap;">
       <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="بحث باسم الفستان أو الباركود..." style="flex:1;min-width:150px;">
       
@@ -54,6 +126,13 @@
         {% endfor %}
       </select>
       
+      <select name="payment_status" class="form-select" style="min-width:130px;">
+        <option value="">حالة الدفع</option>
+        <option value="paid" {% if payment_filter == 'paid' %}selected{% endif %}>مدفوعة بالكامل</option>
+        <option value="partial" {% if payment_filter == 'partial' %}selected{% endif %}>مدفوعة جزئياً</option>
+        <option value="unpaid" {% if payment_filter == 'unpaid' %}selected{% endif %}>غير مدفوعة</option>
+      </select>
+      
       <button type="submit" class="btn btn-primary">بحث</button>
       <a href="{% url 'repair_list' %}" class="btn btn-outline">إعادة تعيين</a>
     </form>
@@ -68,8 +147,10 @@
             <th>النوع</th>
             <th>الحالة</th>
             <th>التكلفة</th>
+            <th>المدفوع</th>
+            <th>المتبقي</th>
+            <th>حالة الدفع</th>
             <th>تاريخ الانتهاء</th>
-            <th>تاريخ الإضافة</th>
             <th>الإجراءات</th>
           </tr>
         </thead>
@@ -79,20 +160,33 @@
             <td class="fw-600">{{ repair.product.name }}</td>
             <td><span class="badge {% if repair.kind == 'clean' %}badge-info{% else %}badge-warning{% endif %}">{{ repair.get_kind_display }}</span></td>
             <td><span class="badge {% if repair.status == 'finished' %}badge-success{% else %}badge-primary{% endif %}">{{ repair.get_status_display }}</span></td>
-            <td>{{ repair.total_cost|floatformat:2|intcomma }}</td>
+            <td>{{ repair.total_cost|floatformat:0|intcomma }}</td>
+            <td class="text-success">{{ repair.paid_amount|floatformat:0|intcomma }}</td>
+            <td class="{% if repair.get_remaining_amount > 0 %}text-danger{% else %}text-muted{% endif %}">
+              {{ repair.get_remaining_amount|floatformat:0|intcomma }}
+            </td>
+            <td>
+              {% if repair.payment_status == 'paid' %}
+              <span class="badge badge-payment-paid">مدفوعة</span>
+              {% elif repair.payment_status == 'partial' %}
+              <span class="badge badge-payment-partial">جزئياً</span>
+              {% else %}
+              <span class="badge badge-payment-unpaid">غير مدفوعة</span>
+              {% endif %}
+            </td>
             <td>{{ repair.finish_at|date:"Y-m-d" }}</td>
-            <td>{{ repair.created_at|date:"Y-m-d" }}</td>
             <td>
               <div style="display:flex;gap:5px;flex-wrap:wrap;">
                 <a href="{% url 'repair_detail' repair.pk %}" class="btn btn-outline btn-icon btn-sm">عرض</a>
                 {% if user.is_main_admin %}
                 <a href="{% url 'repair_edit' repair.pk %}" class="btn btn-outline btn-icon btn-sm">تعديل</a>
+                <a href="{% url 'repair_payment' repair.pk %}" class="btn btn-outline btn-icon btn-sm" style="color:#f59e0b;border-color:#f59e0b;">دفع</a>
                 {% endif %}
               </div>
             </td>
           </tr>
           {% empty %}
-          <tr><td colspan="7" class="text-center text-muted" style="padding:40px;">لا توجد طلبات صيانة</td></tr>
+          <tr><td colspan="9" class="text-center text-muted" style="padding:40px;">لا توجد طلبات صيانة</td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -104,13 +198,24 @@
         <div class="rc-title">{{ repair.product.name }}</div>
         <div class="rc-row"><span class="rc-label">النوع</span><span class="badge {% if repair.kind == 'clean' %}badge-info{% else %}badge-warning{% endif %}">{{ repair.get_kind_display }}</span></div>
         <div class="rc-row"><span class="rc-label">الحالة</span><span class="badge {% if repair.status == 'finished' %}badge-success{% else %}badge-primary{% endif %}">{{ repair.get_status_display }}</span></div>
-        <div class="rc-row"><span class="rc-label">التكلفة</span><span>{{ repair.total_cost|floatformat:2|intcomma }}</span></div>
+        <div class="rc-row"><span class="rc-label">التكلفة</span><span>{{ repair.total_cost|floatformat:0|intcomma }}</span></div>
+        <div class="rc-row"><span class="rc-label">المدفوع</span><span class="text-success">{{ repair.paid_amount|floatformat:0|intcomma }}</span></div>
+        <div class="rc-row"><span class="rc-label">المتبقي</span><span class="{% if repair.get_remaining_amount > 0 %}text-danger{% else %}text-muted{% endif %}">{{ repair.get_remaining_amount|floatformat:0|intcomma }}</span></div>
+        <div class="rc-row"><span class="rc-label">حالة الدفع</span>
+          {% if repair.payment_status == 'paid' %}
+          <span class="badge badge-payment-paid">مدفوعة</span>
+          {% elif repair.payment_status == 'partial' %}
+          <span class="badge badge-payment-partial">جزئياً</span>
+          {% else %}
+          <span class="badge badge-payment-unpaid">غير مدفوعة</span>
+          {% endif %}
+        </div>
         <div class="rc-row"><span class="rc-label">تاريخ الانتهاء</span><span>{{ repair.finish_at|date:"Y-m-d" }}</span></div>
-        <div class="rc-row"><span class="rc-label">تاريخ الإضافة</span><span>{{ repair.created_at|date:"Y-m-d" }}</span></div>
         <div class="rc-actions">
           <a href="{% url 'repair_detail' repair.pk %}" class="btn btn-outline btn-sm">عرض</a>
           {% if user.is_main_admin %}
           <a href="{% url 'repair_edit' repair.pk %}" class="btn btn-outline btn-sm">تعديل</a>
+          <a href="{% url 'repair_payment' repair.pk %}" class="btn btn-outline btn-sm" style="color:#f59e0b;border-color:#f59e0b;">دفع</a>
           {% endif %}
         </div>
       </div>
@@ -125,15 +230,15 @@
     <nav>
       <ul class="pagination" style="justify-content:center;flex-wrap:wrap;gap:5px;">
         {% if repairs.has_previous %}
-        <li><a href="?page=1{% if query %}&q={{ query }}{% endif %}{% if kind_filter %}&kind={{ kind_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-outline btn-sm">الأولى</a></li>
-        <li><a href="?page={{ repairs.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if kind_filter %}&kind={{ kind_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-outline btn-sm">السابق</a></li>
+        <li><a href="?page=1{% if query %}&q={{ query }}{% endif %}{% if kind_filter %}&kind={{ kind_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if payment_filter %}&payment_status={{ payment_filter }}{% endif %}" class="btn btn-outline btn-sm">الأولى</a></li>
+        <li><a href="?page={{ repairs.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if kind_filter %}&kind={{ kind_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if payment_filter %}&payment_status={{ payment_filter }}{% endif %}" class="btn btn-outline btn-sm">السابق</a></li>
         {% endif %}
         
         <li><span class="btn btn-primary btn-sm">صفحة {{ repairs.number }} من {{ repairs.paginator.num_pages }}</span></li>
         
         {% if repairs.has_next %}
-        <li><a href="?page={{ repairs.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if kind_filter %}&kind={{ kind_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-outline btn-sm">التالي</a></li>
-        <li><a href="?page={{ repairs.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}{% if kind_filter %}&kind={{ kind_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-outline btn-sm">الأخيرة</a></li>
+        <li><a href="?page={{ repairs.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if kind_filter %}&kind={{ kind_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if payment_filter %}&payment_status={{ payment_filter }}{% endif %}" class="btn btn-outline btn-sm">التالي</a></li>
+        <li><a href="?page={{ repairs.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}{% if kind_filter %}&kind={{ kind_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if payment_filter %}&payment_status={{ payment_filter }}{% endif %}" class="btn btn-outline btn-sm">الأخيرة</a></li>
         {% endif %}
       </ul>
     </nav>

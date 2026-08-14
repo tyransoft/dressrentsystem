@@ -1,0 +1,282 @@
+{% load humanize %}
+{% load static %}
+
+<!DOCTYPE html>
+<html dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>تقرير المصروفات</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 1.5cm;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: white;
+      color: #333;
+      font-size: 13px;
+    }
+    .print-container {
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 10px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #111;
+      padding-bottom: 12px;
+      margin-bottom: 15px;
+    }
+    .header .title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #111827;
+    }
+    .header .date {
+      font-size: 13px;
+      color: #6b7280;
+    }
+    .filter-info {
+      background: #f9fafb;
+      border-radius: 6px;
+      padding: 10px 15px;
+      margin-bottom: 15px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      font-size: 13px;
+    }
+    .filter-info .item {
+      display: flex;
+      gap: 5px;
+    }
+    .filter-info .label {
+      color: #6b7280;
+    }
+    .filter-info .value {
+      font-weight: 600;
+      color: #1e293b;
+    }
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 15px;
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      font-size: 14px;
+    }
+    .total-row .label {
+      font-weight: 600;
+      color: #4b5563;
+    }
+    .total-row .amount {
+      font-weight: 700;
+      color: #dc2626;
+      font-size: 18px;
+    }
+    .table-responsive {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    thead {
+      background: #f3f4f6;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    thead th {
+      padding: 10px 12px;
+      text-align: center;
+      font-weight: 700;
+      color: #4b5563;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    tbody tr {
+      border-bottom: 1px solid #f1f3f5;
+    }
+    tbody tr:nth-child(even) {
+      background: #fafafa;
+    }
+    tbody td {
+      padding: 8px 12px;
+      text-align: center;
+      vertical-align: middle;
+    }
+    .text-right {
+      text-align: right;
+    }
+    .text-danger {
+      color: #dc2626;
+      font-weight: 600;
+    }
+    .text-muted {
+      color: #9ca3af;
+    }
+    .badge-category {
+      background: #f3f4f6;
+      color: #374151;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      display: inline-block;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 25px;
+      padding-top: 12px;
+      border-top: 1px solid #ddd;
+      font-size: 10px;
+      color: #666;
+    }
+    .no-print {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .btn-print {
+      background: #D4AF37;
+      color: #fff;
+      border: none;
+      padding: 8px 30px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .btn-print:hover {
+      background: #B8960F;
+    }
+    .btn-back {
+      background: #f3f4f6;
+      color: #4b5563;
+      border: none;
+      padding: 8px 30px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-back:hover {
+      background: #e5e7eb;
+    }
+    @media print {
+      .no-print { display: none !important; }
+      body { margin: 0; padding: 0; }
+      .filter-info { background: #f9fafb !important; }
+      .total-row { background: #f8fafc !important; }
+      tbody tr:nth-child(even) { background: #fafafa !important; }
+    }
+    @media (max-width: 600px) {
+      table { font-size: 11px; }
+      thead th, tbody td { padding: 6px 8px; }
+      .filter-info { flex-direction: column; gap: 5px; }
+    }
+  </style>
+</head>
+<body>
+<div class="print-container">
+  
+  <div class="header">
+    <div class="title">تقرير المصروفات</div>
+    <div class="date">{{ request.user.username }} - {{ now|date:"Y-m-d H:i" }}</div>
+  </div>
+
+  <div class="filter-info">
+    <div class="item">
+      <span class="label">الفئة:</span>
+      <span class="value">{{ category_name }}</span>
+    </div>
+    {% if date_from %}
+    <div class="item">
+      <span class="label">من تاريخ:</span>
+      <span class="value">{{ date_from }}</span>
+    </div>
+    {% endif %}
+    {% if date_to %}
+    <div class="item">
+      <span class="label">إلى تاريخ:</span>
+      <span class="value">{{ date_to }}</span>
+    </div>
+    {% endif %}
+    <div class="item">
+      <span class="label">عدد المصروفات:</span>
+      <span class="value">{{ expenses|length }}</span>
+    </div>
+  </div>
+
+  <div class="total-row">
+    <span class="label">إجمالي المصروفات</span>
+    <span class="amount">{{ total_amount|floatformat:0 }} د.ل</span>
+  </div>
+
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th style="text-align:right;">العنوان</th>
+          <th>الفئة</th>
+          <th>المبلغ</th>
+          <th>التاريخ</th>
+          <th style="text-align:right;">الوصف</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for exp in expenses %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td class="text-right">{{ exp.title }}</td>
+          <td>
+            <span class="badge-category">{{ exp.category.name|default:"بدون فئة" }}</span>
+          </td>
+          <td class="text-danger">{{ exp.amount|floatformat:0 }} د.ل</td>
+          <td dir="ltr">{{ exp.expense_date|date:"Y-m-d" }}</td>
+          <td class="text-right text-muted">{{ exp.description|default:"-"|truncatechars:50 }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" style="text-align:center;padding:40px;color:#9ca3af;">
+            لا توجد مصروفات مطابقة للفلاتر المحددة
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr style="background:#f8fafc;font-weight:700;border-top:2px solid #e5e7eb;">
+          <td colspan="3" style="text-align:left;">الإجمالي</td>
+          <td>{{ total_amount|floatformat:0 }} د.ل</td>
+          <td colspan="2"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="footer">
+    <div>تم الطباعة بواسطة: {{ request.user.get_full_name|default:request.user.username }}</div>
+    <div>{{ now|date:"Y-m-d H:i" }}</div>
+  </div>
+</div>
+
+<div class="no-print">
+  <button onclick="window.print();" class="btn-print">طباعة</button>
+  <a href="{% url 'expense_list' %}" class="btn-back">رجوع</a>
+</div>
+
+
+</body>
+</html>

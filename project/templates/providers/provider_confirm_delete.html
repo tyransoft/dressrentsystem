@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block page_title %}حذف مزود الخدمة{% endblock %}
+{% block mobile_title %}حذف المزود{% endblock %}
+
+{% block content %}
+<style>
+.page-container {
+    padding: 10px 15px 30px 15px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+.delete-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    text-align: center;
+}
+.delete-icon {
+    font-size: 48px;
+    color: #dc2626;
+    margin-bottom: 15px;
+}
+.delete-card h5 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 10px;
+}
+.delete-card p {
+    color: #6b7280;
+    font-size: 14px;
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+.delete-card .provider-name {
+    color: #dc2626;
+    font-weight: 700;
+}
+.delete-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+.btn-confirm-delete {
+    background: #dc2626;
+    color: #fff;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.btn-confirm-delete:hover {
+    background: #b91c1c;
+}
+.btn-cancel {
+    background: #f3f4f6;
+    color: #4b5563;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn-cancel:hover {
+    background: #e5e7eb;
+}
+.delete-warning {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 15px 0;
+    color: #991b1b;
+    font-size: 13px;
+    text-align: right;
+}
+.delete-warning i {
+    margin-left: 8px;
+}
+
+@media (max-width: 480px) {
+    .page-container {
+        padding: 5px 8px 20px 8px;
+    }
+    .delete-card {
+        padding: 20px;
+    }
+    .delete-actions {
+        flex-direction: column;
+    }
+    .delete-actions .btn-confirm-delete,
+    .delete-actions .btn-cancel {
+        width: 100%;
+        text-align: center;
+    }
+}
+</style>
+
+<div class="page-container">
+    <div class="delete-card">
+        <div class="delete-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h5>حذف مزود الخدمة</h5>
+        <p>
+            هل أنت متأكد من حذف المزود 
+            <span class="provider-name">{{ provider.name }}</span>؟
+        </p>
+        
+        {% if provider.get_total_services > 0 %}
+        <div class="delete-warning">
+            <i class="fas fa-info-circle"></i>
+            هذا المزود لديه {{ provider.get_total_services }} خدمات مسجلة.
+            سيتم حذف جميع البيانات المرتبطة به.
+        </div>
+        {% endif %}
+        
+        <form method="POST">
+            {% csrf_token %}
+            <div class="delete-actions">
+                <button type="submit" class="btn-confirm-delete">
+                    <i class="fas fa-trash"></i> تأكيد الحذف
+                </button>
+                <a href="{% url 'provider_detail' provider.pk %}" class="btn-cancel">
+                    <i class="fas fa-times"></i> إلغاء
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

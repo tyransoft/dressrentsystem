@@ -30,9 +30,79 @@
     color: #dc3545;
     font-weight: bold;
 }
+
+.provider-section {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 10px 0;
+    border-right: 4px solid #D4AF37;
+}
+
+.provider-section .provider-info {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.provider-section .provider-info .info-item {
+    flex: 1;
+    min-width: 150px;
+}
+
+.provider-section .provider-info .info-item .label {
+    font-size: 11px;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+.provider-section .provider-info .info-item .value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.payment-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.payment-summary .summary-item {
+    background: #fff;
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+}
+
+.payment-summary .summary-item .amount {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.payment-summary .summary-item .amount.paid {
+    color: #16a34a;
+}
+
+.payment-summary .summary-item .amount.remaining {
+    color: #dc2626;
+}
+
+.payment-summary .summary-item .amount.partial {
+    color: #f59e0b;
+}
+
+.payment-summary .summary-item .label {
+    font-size: 11px;
+    color: #64748b;
+    display: block;
+    margin-top: 2px;
+}
 </style>
 
-<div class="card" style="max-width:750px; margin: 0 auto;">
+<div class="card" style="max-width:850px; margin: 0 auto;">
     <div class="card-header">
         <span class="card-title">
             <i class="fas fa-tools"></i> {{ title }}
@@ -79,6 +149,20 @@
                         </ul>
                     {% endif %}
                 </div>
+                <div class="col-md-6 form-group">
+                    <label class="form-label">{{ form.provider.label }}</label>
+                    {{ form.provider }}
+                    {% if form.provider.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.provider.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i> اختر مزود الخدمة
+                    </small>
+                </div>
             </div>
             
             <div class="row">
@@ -92,7 +176,6 @@
                             {% endfor %}
                         </ul>
                     {% endif %}
-                    
                 </div>
                 <div class="col-md-6 form-group">
                     <label class="form-label required-field">{{ form.finish_at.label }}</label>
@@ -104,7 +187,6 @@
                             {% endfor %}
                         </ul>
                     {% endif %}
-                    
                 </div>
             </div>
             
@@ -120,10 +202,68 @@
                         </ul>
                     {% endif %}
                     <small class="text-muted">
-                        <i class="fas fa-info-circle"></i> التكلفة الإجمالية 
+                        <i class="fas fa-info-circle"></i> التكلفة الإجمالية للصيانة
+                    </small>
+                </div>
+                <div class="col-md-6 form-group">
+                    <label class="form-label">{{ form.paid_amount.label }}</label>
+                    {{ form.paid_amount }}
+                    {% if form.paid_amount.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.paid_amount.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i> المبلغ المدفوع للمزود (يمكن الدفع جزئياً)
                     </small>
                 </div>
             </div>
+            
+            {% if is_edit and repair.provider %}
+            <div class="provider-section">
+                <div class="payment-summary">
+                    <div class="summary-item">
+                        <span class="amount paid">{{ repair.total_cost|floatformat:0 }} د.ل</span>
+                        <span class="label">إجمالي التكلفة</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="amount paid">{{ repair.paid_amount|floatformat:0 }} د.ل</span>
+                        <span class="label">المدفوع</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="amount remaining">{{ repair.get_remaining_amount|floatformat:0 }} د.ل</span>
+                        <span class="label">المتبقي</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="amount {% if repair.payment_status == 'paid' %}paid{% elif repair.payment_status == 'partial' %}partial{% else %}remaining{% endif %}">
+                            {{ repair.get_payment_status_display }}
+                        </span>
+                        <span class="label">حالة الدفع</span>
+                    </div>
+                </div>
+                
+                <div class="provider-info">
+                    <div class="info-item">
+                        <span class="label">مزود الخدمة</span>
+                        <span class="value">{{ repair.provider.name }}</span>
+                    </div>
+                    {% if repair.provider.phone %}
+                    <div class="info-item">
+                        <span class="label">رقم الهاتف</span>
+                        <span class="value">{{ repair.provider.phone }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="info-item">
+                        <span class="label">حالة الصيانة</span>
+                        <span class="value {% if repair.status == 'finished' %}text-success{% else %}text-primary{% endif %}">
+                            {{ repair.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
             
             <div class="form-group">
                 <label class="form-label">{{ form.notes.label }}</label>
@@ -181,16 +321,36 @@ $(document).ready(function() {
         }
     });
     
+    $('#id_total_cost, #id_paid_amount').on('input', function() {
+        const totalCost = parseFloat($('#id_total_cost').val()) || 0;
+        const paidAmount = parseFloat($('#id_paid_amount').val()) || 0;
+        
+        if (paidAmount > totalCost) {
+            $('#id_paid_amount').val(totalCost.toFixed(2));
+            alert('المبلغ المدفوع لا يمكن أن يتجاوز التكلفة الإجمالية');
+        }
+    });
+    
     $('#repairForm').submit(function(e) {
         const startDate = $('#id_start_date').val();
         const finishDate = $('#id_finish_at').val();
+        const totalCost = parseFloat($('#id_total_cost').val()) || 0;
+        const paidAmount = parseFloat($('#id_paid_amount').val()) || 0;
         
         if (startDate && finishDate && finishDate < startDate) {
             e.preventDefault();
-            alert(' تاريخ الانتهاء يجب أن يكون بعد تاريخ البداية');
+            alert('تاريخ الانتهاء يجب أن يكون بعد تاريخ البداية');
             $('#id_finish_at').focus();
             return false;
         }
+        
+        if (paidAmount > totalCost) {
+            e.preventDefault();
+            alert('المبلغ المدفوع لا يمكن أن يتجاوز التكلفة الإجمالية');
+            $('#id_paid_amount').focus();
+            return false;
+        }
+        
         return true;
     });
 });

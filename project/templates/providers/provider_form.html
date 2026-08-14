@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block page_title %}{{ title }}{% endblock %}
+{% block mobile_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<style>
+.page-container {
+    padding: 10px 15px 30px 15px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+.page-header {
+    margin-bottom: 20px;
+}
+.page-header h5 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+.form-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.form-group {
+    margin-bottom: 18px;
+}
+.form-group label {
+    display: block;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+.form-group .form-control {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.3s;
+    background: #fff;
+    color: #1e293b;
+}
+.form-group .form-control:focus {
+    border-color: #D4AF37;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+}
+.form-group .form-control::placeholder {
+    color: #9ca3af;
+}
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+.btn-submit {
+    background: #D4AF37;
+    color: #fff;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.btn-submit:hover {
+    background: #B8960F;
+}
+.btn-cancel {
+    background: #f3f4f6;
+    color: #4b5563;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn-cancel:hover {
+    background: #e5e7eb;
+}
+.required-star {
+    color: #dc2626;
+}
+
+@media (max-width: 480px) {
+    .page-container {
+        padding: 5px 8px 20px 8px;
+    }
+    .form-card {
+        padding: 15px;
+    }
+    .form-actions {
+        flex-direction: column;
+    }
+    .form-actions .btn-submit,
+    .form-actions .btn-cancel {
+        text-align: center;
+        width: 100%;
+    }
+}
+</style>
+
+<div class="page-container">
+    <div class="page-header">
+        <h5>{{ title }}</h5>
+    </div>
+
+    <div class="form-card">
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.name.id_for_label }}">
+                    اسم مزود الخدمة <span class="required-star">*</span>
+                </label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                <div style="color: #dc2626; font-size: 12px; margin-top: 4px;">
+                    {{ form.name.errors }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.phone.id_for_label }}">رقم الهاتف</label>
+                {{ form.phone }}
+                {% if form.phone.errors %}
+                <div style="color: #dc2626; font-size: 12px; margin-top: 4px;">
+                    {{ form.phone.errors }}
+                </div>
+                {% endif %}
+            </div>
+
+            
+
+            <div class="form-actions">
+                <button type="submit" class="btn-submit">حفظ</button>
+                <a href="{% url 'provider_list' %}" class="btn-cancel">إلغاء</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

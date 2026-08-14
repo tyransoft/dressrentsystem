@@ -227,7 +227,98 @@ class PaymentMethod(models.Model):
             default = cls.objects.filter(is_active=True).first()
         return default        
 
+class repairandcleanprovider(models.Model):
+    name = models.CharField(max_length=200, verbose_name='اسم مزود الخدمة')
+    phone = models.CharField(max_length=20, blank=True, null=True, verbose_name='رقم الهاتف')
+    created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        verbose_name = 'مزود خدمة الصيانة والتنظيف'
+        verbose_name_plural = 'مزودي خدمات الصيانة والتنظيف'
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+    
+    
+    def get_total_services(self):
+        return self.services.count()
+    
+    def get_total_services_cost(self):
+        return sum(service.total_cost for service in self.services.all())
+    
+    def get_total_paid(self):
+        return sum(payment.amount for payment in self.payments.filter(status='paid'))
+    
+    def get_total_pending(self):
+        return sum(payment.amount for payment in self.payments.filter(status='pending'))
+    
+    def get_total_remaining(self):
+        total_services = self.get_total_services_cost()
+        total_paid = self.get_total_paid()
+        return total_services - total_paid
+    
+    def get_unpaid_services(self):
+        return self.services.filter(payment_status__in=['unpaid', 'partial'])
+    
+    def get_paid_services(self):
+        return self.services.filter(payment_status='paid')
+    
+    def get_total_unpaid_amount(self):
+        unpaid_services = self.get_unpaid_services()
+        return sum(service.get_remaining_amount() for service in unpaid_services)
+
+    
+class ProviderPayment(models.Model):
+    PAYMENT_STATUS = {
+        ('pending', 'معلق'),
+        ('paid', 'مدفوع'),
+        ('cancelled', 'ملغي'),
+    }
+    
+    provider = models.ForeignKey(
+        repairandcleanprovider,
+        on_delete=models.CASCADE,
+        verbose_name='مزود الخدمة',
+        related_name='payments'
+    )
+    service = models.ForeignKey(
+        'RepairAndClean',
+        on_delete=models.CASCADE,
+        verbose_name='خدمة الصيانة',
+        related_name='payments',
+        null=True,
+        blank=True
+    )
+    amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='المبلغ')
+    payment_date = models.DateField(verbose_name='تاريخ الدفع')
+    status = models.CharField(max_length=20, choices=PAYMENT_STATUS, default='pending', verbose_name='الحالة')
+    notes = models.TextField(blank=True, verbose_name='ملاحظات')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'دفع لمزود الخدمة'
+        verbose_name_plural = 'مدفوعات مزودي الخدمة'
+
+        ordering = ['-payment_date']
+
+    def __str__(self):
+        return f"{self.provider.name} - {self.amount} - {self.payment_date}"
+    
+    def save(self, *args, **kwargs):
+        if self.service and self.status == 'paid':
+            self.service.paid_amount += self.amount
+            self.service.update_payment_status()
+        
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        if self.service and self.status == 'paid':
+            self.service.paid_amount -= self.amount
+            self.service.update_payment_status()
+        
+        super().delete(*args, **kwargs)
 
 class RepairAndClean(models.Model):
     KIND = {
@@ -238,6 +329,11 @@ class RepairAndClean(models.Model):
         ('inwork', 'قيد التنفيذ'),
         ('finished', 'تم الاستلام')
     }
+    PAYMENT_STATUS = {
+        ('unpaid', 'غير مدفوعة'),
+        ('partial', 'مدفوعة جزئياً'),
+        ('paid', 'مدفوعة بالكامل'),
+    }
 
     product = models.ForeignKey(
         'Product', 
@@ -245,11 +341,21 @@ class RepairAndClean(models.Model):
         verbose_name='الفستان',
         related_name='repairs'
     )
-    status = models.CharField(max_length=20, choices=STATUS, verbose_name='حالة الصيانة')
+    provider = models.ForeignKey(
+        'repairandcleanprovider',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='مزود الخدمة',
+        related_name='services'
+    )
+    status = models.CharField(max_length=20, choices=STATUS, verbose_name='حالة الصيانة', default='inwork')
     kind = models.CharField(max_length=20, choices=KIND, verbose_name='نوع الصيانة')
-    start_date = models.DateField(verbose_name='تاريخ بداية الصيانة')  # حقل جديد
+    start_date = models.DateField(verbose_name='تاريخ بداية الصيانة') 
     finish_at = models.DateField(verbose_name='تاريخ انتهاء الصيانة')
     total_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name='تكلفة الصيانة')
+    paid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name='المبلغ المدفوع')
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS, default='unpaid', verbose_name='حالة الدفع')
     notes = models.TextField(blank=True, verbose_name='ملاحظات')
     created_at = models.DateField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -262,16 +368,46 @@ class RepairAndClean(models.Model):
     def __str__(self):
         return f"{self.product.name} - {self.get_kind_display()} - {self.created_at.strftime('%Y-%m-%d')}"
 
+    def get_remaining_amount(self):
+        return self.total_cost - self.paid_amount
+
+    def get_payment_percentage(self):
+        if self.total_cost == 0:
+            return 0
+        return (self.paid_amount / self.total_cost) * 100
+
+    def update_payment_status(self):
+        if self.paid_amount >= self.total_cost:
+            self.payment_status = 'paid'
+        elif self.paid_amount > 0:
+            self.payment_status = 'partial'
+        else:
+            self.payment_status = 'unpaid'
+        self.save(update_fields=['payment_status'])
+
+    def mark_as_finished(self):
+        self.status = 'finished'
+        self.save()
+
     def save(self, *args, **kwargs):
         if self.start_date and self.finish_at and self.start_date > self.finish_at:
             raise ValueError("تاريخ البداية يجب أن يكون قبل تاريخ النهاية")
         
         is_new = self.pk is None
         old_cost = 0
+        old_paid = 0
         
         if not is_new:
             old_instance = RepairAndClean.objects.get(pk=self.pk)
             old_cost = old_instance.total_cost
+            old_paid = old_instance.paid_amount
+        
+        if self.paid_amount >= self.total_cost:
+            self.payment_status = 'paid'
+        elif self.paid_amount > 0:
+            self.payment_status = 'partial'
+        else:
+            self.payment_status = 'unpaid'
         
         super().save(*args, **kwargs)
         
@@ -287,11 +423,8 @@ class RepairAndClean(models.Model):
             else:
                 self.product.status = Dstatus.INREPAIR
             
-            self.product.save()
-    
-    def mark_as_finished(self):
-        self.status = 'finished'
-        self.save()
+            self.product.save()    
+
 
 class Customer(models.Model):
     full_name = models.CharField(max_length=20, verbose_name='الاسم الكامل')
@@ -725,3 +858,24 @@ class MonthlySalaryPayment(models.Model):
         super().save(*args, **kwargs)    
     def get_method_display_ar(self):
         return dict(self.METHOD_CHOICES).get(self.payment_method, self.payment_method)
+
+class ProductOldRevenue(models.Model):
+    product = models.ForeignKey(
+        'Product',
+        on_delete=models.CASCADE,
+        verbose_name='الفستان',
+        related_name='old_revenues'
+    )
+    amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='المبلغ')
+    date = models.DateField(verbose_name='التاريخ')
+    notes = models.TextField(blank=True, verbose_name='ملاحظات')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'إيراد قديم للفستان'
+        verbose_name_plural = 'الإيرادات القديمة للفستان'
+        ordering = ['-date']
+
+    def __str__(self):
+        return f"{self.product.name} - {self.amount} - {self.date}"

@@ -436,6 +436,9 @@ tbody td {
     <div class="expenses-header">
         <h2>سجل المصروفات</h2>
         <div class="expenses-actions">
+        <a href="{% url 'expense_print' %}?{{ request.GET.urlencode }}" class="btn-custom-outline" target="_blank">
+             طباعة
+        </a>
             <a href="{% url 'expense_category_list' %}" class="btn-custom-outline">الفئات</a>
             <a href="{% url 'expense_add' %}" class="btn-custom-primary">اضافة مصروف</a>
         </div>

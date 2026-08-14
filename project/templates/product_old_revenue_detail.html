@@ -1,0 +1,335 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block page_title %}{{ title }}{% endblock %}
+{% block mobile_title %}{{ title }}{ endblock %}
+
+{% block content %}
+<style>
+.page-container {
+    padding: 10px 15px 30px 15px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.page-header h5 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+.btn-back {
+    background: #f3f4f6;
+    color: #4b5563;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn-back:hover {
+    background: #e5e7eb;
+}
+.btn-primary-custom {
+    background: #D4AF37;
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn-primary-custom:hover {
+    background: #B8960F;
+    color: #fff;
+}
+.btn-danger-custom {
+    background: #dc2626;
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn-danger-custom:hover {
+    background: #b91c1c;
+    color: #fff;
+}
+.detail-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    overflow: hidden;
+}
+.detail-card .card-body {
+    padding: 25px;
+}
+.detail-card .card-body .detail-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    padding: 12px 0;
+    border-bottom: 1px solid #f1f3f5;
+    gap: 15px;
+}
+.detail-card .card-body .detail-row:last-child {
+    border-bottom: none;
+}
+.detail-card .card-body .detail-row .label {
+    font-weight: 600;
+    color: #4b5563;
+    font-size: 14px;
+}
+.detail-card .card-body .detail-row .value {
+    font-weight: 500;
+    color: #1e293b;
+    font-size: 14px;
+}
+.detail-card .card-body .detail-row .value .amount {
+    color: #16a34a;
+    font-weight: 700;
+    font-size: 16px;
+}
+.detail-card .card-body .detail-row .value .badge-status {
+    padding: 3px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+}
+.detail-card .card-body .detail-row .value .badge-success {
+    background: #dcfce7;
+    color: #166534;
+}
+.detail-card .card-body .detail-row .value .badge-info {
+    background: #dbeafe;
+    color: #1e40af;
+}
+.detail-card .card-footer {
+    padding: 15px 25px;
+    background: #f8fafc;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.detail-card .card-footer .btn-action {
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+.detail-card .card-footer .btn-action:hover {
+    transform: translateY(-2px);
+}
+.product-info-box {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+.product-info-box .product-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #166534;
+}
+.product-info-box .product-barcode {
+    font-size: 13px;
+    color: #4b5563;
+}
+
+@media (max-width: 768px) {
+    .detail-card .card-body .detail-row {
+        grid-template-columns: 1fr;
+        gap: 5px;
+        padding: 10px 0;
+    }
+    .detail-card .card-body .detail-row .label {
+        font-size: 12px;
+        color: #9ca3af;
+    }
+    .detail-card .card-footer {
+        flex-direction: column;
+    }
+    .detail-card .card-footer .btn-action {
+        text-align: center;
+        width: 100%;
+    }
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .page-header .header-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .page-header .header-actions a {
+        flex: 1;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-container {
+        padding: 5px 8px 20px 8px;
+    }
+    .detail-card .card-body {
+        padding: 15px;
+    }
+    .detail-card .card-footer {
+        padding: 12px 15px;
+    }
+}
+</style>
+
+<div class="page-container">
+    <div class="page-header">
+        <h5>{{ title }}</h5>
+        <div class="header-actions">
+            <a href="{% url 'product_old_revenue_edit' revenue.pk %}" class="btn-primary-custom">
+                <i class="fas fa-edit"></i> تعديل
+            </a>
+            <a href="{% url 'product_old_revenue_delete' revenue.pk %}" class="btn-danger-custom" onclick="return confirm('هل انت متأكد من حذف هذا الإيراد القديم؟')">
+                <i class="fas fa-trash"></i> حذف
+            </a>
+            <a href="{% url 'product_old_revenue_list' %}" class="btn-back">
+                <i class="fas fa-arrow-right"></i> رجوع
+            </a>
+        </div>
+    </div>
+
+    <div class="detail-card">
+        <div class="card-body">
+            <!-- معلومات الفستان -->
+            <div class="product-info-box">
+                <div class="product-name">
+                    <i class="fas fa-tag"></i> {{ revenue.product.name }}
+                </div>
+                <div class="product-barcode">
+                    <i class="fas fa-barcode"></i> الباركود: {{ revenue.product.barcode }}
+                </div>
+            </div>
+
+            <!-- تفاصيل الإيراد -->
+            <div class="detail-row">
+                <div class="label">
+                    <i class="fas fa-money-bill-wave"></i> المبلغ
+                </div>
+                <div class="value">
+                    <span class="amount">{{ revenue.amount|floatformat:0 }} د.ل</span>
+                </div>
+            </div>
+
+            <div class="detail-row">
+                <div class="label">
+                    <i class="fas fa-calendar-day"></i> التاريخ
+                </div>
+                <div class="value" dir="ltr">
+                    {{ revenue.date|date:"Y-m-d" }}
+                </div>
+            </div>
+
+            <div class="detail-row">
+                <div class="label">
+                    <i class="fas fa-clock"></i> تاريخ الإضافة
+                </div>
+                <div class="value" dir="ltr">
+                    {{ revenue.created_at|date:"Y-m-d H:i" }}
+                </div>
+            </div>
+
+            <div class="detail-row">
+                <div class="label">
+                    <i class="fas fa-edit"></i> آخر تحديث
+                </div>
+                <div class="value" dir="ltr">
+                    {{ revenue.updated_at|date:"Y-m-d H:i" }}
+                </div>
+            </div>
+
+            {% if revenue.notes %}
+            <div class="detail-row">
+                <div class="label">
+                    <i class="fas fa-sticky-note"></i> الملاحظات
+                </div>
+                <div class="value">
+                    {{ revenue.notes|linebreaks }}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- معلومات إضافية عن الفستان -->
+            <div class="detail-row" style="border-top: 2px solid #e5e7eb; padding-top: 15px; margin-top: 5px;">
+                <div class="label">
+                    <i class="fas fa-info-circle"></i> معلومات الفستان
+                </div>
+                <div class="value">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <div>
+                            <span style="color: #6b7280; font-size: 12px;">الحالة</span><br>
+                            <span class="badge-status {% if revenue.product.status == 'available' %}badge-success{% else %}badge-info{% endif %}">
+                                {{ revenue.product.get_status_display }}
+                            </span>
+                        </div>
+                        <div>
+                            <span style="color: #6b7280; font-size: 12px;">السعر</span><br>
+                            <span>{{ revenue.product.price|floatformat:0 }} د.ل</span>
+                        </div>
+                        <div>
+                            <span style="color: #6b7280; font-size: 12px;">تكلفة الشراء</span><br>
+                            <span>{{ revenue.product.cost_price|floatformat:0 }} د.ل</span>
+                        </div>
+                        <div>
+                            <span style="color: #6b7280; font-size: 12px;">الربح المتوقع</span><br>
+                            <span class="{% if revenue.product.get_expected_profit > 0 %}text-success{% else %}text-danger{% endif %}">
+                                {{ revenue.product.get_expected_profit|floatformat:0 }} د.ل
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-footer">
+            <a href="{% url 'product_old_revenue_edit' revenue.pk %}" class="btn-action" style="background: #D4AF37; color: #fff;">
+                <i class="fas fa-edit"></i> تعديل
+            </a>
+            <a href="{% url 'product_old_revenue_delete' revenue.pk %}" class="btn-action" style="background: #dc2626; color: #fff;" onclick="return confirm('هل انت متأكد من حذف هذا الإيراد القديم؟')">
+                <i class="fas fa-trash"></i> حذف
+            </a>
+            <a href="{% url 'product_detail' revenue.product.pk %}" class="btn-action" style="background: #3b82f6; color: #fff;">
+                <i class="fas fa-eye"></i> عرض الفستان
+            </a>
+            <a href="{% url 'product_old_revenue_list' %}" class="btn-action" style="background: #f3f4f6; color: #4b5563;">
+                <i class="fas fa-list"></i> قائمة الإيرادات
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

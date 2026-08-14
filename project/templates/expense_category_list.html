@@ -226,6 +226,7 @@ tbody td {
                     <th>اسم الفئة</th>
                     <th>الوصف</th>
                     <th>اجمالي المصروفات</th>
+                    <th>تعديل</th>
                 </tr>
             </thead>
             <tbody>
@@ -234,7 +235,11 @@ tbody td {
                     <td class="fw-semibold">{{ cat.name }}</td>
                     <td class="text-muted">{{ cat.description|default:"-" }}</td>
                     <td class="text-danger fw-bold">{{ cat.total_expenses|floatformat:0 }} د.ل</td>
+                    <td>
+                        <a href="{% url 'expense_category_edit' pk=cat.pk %}" class="btn btn-sm btn-outline-primary">تعديل</a>
+                    </td>
                 </tr>
+                
                 {% empty %}
                 <tr>
                     <td colspan="3" class="text-center text-muted py-4">لا توجد فئات</td>

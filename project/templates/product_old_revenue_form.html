@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block page_title %}{{ title }}{% endblock %}
+{% block mobile_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<style>
+.page-container {
+    padding: 10px 15px 30px 15px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+.page-header {
+    margin-bottom: 20px;
+}
+.page-header h5 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+.form-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.form-group {
+    margin-bottom: 18px;
+}
+.form-group label {
+    display: block;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+.form-group .form-control {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.3s;
+    background: #fff;
+    color: #1e293b;
+}
+.form-group .form-control:focus {
+    border-color: #D4AF37;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+}
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e9ecef;
+}
+.btn-submit {
+    background: #D4AF37;
+    color: #fff;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.btn-submit:hover {
+    background: #B8960F;
+}
+.btn-cancel {
+    background: #f3f4f6;
+    color: #4b5563;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn-cancel:hover {
+    background: #e5e7eb;
+}
+.required-star {
+    color: #dc2626;
+}
+.help-text {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: 4px;
+}
+@media (max-width: 480px) {
+    .page-container {
+        padding: 5px 8px 20px 8px;
+    }
+    .form-card {
+        padding: 15px;
+    }
+    .form-actions {
+        flex-direction: column;
+    }
+    .form-actions .btn-submit,
+    .form-actions .btn-cancel {
+        text-align: center;
+        width: 100%;
+    }
+}
+</style>
+
+<div class="page-container">
+    <div class="page-header">
+        <h5>{{ title }}</h5>
+    </div>
+
+    <div class="form-card">
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.product.id_for_label }}">
+                    الفستان <span class="required-star">*</span>
+                </label>
+                {{ form.product }}
+                {% if form.product.errors %}
+                <div style="color: #dc2626; font-size: 12px; margin-top: 4px;">
+                    {{ form.product.errors }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.amount.id_for_label }}">
+                    المبلغ <span class="required-star">*</span>
+                </label>
+                {{ form.amount }}
+                {% if form.amount.errors %}
+                <div style="color: #dc2626; font-size: 12px; margin-top: 4px;">
+                    {{ form.amount.errors }}
+                </div>
+                {% endif %}
+                <div class="help-text">أدخل قيمة الإيراد القديم للفستان</div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.date.id_for_label }}">
+                    التاريخ <span class="required-star">*</span>
+                </label>
+                {{ form.date }}
+                {% if form.date.errors %}
+                <div style="color: #dc2626; font-size: 12px; margin-top: 4px;">
+                    {{ form.date.errors }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.notes.id_for_label }}">ملاحظات</label>
+                {{ form.notes }}
+                {% if form.notes.errors %}
+                <div style="color: #dc2626; font-size: 12px; margin-top: 4px;">
+                    {{ form.notes.errors }}
+                </div>
+                {% endif %}
+                <div class="help-text">مثال: إيراد من موسم سابق، بيع خارجي، الخ</div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-save"></i> {% if is_edit %}تحديث{% else %}حفظ{% endif %}
+                </button>
+                <a href="{% url 'product_old_revenue_list' %}" class="btn-cancel">
+                    <i class="fas fa-times"></i> إلغاء
+                </a>
+                {% if is_edit %}
+                <button type="reset" class="btn-cancel" style="background: #fff; border: 1px solid #e5e7eb;">
+                    <i class="fas fa-undo"></i> إعادة تعيين
+                </button>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    const today = new Date().toISOString().split('T')[0];
+    $('#id_date').attr('max', today);
+});
+</script>
+{% endblock %}

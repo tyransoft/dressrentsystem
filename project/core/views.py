@@ -174,8 +174,9 @@ def product_detail(request, pk):
     history = []
     
     invoice_items = InvoiceItem.objects.filter(product=product)
-    total_revenue = 0
     total_rentals = 0
+    old_revenues = ProductOldRevenue.objects.filter(product=product)
+    total_revenue = old_revenues.aggregate(Sum('amount'))['amount__sum'] or 0
     
     for item in invoice_items:
         if item.invoice.invoice_type == InvoiceType.RENT:
@@ -444,43 +445,6 @@ def payment_method_toggle_status(request, pk):
     messages.success(request, f'تم {status} طريقة الدفع "{payment_method.name}"')
     return redirect('payment_methods_list')
 
-
-@login_required
-def repair_list(request):
-    repairs = RepairAndClean.objects.select_related('product').all()
-    
-    query = request.GET.get('q','')
-    kind_filter = request.GET.get('kind')
-    status_filter = request.GET.get('status')
-    
-    if query:
-        repairs = repairs.filter(
-            Q(product__name__icontains=query) |
-            Q(product__barcode__icontains=query) |
-            Q(notes__icontains=query)
-        )
-    
-    if kind_filter:
-        repairs = repairs.filter(kind=kind_filter)
-    
-    if status_filter:
-        repairs = repairs.filter(status=status_filter)
-    
-    paginator = Paginator(repairs, 20)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        'repairs': page_obj,
-        'query': query,
-        'kind_filter': kind_filter,
-        'status_filter': status_filter,
-        'kind_choices': RepairAndClean.KIND,
-        'status_choices': RepairAndClean.STATUS,
-        'title': 'قائمة الصيانة والتنظيف',
-    }
-    return render(request, 'repairs/repair_list.html', context)
-
 @login_required
 def reservations_list(request):
     today = timezone.now().date()
@@ -548,23 +512,75 @@ def reservation_detail(request, invoice_id):
         'total_items': reservation.items.count(),
     }
     return render(request, 'reservation_detail.html', context)
+
+
+
+
+@login_required
+def repair_list(request):
+    repairs = RepairAndClean.objects.select_related('product', 'provider').all()
+    
+    query = request.GET.get('q', '')
+    kind_filter = request.GET.get('kind', '')
+    status_filter = request.GET.get('status', '')
+    payment_filter = request.GET.get('payment_status', '')
+    
+    if query:
+        repairs = repairs.filter(
+            Q(product__name__icontains=query) |
+            Q(product__barcode__icontains=query)
+        )
+    if kind_filter:
+        repairs = repairs.filter(kind=kind_filter)
+    if status_filter:
+        repairs = repairs.filter(status=status_filter)
+    if payment_filter:
+        repairs = repairs.filter(payment_status=payment_filter)
+    
+    total_stats = {
+        'total_cost': repairs.aggregate(Sum('total_cost'))['total_cost__sum'] or 0,
+        'total_paid': repairs.aggregate(Sum('paid_amount'))['paid_amount__sum'] or 0,
+        'total_remaining': 0,
+        'unpaid_count': repairs.filter(payment_status__in=['unpaid', 'partial']).count(),
+    }
+    total_stats['total_remaining'] = total_stats['total_cost'] - total_stats['total_paid']
+    
+    paginator = Paginator(repairs, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'repairs': page_obj,
+        'title': 'طلبات الصيانة والتنظيف',
+        'query': query,
+        'kind_filter': kind_filter,
+        'status_filter': status_filter,
+        'payment_filter': payment_filter,
+        'kind_choices': RepairAndClean.KIND,
+        'status_choices': RepairAndClean.STATUS,
+        'total_stats': total_stats,
+    }
+    return render(request, 'repairs/repair_list.html', context)
+
+
 @login_required
 def repair_create(request):
     if request.method == 'POST':
         form = RepairAndCleanForm(request.POST)
         if form.is_valid():
             repair = form.save()
-            messages.success(request, 'تم إضافة طلب الصيانة/التنظيف بنجاح')
+            messages.success(request, 'تم إضافة طلب الصيانة بنجاح')
             return redirect('repair_detail', pk=repair.pk)
     else:
         form = RepairAndCleanForm()
     
     context = {
         'form': form,
-        'title': 'إضافة طلب صيانة/تنظيف',
+        'title': 'إضافة طلب صيانة جديد',
         'is_edit': False,
     }
     return render(request, 'repairs/repair_form.html', context)
+
 
 @login_required
 def repair_edit(request, pk):
@@ -573,46 +589,50 @@ def repair_edit(request, pk):
     if request.method == 'POST':
         form = RepairAndCleanForm(request.POST, instance=repair)
         if form.is_valid():
-            repair = form.save()
-            messages.success(request, 'تم تحديث طلب الصيانة/التنظيف بنجاح')
+            form.save()
+            messages.success(request, 'تم تحديث طلب الصيانة بنجاح')
             return redirect('repair_detail', pk=repair.pk)
     else:
         form = RepairAndCleanForm(instance=repair)
     
     context = {
         'form': form,
-        'repair': repair,
-        'title': 'تعديل طلب صيانة/تنظيف',
+        'title': 'تعديل طلب الصيانة',
         'is_edit': True,
+        'repair': repair,
     }
     return render(request, 'repairs/repair_form.html', context)
 
+
 @login_required
 def repair_detail(request, pk):
-    repair = get_object_or_404(RepairAndClean.objects.select_related('product'), pk=pk)
+    repair = get_object_or_404(RepairAndClean, pk=pk)
     
     context = {
         'repair': repair,
-        'title': 'تفاصيل الصيانة/التنظيف',
+        'title': f'تفاصيل طلب الصيانة - {repair.product.name}',
     }
     return render(request, 'repairs/repair_detail.html', context)
+
 
 @login_required
 def repair_delete(request, pk):
     repair = get_object_or_404(RepairAndClean, pk=pk)
     
     if request.method == 'POST':
-   
-        
+        product = repair.product
+        product.cost_price -= repair.total_cost
+        product.save()
         repair.delete()
-        messages.success(request, 'تم حذف طلب الصيانة/التنظيف بنجاح')
+        messages.success(request, 'تم حذف طلب الصيانة بنجاح')
         return redirect('repair_list')
     
     context = {
         'repair': repair,
-        'title': 'حذف طلب الصيانة/التنظيف',
+        'title': 'حذف طلب الصيانة',
     }
     return render(request, 'repairs/repair_delete.html', context)
+
 
 @login_required
 def repair_finish(request, pk):
@@ -620,21 +640,43 @@ def repair_finish(request, pk):
     
     if request.method == 'POST':
         repair.mark_as_finished()
-        repair.product.status = Dstatus.AVAILABLE
-            
-        repair.product.save()
-        messages.success(request, 'تم تغيير حالة الصيانة إلى "تم الاستلام"')
+        messages.success(request, 'تم تأكيد استلام الصيانة بنجاح')
         return redirect('repair_detail', pk=repair.pk)
     
+    return redirect('repair_detail', pk=repair.pk)
+
+
+@login_required
+def repair_payment(request, pk):
+    repair = get_object_or_404(RepairAndClean, pk=pk)
+    
+    if request.method == 'POST':
+        form = RepairPaymentForm(request.POST, instance=repair)
+        if form.is_valid():
+            repair = form.save()
+            repair.update_payment_status()
+            
+            if repair.paid_amount > 0 and repair.provider:
+                ProviderPayment.objects.create(
+                    provider=repair.provider,
+                    service=repair,
+                    amount=repair.paid_amount,
+                    payment_date=datetime.now().date(),
+                    status='paid',
+                    notes=f'دفعة للخدمة: {repair.product.name}'
+                )
+            
+            messages.success(request, 'تم تسجيل الدفعة بنجاح')
+            return redirect('repair_detail', pk=repair.pk)
+    else:
+        form = RepairPaymentForm(instance=repair)
+    
     context = {
+        'form': form,
         'repair': repair,
-        'title': 'تأكيد الاستلام',
+        'title': f'تسجيل دفعة للخدمة - {repair.product.name}',
     }
-    return render(request, 'repairs/repair_finish.html', context)
-
-
-
-
+    return render(request, 'repairs/repair_payment.html', context)
 
 
 
@@ -1288,8 +1330,6 @@ def cancel_invoice(request, invoice_id):
         return JsonResponse({'success': False, 'message': str(e)})
 
 
-
-
 @login_required
 def statistics(request):
 
@@ -1310,7 +1350,7 @@ def statistics(request):
     invoices = Invoice.objects.filter(
         created_at__date__gte=start_date,
         created_at__date__lte=end_date
-    )
+    ).exclude(status=InvoiceStatus.CANCELLED)
     
     rent_invoices = invoices.filter(invoice_type=InvoiceType.RENT)
     sale_invoices = invoices.filter(invoice_type=InvoiceType.SALE)
@@ -1372,17 +1412,25 @@ def statistics(request):
     
     total_product_cost = invoice_items.aggregate(total=Sum('product__cost_price'))['total'] or Decimal('0')
     
-    total_profit = total_revenue - total_product_cost
+    old_revenues = ProductOldRevenue.objects.filter(
+        date__gte=start_date,
+        date__lte=end_date
+    )
+    total_old_revenue = old_revenues.aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    
+    total_gross_revenue = total_revenue + total_old_revenue
+    
+    total_profit = total_gross_revenue - total_product_cost
     
     profit_margin = 0
-    if total_revenue > 0:
-        profit_margin = (total_profit / total_revenue) * 100
+    if total_gross_revenue > 0:
+        profit_margin = (total_profit / total_gross_revenue) * 100
     
     rent_percent = 0
     sale_percent = 0
-    if total_revenue > 0:
-        rent_percent = (total_rent_revenue / total_revenue) * 100
-        sale_percent = (total_sale_revenue / total_revenue) * 100
+    if total_gross_revenue > 0:
+        rent_percent = (total_rent_revenue / total_gross_revenue) * 100
+        sale_percent = (total_sale_revenue / total_gross_revenue) * 100
     
     total_rent_items = invoice_items.filter(invoice__invoice_type=InvoiceType.RENT)
     total_sale_items = invoice_items.filter(invoice__invoice_type=InvoiceType.SALE)
@@ -1390,8 +1438,16 @@ def statistics(request):
     rent_product_cost = total_rent_items.aggregate(total=Sum('product__cost_price'))['total'] or Decimal('0')
     sale_product_cost = total_sale_items.aggregate(total=Sum('product__cost_price'))['total'] or Decimal('0')
     
-    rent_profit = total_rent_revenue - rent_product_cost
-    sale_profit = total_sale_revenue - sale_product_cost
+    rent_old_revenue = ProductOldRevenue.objects.filter(
+        product__in=Product.objects.filter(invoiceitem__invoice__in=rent_invoices)
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    
+    sale_old_revenue = ProductOldRevenue.objects.filter(
+        product__in=Product.objects.filter(invoiceitem__invoice__in=sale_invoices)
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    
+    rent_profit = (total_rent_revenue + rent_old_revenue) - rent_product_cost
+    sale_profit = (total_sale_revenue + sale_old_revenue) - sale_product_cost
     
     expenses = Expense.objects.filter(
         expense_date__gte=start_date,
@@ -1434,8 +1490,8 @@ def statistics(request):
     total_gross_profit = total_profit
     
     net_profit_margin = 0
-    if total_revenue > 0:
-        net_profit_margin = (total_net_profit / total_revenue) * 100
+    if total_gross_revenue > 0:
+        net_profit_margin = (total_net_profit / total_gross_revenue) * 100
     
     daily_stats = []
     for i in range(7):
@@ -1511,7 +1567,6 @@ def statistics(request):
     }
     
     return render(request, 'statistics.html', context)
-
 
 @login_required
 def inventory_report(request):
@@ -1893,6 +1948,39 @@ def expense_list(request):
     }
     return render(request, 'expense_list.html', context)
 
+@login_required
+def expense_print(request):
+    
+    qs = Expense.objects.select_related('category').order_by('-expense_date')
+    
+    cat = request.GET.get('category', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    
+    if cat:
+        qs = qs.filter(category_id=cat)
+    if date_from:
+        qs = qs.filter(expense_date__gte=date_from)
+    if date_to:
+        qs = qs.filter(expense_date__lte=date_to)
+    
+    total = qs.aggregate(t=Sum('amount'))['t'] or 0
+    
+    category_name = 'جميع الفئات'
+    if cat:
+        category = ExpenseCategory.objects.filter(id=cat).first()
+        if category:
+            category_name = category.name
+    
+    context = {
+        'expenses': qs,
+        'total_amount': total,
+        'date_from': date_from,
+        'date_to': date_to,
+        'category_name': category_name,
+        'now': timezone.now(),
+    }
+    return render(request, 'expense_print.html', context)
 
 @login_required
 def expense_add(request):
@@ -1950,7 +2038,25 @@ def expense_category_add(request):
     else:
         form = ExpenseCategoryForm()
     return render(request, 'expense_category_form.html', {'form': form})
-
+@login_required
+def expense_category_edit(request, pk):
+    category = get_object_or_404(ExpenseCategory, pk=pk)
+    
+    if request.method == 'POST':
+        form = ExpenseCategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'تم تحديث الفئة بنجاح')
+            return redirect('expense_category_list')
+    else:
+        form = ExpenseCategoryForm(instance=category)
+    
+    context = {
+        'form': form,
+        'object': category,
+        
+    }
+    return render(request, 'expense_category_form.html', context)
 
 
 @login_required
@@ -2012,3 +2118,300 @@ def employees_performance(request):
         'today': today,
     }
     return render(request, 'employees_performance.html', context)
+
+
+
+@login_required
+def provider_list(request):
+    providers = repairandcleanprovider.objects.all().prefetch_related('services', 'payments')
+    
+    total_providers = providers.count()
+    total_services = sum(p.get_total_services() for p in providers)
+    total_paid = sum(p.get_total_paid() for p in providers)
+    total_pending = sum(p.get_total_pending() for p in providers)
+    total_remaining = sum(p.get_total_remaining() for p in providers)
+    
+    context = {
+        'providers': providers,
+        'total_providers': total_providers,
+        'total_services': total_services,
+        'total_paid': total_paid,
+        'total_pending': total_pending,
+        'total_remaining': total_remaining,
+    }
+    return render(request, 'providers/provider_list.html', context)
+
+
+@login_required
+def provider_create(request):
+    if request.method == 'POST':
+        form = ProviderForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'تم إضافة مزود الخدمة بنجاح')
+            return redirect('provider_list')
+    else:
+        form = ProviderForm()
+    
+    context = {
+        'form': form,
+        'title': 'إضافة مزود خدمة جديد',
+    }
+    return render(request, 'providers/provider_form.html', context)
+
+
+@login_required
+def provider_edit(request, pk):
+    provider = get_object_or_404(repairandcleanprovider, pk=pk)
+    
+    if request.method == 'POST':
+        form = ProviderForm(request.POST, instance=provider)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'تم تحديث بيانات مزود الخدمة بنجاح')
+            return redirect('provider_list')
+    else:
+        form = ProviderForm(instance=provider)
+    
+    context = {
+        'form': form,
+        'title': 'تعديل بيانات مزود الخدمة',
+        'provider': provider,
+    }
+    return render(request, 'providers/provider_form.html', context)
+
+
+@login_required
+def provider_detail(request, pk):
+    provider = get_object_or_404(repairandcleanprovider, pk=pk)
+    services = provider.services.all()
+    payments = provider.payments.all()
+    
+    total_services_cost = provider.get_total_services_cost()
+    total_paid = provider.get_total_paid()
+    total_pending = provider.get_total_pending()
+    balance = provider.get_total_remaining()
+    total_unpaid = provider.get_total_unpaid_amount()
+    
+    context = {
+        'provider': provider,
+        'services': services,
+        'payments': payments,
+        'total_services_cost': total_services_cost,
+        'total_paid': total_paid,
+        'total_pending': total_pending,
+        'balance': balance,
+        'total_unpaid': total_unpaid,
+    }
+    return render(request, 'providers/provider_detail.html', context)
+
+
+@login_required
+def provider_delete(request, pk):
+    provider = get_object_or_404(repairandcleanprovider, pk=pk)
+    
+    if request.method == 'POST':
+        provider.delete()
+        messages.success(request, 'تم حذف مزود الخدمة بنجاح')
+        return redirect('provider_list')
+    
+    context = {
+        'provider': provider,
+    }
+    return render(request, 'providers/provider_confirm_delete.html', context)
+
+
+
+@login_required
+def provider_payment_create(request, provider_pk):
+    provider = get_object_or_404(repairandcleanprovider, pk=provider_pk)
+    
+    if request.method == 'POST':
+        form = ProviderPaymentForm(request.POST)
+        if form.is_valid():
+            payment = form.save(commit=False)
+            payment.provider = provider
+            
+            if payment.service:
+                if payment.amount > payment.service.get_remaining_amount():
+                    messages.error(request, f'المبلغ المدفوع ({payment.amount}) يتجاوز المبلغ المتبقي للخدمة ({payment.service.get_remaining_amount()})')
+                    return render(request, 'providers/payment_form.html', {
+                        'form': form,
+                        'provider': provider,
+                        'title': 'تسجيل دفعة جديدة',
+                    })
+                
+                payment.service.paid_amount += payment.amount
+                payment.service.update_payment_status()
+                payment.service.save()
+            
+            payment.save()
+            messages.success(request, 'تم تسجيل الدفعة بنجاح')
+            return redirect('provider_detail', pk=provider.pk)
+    else:
+        form = ProviderPaymentForm()
+        form.fields['service'].queryset = RepairAndClean.objects.filter(
+            status='finished',
+            provider=provider
+        )
+        form.fields['service'].label_from_instance = lambda obj: f"{obj.product.name} - {obj.get_kind_display()} - المتبقي: {obj.get_remaining_amount()} د.ل"
+    
+    context = {
+        'form': form,
+        'provider': provider,
+        'title': 'تسجيل دفعة جديدة',
+    }
+    return render(request, 'providers/payment_form.html', context)
+
+
+@login_required
+def provider_payment_list(request):
+    payments = ProviderPayment.objects.all().select_related('provider', 'service')
+    
+    provider_id = request.GET.get('provider')
+    status = request.GET.get('status')
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    
+    if provider_id:
+        payments = payments.filter(provider_id=provider_id)
+    if status:
+        payments = payments.filter(status=status)
+    if date_from:
+        payments = payments.filter(payment_date__gte=date_from)
+    if date_to:
+        payments = payments.filter(payment_date__lte=date_to)
+    
+    total_amount = payments.aggregate(Sum('amount'))['amount__sum'] or 0
+    total_paid = payments.filter(status='paid').aggregate(Sum('amount'))['amount__sum'] or 0
+    total_pending = payments.filter(status='pending').aggregate(Sum('amount'))['amount__sum'] or 0
+    
+    providers = repairandcleanprovider.objects.all()
+    
+    context = {
+        'payments': payments,
+        'providers': providers,
+        'total_amount': total_amount,
+        'total_paid': total_paid,
+        'total_pending': total_pending,
+    }
+    return render(request, 'providers/payment_list.html', context)
+
+
+@login_required
+def provider_payment_delete(request, pk):
+    payment = get_object_or_404(ProviderPayment, pk=pk)
+    provider_pk = payment.provider.pk
+    
+    if request.method == 'POST':
+        if payment.service and payment.status == 'paid':
+            payment.service.paid_amount -= payment.amount
+            payment.service.update_payment_status()
+            payment.service.save()
+        
+        payment.delete()
+        messages.success(request, 'تم حذف الدفعة بنجاح')
+        return redirect('provider_detail', pk=provider_pk)
+    
+    context = {
+        'payment': payment,
+    }
+    return render(request, 'providers/payment_confirm_delete.html', context)
+
+
+
+@login_required
+def product_old_revenue_list(request):
+    revenues = ProductOldRevenue.objects.select_related('product').all()
+    
+    product_id = request.GET.get('product', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    
+    if product_id:
+        revenues = revenues.filter(product_id=product_id)
+    if date_from:
+        revenues = revenues.filter(date__gte=date_from)
+    if date_to:
+        revenues = revenues.filter(date__lte=date_to)
+    
+    total_amount = revenues.aggregate(Sum('amount'))['amount__sum'] or 0
+    
+    paginator = Paginator(revenues, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'revenues': page_obj,
+        'products': Product.objects.all().order_by('name'),
+        'selected_product': product_id,
+        'date_from': date_from,
+        'date_to': date_to,
+        'total_amount': total_amount,
+        'title': 'الإيرادات القديمة للفساتين',
+    }
+    return render(request, 'product_old_revenue_list.html', context)
+
+@login_required
+def product_old_revenue_add(request):
+    if request.method == 'POST':
+        form = ProductOldRevenueForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'تم إضافة الإيراد القديم بنجاح')
+            return redirect('product_old_revenue_list')
+    else:
+        form = ProductOldRevenueForm()
+    
+    context = {
+        'form': form,
+        'title': 'إضافة إيراد قديم',
+        'is_edit': False,
+    }
+    return render(request, 'product_old_revenue_form.html', context)
+
+@login_required
+def product_old_revenue_edit(request, pk):
+    revenue = get_object_or_404(ProductOldRevenue, pk=pk)
+    
+    if request.method == 'POST':
+        form = ProductOldRevenueForm(request.POST, instance=revenue)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'تم تحديث الإيراد القديم بنجاح')
+            return redirect('product_old_revenue_list')
+    else:
+        form = ProductOldRevenueForm(instance=revenue)
+    
+    context = {
+        'form': form,
+        'revenue': revenue,
+        'title': 'تعديل الإيراد القديم',
+        'is_edit': True,
+    }
+    return render(request, 'product_old_revenue_form.html', context)
+
+@login_required
+def product_old_revenue_delete(request, pk):
+    revenue = get_object_or_404(ProductOldRevenue, pk=pk)
+    
+    if request.method == 'POST':
+        revenue.delete()
+        messages.success(request, 'تم حذف الإيراد القديم بنجاح')
+        return redirect('product_old_revenue_list')
+    
+    context = {
+        'revenue': revenue,
+        'title': 'حذف الإيراد القديم',
+    }
+    return render(request, 'product_old_revenue_confirm_delete.html', context)
+
+@login_required
+def product_old_revenue_detail(request, pk):
+    revenue = get_object_or_404(ProductOldRevenue, pk=pk)
+    
+    context = {
+        'revenue': revenue,
+        'title': 'تفاصيل الإيراد القديم',
+    }
+    return render(request, 'product_old_revenue_detail.html', context)
