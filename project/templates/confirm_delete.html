@@ -171,7 +171,7 @@
         </div>
 
         <div class="delete-warning">
-            <i class="fas fa-info-circle"></i>
+          
             <strong>تنبيه:</strong> هذا الإجراء لا يمكن التراجع عنه. سيتم حذف المصروف بشكل نهائي من النظام.
         </div>
 
@@ -179,10 +179,10 @@
             {% csrf_token %}
             <div class="delete-actions">
                 <button type="submit" class="btn-confirm-delete">
-                    <i class="fas fa-trash"></i> تأكيد الحذف
+             تأكيد الحذف
                 </button>
                 <a href="{% url 'expense_list' %}" class="btn-cancel">
-                    <i class="fas fa-times"></i> إلغاء
+                    إلغاء
                 </a>
             </div>
         </form>
