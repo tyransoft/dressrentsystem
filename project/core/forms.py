@@ -310,18 +310,14 @@ class EmployeeForm(forms.ModelForm):
 class ProviderForm(forms.ModelForm):
     class Meta:
         model = repairandcleanprovider
-        fields = ['name', 'phone', 'address', 'notes']
+        fields = ['name', 'phone']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'أدخل اسم مزود الخدمة'}),
             'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'أدخل رقم الهاتف'}),
-            'address': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'أدخل العنوان'}),
-            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'ملاحظات إضافية'}),
         }
         labels = {
             'name': 'اسم مزود الخدمة',
             'phone': 'رقم الهاتف',
-            'address': 'العنوان',
-            'notes': 'ملاحظات',
         }
 
 
