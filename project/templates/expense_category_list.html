@@ -264,6 +264,9 @@ tbody td {
                 <span class="card-label">اجمالي المصروفات</span>
                 <span class="card-value amount">{{ cat.total_expenses|floatformat:0 }} د.ل</span>
             </div>
+            <div class='card-row'> 
+            <a href="{% url 'expense_category_edit' pk=cat.pk %}" class="btn btn-sm btn-outline-primary">تعديل</a>
+            </div>
         </div>
         {% empty %}
         <div class="empty-state">

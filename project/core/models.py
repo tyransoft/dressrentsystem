@@ -515,7 +515,7 @@ class Invoice(models.Model):
     commission = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name='العمولة')
     paid_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name='المدفوع')
     remaining_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name='المتبقي') 
-    payment_method = models.ForeignKey(PaymentMethod, on_delete=models.PROTECT, null=True, blank=True, verbose_name='طريقة الدفع')
+    payment_method = models.ForeignKey(PaymentMethod, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='طريقة الدفع')
     identity_verified = models.BooleanField(default=True)
     identity_verified_return = models.BooleanField(default=False)   
     status = models.CharField(max_length=20, choices=InvoiceStatus.choices, default=InvoiceStatus.PENDING, verbose_name='حالة الفاتورة') 
@@ -564,8 +564,7 @@ class Invoice(models.Model):
         if start_date > end_date:
             return False, "تاريخ البداية يجب أن يكون قبل تاريخ النهاية"
         
-        if start_date < timezone.now().date():
-            return False, "لا يمكن الإيجار في تاريخ ماضي"
+       
         
         invoices = Invoice.objects.filter(
             invoice_type=InvoiceType.RENT,

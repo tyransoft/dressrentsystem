@@ -209,12 +209,6 @@ class RepairAndCleanForm(forms.ModelForm):
         start_date = cleaned_data.get('start_date')
         finish_at = cleaned_data.get('finish_at')
         
-        if start_date and start_date < timezone.now().date():
-            self.add_error('start_date', 'تاريخ البداية لا يمكن أن يكون في الماضي')
-        
-        if finish_at and finish_at < timezone.now().date():
-            self.add_error('finish_at', 'تاريخ الانتهاء لا يمكن أن يكون في الماضي')
-        
         if start_date and finish_at and start_date > finish_at:
             self.add_error('finish_at', 'تاريخ الانتهاء يجب أن يكون بعد تاريخ البداية')
         
@@ -222,14 +216,10 @@ class RepairAndCleanForm(forms.ModelForm):
     
     def clean_start_date(self):
         start_date = self.cleaned_data.get('start_date')
-        if start_date and start_date < timezone.now().date():
-            raise forms.ValidationError('تاريخ البداية لا يمكن أن يكون في الماضي')
         return start_date
     
     def clean_finish_at(self):
         finish_at = self.cleaned_data.get('finish_at')
-        if finish_at and finish_at < timezone.now().date():
-            raise forms.ValidationError('تاريخ الانتهاء لا يمكن أن يكون في الماضي')
         return finish_at
     
     def clean_total_cost(self):
