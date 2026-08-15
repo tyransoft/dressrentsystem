@@ -15,7 +15,10 @@ from django.conf import settings
 from django.core.files import File
 from django.db import models
 from .models import *
+from django.utils import timezone
 
+def default_date():
+    return timezone.now().date()
 
 class Role(models.TextChoices):
     SUPER_ADMIN = 'super_admin', 'مدير النظام'
@@ -506,7 +509,7 @@ class Invoice(models.Model):
     invoice_type = models.CharField(max_length=10, choices=InvoiceType.choices, default=InvoiceType.RENT, verbose_name='نوع الفاتورة')
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, null=True, blank=True, verbose_name='العميل')
     
-    rent_start_date = models.DateField(null=True, blank=True,default=timezone.now().date, verbose_name='تاريخ بداية الإيجار')
+    rent_start_date = models.DateField(null=True, blank=True,default=default_date, verbose_name='تاريخ بداية الإيجار')
     rent_end_date = models.DateField(null=True, blank=True, verbose_name='تاريخ نهاية الإيجار')
     
     sale_price = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name='سعر البيع')
