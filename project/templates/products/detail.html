@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load humanize %}
 {% block title %}{{ product.name }}{% endblock %}
-{% block page_title %}{{ product.name }}{% endblock %}
+{% block page_title %}{{ product.name }}{ endblock %}
 {% block nav_products %}active{% endblock %}
 
 {% block content %}
@@ -9,15 +9,27 @@
 *{box-sizing:border-box;}
 code{word-break:break-all;}
 .pd-grid{display:grid;grid-template-columns:300px 1fr;gap:20px;}
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
 .stat-card{background:#fff;border:1px solid #eaecf0;border-radius:12px;padding:14px 16px;text-align:center;}
-.stat-card .stat-number{font-size:24px;font-weight:800;color:#1a2236;}
-.stat-card .stat-label{font-size:11px;color:#6b7280;margin-top:4px;}
-.stat-card .stat-sub{font-size:12px;color:#D4AF37;font-weight:600;margin-top:2px;}
+.stat-card .stat-number{font-size:20px;font-weight:800;color:#1a2236;}
+.stat-card .stat-label{font-size:10px;color:#6b7280;margin-top:4px;}
+.stat-card .stat-sub{font-size:11px;color:#D4AF37;font-weight:600;margin-top:2px;}
 .stat-card.primary .stat-number{color:#D4AF37;}
 .stat-card.success .stat-number{color:#16a34a;}
 .stat-card.warning .stat-number{color:#f59e0b;}
 .stat-card.danger .stat-number{color:#dc2626;}
+.stat-card.info .stat-number{color:#3b82f6;}
+.stat-card.purple .stat-number{color:#8b5cf6;}
+.filter-section{background:#fff;border-radius:12px;padding:12px 16px;margin-bottom:16px;border:1px solid #eaecf0;}
+.filter-section form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;}
+.filter-section .form-group{display:flex;flex-direction:column;gap:4px;min-width:120px;}
+.filter-section .form-group label{font-size:11px;font-weight:600;color:#4b5563;}
+.filter-section .form-control{padding:6px 10px;border:1.5px solid #eaecf0;border-radius:6px;font-size:13px;background:#fff;color:#1e293b;}
+.filter-section .form-control:focus{border-color:#D4AF37;outline:none;}
+.btn-filter{background:#D4AF37;color:#fff;border:none;padding:6px 18px;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;}
+.btn-filter:hover{background:#B8960F;}
+.btn-reset{background:#f3f4f6;color:#4b5563;border:none;padding:6px 18px;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;text-decoration:none;display:inline-block;}
+.btn-reset:hover{background:#e5e7eb;}
 .desktop-table{display:block;}
 .mobile-cards{display:none;}
 .history-card-m{background:#fff;border:1px solid #eaecf0;border-radius:12px;padding:12px 14px;margin-bottom:8px;}
@@ -37,6 +49,7 @@ code{word-break:break-all;}
 .badge-sale{background:#dbeafe;color:#1e40af;}
 .badge-repair{background:#fee2e2;color:#991b1b;}
 .badge-clean{background:#dbeafe;color:#1e40af;}
+.badge-old{background:#f3e8ff;color:#6b21a8;}
 .badge-available{background:#dcfce7;color:#166534;}
 .badge-sold{background:#fee2e2;color:#991b1b;}
 .badge-rented{background:#fef3c7;color:#92400e;}
@@ -58,10 +71,12 @@ code{word-break:break-all;}
   .btn-sm{min-height:40px;padding:8px 12px;}
   .slider-container{max-width:100%;}
   .slider-image{height:300px;}
+  .filter-section form{flex-direction:column;}
+  .filter-section .form-group{min-width:100%;}
 }
 @media(max-width:480px){
   .stats-grid{grid-template-columns:1fr 1fr!important;}
-  .stat-card .stat-number{font-size:20px;}
+  .stat-card .stat-number{font-size:18px;}
   .slider-image{height:250px;}
 }
 </style>
@@ -145,8 +160,59 @@ code{word-break:break-all;}
       </div>
     </div>
 
+    <!-- إحصائيات الشهر الحالي -->
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);">
+      <div class="stat-card info">
+        <div class="stat-number">{{ current_month_total|floatformat:0|intcomma }}</div>
+        <div class="stat-label">إجمالي إيرادات الشهر الحالي</div>
+        <div class="stat-sub">{{ current_month_total|floatformat:2|intcomma }} د.ل</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-number">{{ current_month_old|floatformat:0|intcomma }}</div>
+        <div class="stat-label">إيرادات قديمة بالشهر الحالي</div>
+        <div class="stat-sub">{{ current_month_old|floatformat:2|intcomma }} د.ل</div>
+      </div>
+      <div class="stat-card success">
+        <div class="stat-number">{{ current_month_new|floatformat:0|intcomma }}</div>
+        <div class="stat-label">إيرادات جديدة بالشهر الحالي</div>
+        <div class="stat-sub">{{ current_month_new|floatformat:2|intcomma }} د.ل</div>
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <form method="get">
+        <div class="form-group">
+          <label>الشهر</label>
+          <select name="month" class="form-control">
+            <option value="">جميع الأشهر</option>
+            {% for m in "123456789101112"|make_list %}
+            <option value="{{ m }}" {% if selected_month == m|add:0 %}selected{% endif %}>
+              {% if m|add:0 == 1 %}يناير{% elif m|add:0 == 2 %}فبراير{% elif m|add:0 == 3 %}مارس{% elif m|add:0 == 4 %}أبريل{% elif m|add:0 == 5 %}مايو{% elif m|add:0 == 6 %}يونيو{% elif m|add:0 == 7 %}يوليو{% elif m|add:0 == 8 %}أغسطس{% elif m|add:0 == 9 %}سبتمبر{% elif m|add:0 == 10 %}أكتوبر{% elif m|add:0 == 11 %}نوفمبر{% else %}ديسمبر{% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>السنة</label>
+          <select name="year" class="form-control">
+            <option value="">جميع السنوات</option>
+            {% for year in years %}
+            <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn-filter">تصفية</button>
+        <a href="{% url 'products_detail' product.pk %}" class="btn-reset">إعادة تعيين</a>
+      </form>
+    </div>
+
     <div class="card">
-      <div class="card-header"><span class="card-title">سجل الفستان</span></div>
+      <div class="card-header">
+        <span class="card-title">سجل الفستان</span>
+        <a href="{% url 'product_old_revenue_add' %}?product={{ product.id }}" class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 10px;">
+          + إضافة إيراد قديم
+        </a>
+      </div>
       <div class="card-body" style="padding:0;">
         <div class="desktop-table">
           <div class="table-wrap">
@@ -168,7 +234,8 @@ code{word-break:break-all;}
                     <span class="badge-status {% if item.type == 'rent' %}badge-rent
                              {% elif item.type == 'sale' %}badge-sale
                              {% elif item.type == 'repair' %}badge-repair
-                             {% elif item.type == 'clean' %}badge-clean{% endif %}">
+                             {% elif item.type == 'clean' %}badge-clean
+                             {% elif item.type == 'old_revenue' %}badge-old{% endif %}">
                       {{ item.type_display }}
                     </span>
                   </td>
@@ -192,7 +259,8 @@ code{word-break:break-all;}
                 <span class="badge-status {% if item.type == 'rent' %}badge-rent
                          {% elif item.type == 'sale' %}badge-sale
                          {% elif item.type == 'repair' %}badge-repair
-                         {% elif item.type == 'clean' %}badge-clean{% endif %}">
+                         {% elif item.type == 'clean' %}badge-clean
+                         {% elif item.type == 'old_revenue' %}badge-old{% endif %}">
                   {{ item.type_display }}
                 </span>
               </span>

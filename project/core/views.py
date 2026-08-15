@@ -171,17 +171,30 @@ def product_edit(request, pk):
 def product_detail(request, pk):
     product = get_object_or_404(Product, pk=pk)
     
+    month_filter = request.GET.get('month')
+    year_filter = request.GET.get('year')
+    
     history = []
     
     invoice_items = InvoiceItem.objects.filter(product=product)
     total_rentals = 0
     old_revenues = ProductOldRevenue.objects.filter(product=product)
+    
+    if month_filter and year_filter:
+        old_revenues = old_revenues.filter(date__month=month_filter, date__year=year_filter)
+        invoice_items = invoice_items.filter(invoice__created_at__month=month_filter, invoice__created_at__year=year_filter)
+    
     total_revenue = old_revenues.aggregate(Sum('amount'))['amount__sum'] or 0
+    
+    total_new_revenue = 0
+    total_rent_revenue = 0
+    total_sale_revenue = 0
     
     for item in invoice_items:
         if item.invoice.invoice_type == InvoiceType.RENT:
             total_rentals += 1
-            total_revenue += item.total_price
+            total_new_revenue += item.total_price
+            total_rent_revenue += item.total_price
             history.append({
                 'type': 'rent',
                 'type_display': 'إيجار',
@@ -190,7 +203,8 @@ def product_detail(request, pk):
                 'date': item.invoice.created_at.date()
             })
         elif item.invoice.invoice_type == InvoiceType.SALE:
-            total_revenue += item.total_price
+            total_new_revenue += item.total_price
+            total_sale_revenue += item.total_price
             history.append({
                 'type': 'sale',
                 'type_display': 'بيع',
@@ -211,9 +225,42 @@ def product_detail(request, pk):
             'date': repair.created_at
         })
     
+    total_old_revenue = 0
+    for old in old_revenues:
+        total_old_revenue += old.amount
+        history.append({
+            'type': 'old_revenue',
+            'type_display': 'إيراد قديم',
+            'details': old.notes or 'إيراد سابق',
+            'amount': old.amount,
+            'date': old.date
+        })
+    
     history.sort(key=lambda x: x['date'], reverse=True)
     
+    total_revenue = total_new_revenue + total_old_revenue
     total_profit = total_revenue - product.cost_price
+    
+    current_month = timezone.now().month
+    current_year = timezone.now().year
+    
+    current_month_old = ProductOldRevenue.objects.filter(
+        product=product,
+        date__month=current_month,
+        date__year=current_year
+    ).aggregate(Sum('amount'))['amount__sum'] or 0
+    
+    current_month_new = InvoiceItem.objects.filter(
+        product=product,
+        invoice__created_at__month=current_month,
+        invoice__created_at__year=current_year
+    ).aggregate(Sum('total_price'))['total_price__sum'] or 0
+    
+    current_month_total = current_month_old + current_month_new
+    
+    years = ProductOldRevenue.objects.filter(product=product).dates('date', 'year')
+    invoice_years = InvoiceItem.objects.filter(product=product).dates('invoice__created_at', 'year')
+    all_years = sorted(set([y.year for y in years] + [y.year for y in invoice_years]))
     
     context = {
         'product': product,
@@ -222,18 +269,31 @@ def product_detail(request, pk):
         'total_maintenance': total_maintenance,
         'total_revenue': total_revenue,
         'total_profit': total_profit,
+        'total_new_revenue': total_new_revenue,
+        'total_old_revenue': total_old_revenue,
+        'total_rent_revenue': total_rent_revenue,
+        'total_sale_revenue': total_sale_revenue,
+        'current_month_total': current_month_total,
+        'current_month_old': current_month_old,
+        'current_month_new': current_month_new,
+        'years': all_years,
+        'selected_month': int(month_filter) if month_filter else None,
+        'selected_year': int(year_filter) if year_filter else None,
+        'now': timezone.now(),
     }
     return render(request, 'products/detail.html', context)
 
 @login_required
 def product_delete(request, pk):
     if not request.user.is_main_admin():
-        return JsonResponse({'error': 'غير مصرح'}, status=403)
+        messages.error(request, 'غير مصرح')
+        return redirect('products_list')
 
     product = get_object_or_404(Product, pk=pk)
     product.delete()
 
-    return JsonResponse({'success': True})
+    messages.success(request, 'تم حذف المنتج بنجاح')
+    return redirect('products_list')
 
 
 @login_required
