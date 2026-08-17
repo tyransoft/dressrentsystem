@@ -192,9 +192,10 @@ def product_detail(request, pk):
     
     for item in invoice_items:
         if item.invoice.invoice_type == InvoiceType.RENT:
-            total_rentals += 1
-            total_new_revenue += item.total_price
-            total_rent_revenue += item.total_price
+            if item.invoice.status != InvoiceStatus.CANCELLED :
+              total_rentals += 1
+              total_new_revenue += item.total_price
+              total_rent_revenue += item.total_price
             history.append({
                 'type': 'rent',
                 'type_display': 'إيجار',
@@ -203,8 +204,10 @@ def product_detail(request, pk):
                 'date': item.invoice.created_at.date()
             })
         elif item.invoice.invoice_type == InvoiceType.SALE:
-            total_new_revenue += item.total_price
-            total_sale_revenue += item.total_price
+            if item.invoice.status != InvoiceStatus.CANCELLED :
+
+             total_new_revenue += item.total_price
+             total_sale_revenue += item.total_price
             history.append({
                 'type': 'sale',
                 'type_display': 'بيع',
@@ -1367,27 +1370,26 @@ def invoice_list(request):
 
 @csrf_exempt
 def cancel_invoice(request, invoice_id):
-    if request.method != 'POST':
-        return JsonResponse({'success': False, 'message': 'طريقة غير صحيحة'})
+
+    invoice = get_object_or_404(Invoice, id=invoice_id)
     
-    try:
-        invoice = get_object_or_404(Invoice, id=invoice_id)
-        
-        if invoice.status == InvoiceStatus.PAID:
-            return JsonResponse({'success': False, 'message': 'لا يمكن إلغاء فاتورة مدفوعة'})
-        
-        if invoice.status == InvoiceStatus.CANCELLED:
-            return JsonResponse({'success': False, 'message': 'الفاتورة ملغاة بالفعل'})
-        
-        invoice.mark_as_cancelled()
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'تم إلغاء الفاتورة وإعادة جميع المنتجات'
-        })
-        
-    except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)})
+   
+    if request.method == 'POST':
+        try:
+            
+            invoice.delete()
+            
+            messages.success(request, f'تم إلغاء الفاتورة  بنجاح')
+            return redirect('invoice_list')
+            
+        except Exception as e:
+            messages.error(request, f'حدث خطأ: {str(e)}')
+            return redirect('reservation_detail', invoice_id=invoice.id)
+    
+    context = {
+        'invoice': invoice,
+    }
+    return render(request, 'invoices/cancel_invoice.html', context)  
 
 
 @login_required

@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block page_title %}إلغاء الفاتورة{% endblock %}
+{% block mobile_title %}إلغاء الفاتورة{% endblock %}
+
+{% block content %}
+<style>
+.page-container {
+    padding: 10px 15px 30px 15px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+.cancel-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    text-align: center;
+}
+.cancel-icon {
+    font-size: 48px;
+    color: #dc2626;
+    margin-bottom: 15px;
+}
+.cancel-card h5 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 10px;
+}
+.cancel-card p {
+    color: #6b7280;
+    font-size: 14px;
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+.invoice-details {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+    text-align: right;
+}
+.invoice-details .detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    font-size: 14px;
+    border-bottom: 1px solid #e5e7eb;
+}
+.invoice-details .detail-row:last-child {
+    border-bottom: none;
+}
+.invoice-details .detail-row .label {
+    color: #6b7280;
+}
+.invoice-details .detail-row .value {
+    font-weight: 600;
+    color: #1e293b;
+}
+.invoice-details .detail-row .value.amount {
+    color: #dc2626;
+}
+.cancel-warning {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 15px 0;
+    color: #991b1b;
+    font-size: 13px;
+    text-align: right;
+}
+.cancel-warning i {
+    margin-left: 8px;
+}
+.invoice-items {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+    text-align: right;
+}
+.invoice-items table {
+    width: 100%;
+    font-size: 13px;
+}
+.invoice-items table th {
+    color: #6b7280;
+    font-weight: 600;
+    padding: 5px 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+.invoice-items table td {
+    padding: 5px 0;
+    border-bottom: 1px solid #f1f3f5;
+}
+.invoice-items table .item-name {
+    color: #1e293b;
+}
+.invoice-items table .item-price {
+    color: #059669;
+}
+.cancel-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+.btn-confirm-cancel {
+    background: #dc2626;
+    color: #fff;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.btn-confirm-cancel:hover {
+    background: #b91c1c;
+}
+.btn-cancel {
+    background: #f3f4f6;
+    color: #4b5563;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn-cancel:hover {
+    background: #e5e7eb;
+}
+
+@media (max-width: 480px) {
+    .page-container {
+        padding: 5px 8px 20px 8px;
+    }
+    .cancel-card {
+        padding: 20px;
+    }
+    .cancel-actions {
+        flex-direction: column;
+    }
+    .cancel-actions .btn-confirm-cancel,
+    .cancel-actions .btn-cancel {
+        width: 100%;
+        text-align: center;
+    }
+}
+</style>
+
+<div class="page-container">
+    <div class="cancel-card">
+        <div class="cancel-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h5>إلغاء الفاتورة</h5>
+        
+
+        <div class="invoice-details">
+            <div class="detail-row">
+                <span class="label">رقم الفاتورة</span>
+                <span class="value">#{{ invoice.invoice_number }}</span>
+            </div>
+           
+           
+            <div class="detail-row">
+                <span class="label">المبلغ الإجمالي</span>
+                <span class="value amount">{{ invoice.total_amount}} د.ل</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">تاريخ الإنشاء</span>
+                <span class="value">{{ invoice.created_at|date:'Y-m-d H:i' }}</span>
+            </div>
+        </div>
+
+        
+
+        
+        <form method="POST">
+            {% csrf_token %}
+            <div class="cancel-actions">
+                <button type="submit" class="btn-confirm-cancel">
+                    <i class="fas fa-trash"></i> تأكيد الإلغاء
+                </button>
+                <a href="{% url 'reservation_detail' invoice.id %}" class="btn-cancel">
+                    <i class="fas fa-times"></i> إلغاء
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

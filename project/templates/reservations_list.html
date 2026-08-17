@@ -617,6 +617,10 @@ tbody td {
                             {% if invoice.status == 'pending' %}
                                 <button class="btn-sm btn-deliver-sm" onclick="markAsDelivered({{ invoice.id }}, this)">تسليم</button>
                             {% endif %}
+                            
+                  <a class="btn btn-danger" href="{% url 'cancel_invoice' invoice.id %}" title="حذف">
+                    <i class="fas fa-times"></i>
+                  </a>
                         </div>
                     </td>
                 </tr>
@@ -705,6 +709,10 @@ tbody td {
                 {% if invoice.status == 'pending' %}
                     <button class="btn-sm btn-deliver-sm" onclick="markAsDelivered({{ invoice.id }}, this)">تسليم</button>
                 {% endif %}
+                
+                  <a class="btn btn-danger" href="{% url 'cancel_invoice' invoice.id %}" title="حذف">
+                    <i class="fas fa-times"></i>
+                  </a>
             </div>
         </div>
         {% empty %}

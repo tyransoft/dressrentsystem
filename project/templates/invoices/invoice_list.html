@@ -242,13 +242,13 @@
                   <a href="{% url 'reservation_detail' invoice.id %}" class="btn-view">
                     <i class="fa-regular fa-eye"></i> عرض
                   </a>
-                  {% if invoice.status != 'cancelled' and invoice.status != 'recieved' %}
+                  {% if  invoice.status != 'recieved' %}
                   <a href="{% url 'confirm_return' invoice.id %}" class="btn btn-success" title="استلام">
                     <i class="fas fa-check"></i>
                   </a>
-                  <button class="btn btn-danger" onclick="cancelInvoice({{ invoice.id }})" title="إلغاء">
+                  <a class="btn btn-danger" href="{% url 'cancel_invoice' invoice.id %}" title="حذف">
                     <i class="fas fa-times"></i>
-                  </button>
+                  </a>
                   {% endif %}
                   <a href="{% url 'print_receipt' invoice.id %}" target="_blank" class="btn btn-secondary" title="طباعة">
                     <i class="fas fa-print"></i>
@@ -311,13 +311,14 @@
           <a href="{% url 'reservation_detail' invoice.id %}" class="btn-view">
             <i class="fa-regular fa-eye"></i> عرض
           </a>
-          {% if invoice.status != 'cancelled' and invoice.status != 'recieved' %}
+          {% if  invoice.status != 'recieved' %}
           <a href="{% url 'confirm_return' invoice.id %}" class="btn-success-sm">
             <i class="fas fa-check"></i> استلام
           </a>
-          <button class="btn-danger-sm" onclick="cancelInvoice({{ invoice.id }})">
-            <i class="fas fa-times"></i> إلغاء
-          </button>
+          
+          <a class="btn btn-danger" href="{% url 'cancel_invoice' invoice.id %}" title="حذف">
+            <i class="fas fa-times"></i>
+          </a>
           {% endif %}
           <a href="{% url 'print_receipt' invoice.id %}" target="_blank" class="btn-secondary-sm">
             <i class="fas fa-print"></i> طباعة
