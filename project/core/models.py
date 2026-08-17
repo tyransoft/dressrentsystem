@@ -507,7 +507,7 @@ class InvoiceStatus(models.TextChoices):
 class Invoice(models.Model):
     invoice_number = models.CharField(max_length=20, unique=True, verbose_name='رقم الفاتورة')
     invoice_type = models.CharField(max_length=10, choices=InvoiceType.choices, default=InvoiceType.RENT, verbose_name='نوع الفاتورة')
-    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, null=True, blank=True, verbose_name='العميل')
+    customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='العميل')
     
     rent_start_date = models.DateField(null=True, blank=True,default=default_date, verbose_name='تاريخ بداية الإيجار')
     rent_end_date = models.DateField(null=True, blank=True, verbose_name='تاريخ نهاية الإيجار')
@@ -527,7 +527,7 @@ class Invoice(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
         CustomUser, 
-        on_delete=models.PROTECT, 
+        on_delete=models.SET_NULL, 
         null=True, 
         blank=True, 
         related_name='invoices', 
@@ -657,7 +657,7 @@ class Invoice(models.Model):
 
 class InvoiceItem(models.Model):
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='items')
-    product = models.ForeignKey(Product, on_delete=models.PROTECT)  
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)  
     days = models.IntegerField(default=0, verbose_name='عدد الأيام') 
     unit_price = models.DecimalField(max_digits=12, decimal_places=2, verbose_name='سعر الوحدة')
     total_price = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name='الإجمالي')
