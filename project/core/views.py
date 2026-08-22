@@ -2314,7 +2314,7 @@ def admin_daily_report_print(request):
     ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
     
     repairs = RepairAndClean.objects.filter(
-        created_at__date=today
+        created_at=today
     )
     total_repair_cost = repairs.aggregate(total=Sum('total_cost'))['total'] or Decimal('0')
     repair_count = repairs.filter(kind='repair').count()
