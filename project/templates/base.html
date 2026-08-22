@@ -917,9 +917,19 @@ textarea.form-control { resize: vertical; min-height: 90px; }
     
     <div class="section-page active" id="section-home">
         {% if user.can_see_all_data or user.is_accountant %}
+            <a href="{% url 'admin_daily_report_print' %}" class="btn-primary-custom" style="background:#D4AF37;">
+        <i class="fas fa-file-pdf"></i> تقرير  
+    </a>
+    <a href="{% url 'employee_performance_print' %}" class="btn-primary-custom" style="background:#8b5cf6;">
+    <i class="fas fa-chart-bar"></i> تقرير  الموظفين
+</a>
         <a href="{% url 'statistics' %}" class="section-btn">
             <i class="fa-solid fa-chart-pie nav-icon"></i> لوحة التحكم
         </a>
+         {% else %}
+         <a href="{% url 'employee_performance_print' %}?employee_id={{ request.user.id }}" class="btn-action btn-view">
+    <i class="fas fa-print"></i> تقرير اليوم
+</a>
         {% endif %}
     </div>
 

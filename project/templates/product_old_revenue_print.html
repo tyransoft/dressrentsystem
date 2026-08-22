@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block page_title %}طباعة الإيرادات {% endblock %}
+
+{% block content %}
+<style>
+@media print {
+    .no-print { display: none !important; }
+    body { background: #fff !important; }
+    .print-container { padding: 20px; }
+}
+.print-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #fff;
+}
+.header {
+    text-align: center;
+    border-bottom: 3px solid #D4AF37;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+.header h2 {
+    margin: 0;
+    color: #1e293b;
+    font-size: 24px;
+}
+.header p {
+    margin: 5px 0 0;
+    color: #6b7280;
+    font-size: 14px;
+}
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+.stat-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 12px 16px;
+    border: 1px solid #eaecf0;
+}
+.stat-card .stat-number {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1e293b;
+}
+.stat-card .stat-label {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: 4px;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+thead {
+    background: #f8fafc;
+    border-bottom: 2px solid #e5e7eb;
+}
+thead th {
+    padding: 10px 12px;
+    text-align: right;
+    font-weight: 700;
+    color: #4b5563;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+tbody tr {
+    border-bottom: 1px solid #f1f3f5;
+}
+tbody td {
+    padding: 8px 12px;
+    vertical-align: middle;
+}
+tbody tr:last-child {
+    border-bottom: none;
+}
+.amount {
+    color: #16a34a;
+    font-weight: 600;
+}
+.total-row {
+    background: #f8fafc;
+    font-weight: 700;
+    border-top: 2px solid #D4AF37;
+}
+.total-row td {
+    padding: 12px;
+}
+.footer {
+    text-align: center;
+    margin-top: 30px;
+    padding-top: 15px;
+    border-top: 1px solid #eaecf0;
+    color: #9ca3af;
+    font-size: 12px;
+}
+.btn-print {
+    background: #D4AF37;
+    color: #fff;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    margin: 10px;
+    transition: all 0.3s;
+}
+.btn-print:hover {
+    background: #B8960F;
+}
+.btn-back {
+    background: #f3f4f6;
+    color: #4b5563;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    margin: 10px;
+}
+.btn-back:hover {
+    background: #e5e7eb;
+}
+.actions {
+    text-align: center;
+    margin-bottom: 20px;
+}
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+</style>
+
+<div class="print-container">
+    <div class="header">
+        <h2>تقرير الإيرادات القديمة للفساتين</h2>
+        <p>
+            {% if date_from and date_to %}
+            من {{ date_from }} إلى {{ date_to }}
+            {% elif date_from %}
+            من {{ date_from }}
+            {% elif date_to %}
+            إلى {{ date_to }}
+            {% else %}
+            جميع الإيرادات
+            {% endif %}
+        </p>
+        <p style="font-size: 12px; color: #9ca3af;">تاريخ الطباعة: {% now "Y-m-d H:i" %}</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">{{ grouped_data|length }}</div>
+            <div class="stat-label">عدد الفساتين</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ total_sum|floatformat:0|intcomma }} د.ل</div>
+            <div class="stat-label">إجمالي الإيرادات</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ grouped_data|length }}</div>
+            <div class="stat-label">إجمالي العمليات</div>
+        </div>
+    </div>
+
+    {% if grouped_data %}
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>اسم الفستان</th>
+                <th>عدد الإيرادات</th>
+                <th>إجمالي المبلغ</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in grouped_data %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ item.product.name }}</td>
+                <td>{{ item.count }}</td>
+                <td class="amount">{{ item.total_amount|floatformat:2 }} د.ل</td>
+            </tr>
+            {% endfor %}
+            <tr class="total-row">
+                <td colspan="3" style="text-align:left;">الإجمالي الكلي</td>
+                <td>{{ total_sum|floatformat:2 }} د.ل</td>
+            </tr>
+        </tbody>
+    </table>
+    {% else %}
+    <div style="text-align:center;padding:40px;color:#9ca3af;">
+        <h3>لا توجد إيرادات  في هذه الفترة</h3>
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        <p>هذا التقرير صادر عن نظام إدارة المحل</p>
+    </div>
+</div>
+
+<div class="actions no-print">
+    <button class="btn-print" onclick="window.print()"> طباعة</button>
+    <a href="{% url 'product_old_revenue_list' %}{% if product_id %}?product={{ product_id }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="btn-back">رجوع</a>
+</div>
+
+<script>
+window.onload = function() {
+    setTimeout(function() {
+        window.print();
+    }, 500);
+};
+</script>
+{% endblock %}

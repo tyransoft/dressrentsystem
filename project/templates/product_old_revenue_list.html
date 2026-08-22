@@ -330,6 +330,7 @@ tbody td {
             </div>
             <button type="submit" class="btn-filter">تصفية</button>
             <a href="{% url 'product_old_revenue_list' %}" class="btn-reset">إعادة تعيين</a>
+            <a href="{% url 'product_old_revenue_print' %}?{{ request.GET.urlencode }}" class="btn-filter" style="background:#16a34a;">طباعة التقرير</a>
         </form>
     </div>
 

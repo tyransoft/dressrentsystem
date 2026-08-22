@@ -1391,7 +1391,6 @@ def cancel_invoice(request, invoice_id):
     }
     return render(request, 'invoices/cancel_invoice.html', context)  
 
-
 @login_required
 def statistics(request):
 
@@ -1472,7 +1471,16 @@ def statistics(request):
         total_sale_revenue=Sum('invoiceitem__total_price')
     ).order_by('-sale_count')[:10]
     
-    total_product_cost = invoice_items.aggregate(total=Sum('product__cost_price'))['total'] or Decimal('0')
+    total_sale_items = invoice_items.filter(invoice__invoice_type=InvoiceType.SALE)
+    total_rent_items = invoice_items.filter(invoice__invoice_type=InvoiceType.RENT)
+    
+    sale_product_cost = total_sale_items.aggregate(
+        total=Sum('product__cost_price')
+    )['total'] or Decimal('0')
+    
+    rent_product_cost = total_rent_items.aggregate(
+        total=Sum('product__cost_price')
+    )['total'] or Decimal('0')
     
     old_revenues = ProductOldRevenue.objects.filter(
         date__gte=start_date,
@@ -1480,47 +1488,28 @@ def statistics(request):
     )
     total_old_revenue = old_revenues.aggregate(total=Sum('amount'))['total'] or Decimal('0')
     
-    total_gross_revenue = total_revenue + total_old_revenue
-    
-    total_profit = total_gross_revenue - total_product_cost
-    
-    profit_margin = 0
-    if total_gross_revenue > 0:
-        profit_margin = (total_profit / total_gross_revenue) * 100
-    
-    rent_percent = 0
-    sale_percent = 0
-    if total_gross_revenue > 0:
-        rent_percent = (total_rent_revenue / total_gross_revenue) * 100
-        sale_percent = (total_sale_revenue / total_gross_revenue) * 100
-    
-    total_rent_items = invoice_items.filter(invoice__invoice_type=InvoiceType.RENT)
-    total_sale_items = invoice_items.filter(invoice__invoice_type=InvoiceType.SALE)
-    
-    rent_product_cost = total_rent_items.aggregate(total=Sum('product__cost_price'))['total'] or Decimal('0')
-    sale_product_cost = total_sale_items.aggregate(total=Sum('product__cost_price'))['total'] or Decimal('0')
-    
-    rent_old_revenue = ProductOldRevenue.objects.filter(
-        product__in=Product.objects.filter(invoiceitem__invoice__in=rent_invoices)
+    total_penalties = Penalty.objects.filter(
+        invoice__in=invoices
     ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
     
-    sale_old_revenue = ProductOldRevenue.objects.filter(
-        product__in=Product.objects.filter(invoiceitem__invoice__in=sale_invoices)
-    ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-    
-    rent_profit = (total_rent_revenue + rent_old_revenue) - rent_product_cost
-    sale_profit = (total_sale_revenue + sale_old_revenue) - sale_product_cost
+    total_gross_revenue = total_revenue + total_old_revenue + total_penalties
     
     expenses = Expense.objects.filter(
         expense_date__gte=start_date,
         expense_date__lte=end_date
     )
-    
     total_expenses = expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0')
     
     expenses_by_category = ExpenseCategory.objects.annotate(
         total=Sum('expenses__amount', filter=Q(expenses__expense_date__gte=start_date, expenses__expense_date__lte=end_date))
     ).filter(total__gt=0)
+    
+    expenses_by_category_list = []
+    for cat in expenses_by_category:
+        expenses_by_category_list.append({
+            'name': cat.name,
+            'total': cat.total
+        })
     
     total_salaries_paid = MonthlySalaryPayment.objects.filter(
         payment_date__gte=start_date,
@@ -1539,21 +1528,37 @@ def statistics(request):
         absence_date__lte=end_date
     ).aggregate(total=Sum('deduction_amount'))['total'] or Decimal('0')
     
-    expenses_by_category_list = []
-    for cat in expenses_by_category:
-        expenses_by_category_list.append({
-            'name': cat.name,
-            'total': cat.total
-        })
+    total_operating_expenses = total_expenses + total_salaries_paid + total_repair_cost
     
-    total_cost_of_goods_sold = total_product_cost
-    total_operating_expenses = total_expenses 
-    total_net_profit = total_profit - total_operating_expenses
-    total_gross_profit = total_profit
+    total_net_profit = total_gross_revenue - sale_product_cost - total_operating_expenses
+    
+    total_gross_profit = total_gross_revenue - sale_product_cost
+    
+    profit_margin = 0
+    if total_gross_revenue > 0:
+        profit_margin = (total_gross_profit / total_gross_revenue) * 100
     
     net_profit_margin = 0
     if total_gross_revenue > 0:
         net_profit_margin = (total_net_profit / total_gross_revenue) * 100
+    
+    rent_percent = 0
+    sale_percent = 0
+    if total_gross_revenue > 0:
+        rent_percent = (total_rent_revenue / total_gross_revenue) * 100
+        sale_percent = (total_sale_revenue / total_gross_revenue) * 100
+    
+    rent_old_revenue = ProductOldRevenue.objects.filter(
+        product__in=Product.objects.filter(invoiceitem__invoice__in=rent_invoices)
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    
+    sale_old_revenue = ProductOldRevenue.objects.filter(
+        product__in=Product.objects.filter(invoiceitem__invoice__in=sale_invoices)
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    
+    rent_profit = (total_rent_revenue + rent_old_revenue)
+    
+    sale_profit = (total_sale_revenue + sale_old_revenue) - sale_product_cost
     
     daily_stats = []
     for i in range(7):
@@ -1565,10 +1570,6 @@ def statistics(request):
             'revenue': day_invoices.aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
         })
     daily_stats.reverse()
-    
-    total_penalties = Penalty.objects.filter(
-        invoice__in=invoices
-    ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
     
     top_customers = Customer.objects.filter(
         invoice__in=invoices
@@ -1605,9 +1606,15 @@ def statistics(request):
         'total_products_inrepair': total_products_inrepair,
         'top_rented_products': top_rented_products,
         'top_sold_products': top_sold_products,
-        'total_product_cost': total_product_cost,
-        'total_profit': total_profit,
+        'sale_product_cost': sale_product_cost,
+        'rent_product_cost': rent_product_cost,
+        'total_cost_of_goods_sold': sale_product_cost,
+        'total_gross_revenue': total_gross_revenue,
+        'total_old_revenue': total_old_revenue,
+        'total_gross_profit': total_gross_profit,
+        'total_net_profit': total_net_profit,
         'profit_margin': profit_margin,
+        'net_profit_margin': net_profit_margin,
         'rent_profit': rent_profit,
         'sale_profit': sale_profit,
         'rent_percent': rent_percent,
@@ -1621,11 +1628,7 @@ def statistics(request):
         'total_absences': total_absences,
         'total_absence_deductions': total_absence_deductions,
         'total_operating_expenses': total_operating_expenses,
-        'total_net_profit': total_net_profit,
-        'net_profit_margin': net_profit_margin,
-        'total_gross_profit': total_gross_profit,
         'top_customers': top_customers,
-        'total_cost_of_goods_sold': total_cost_of_goods_sold,
     }
     
     return render(request, 'statistics.html', context)
@@ -2127,7 +2130,7 @@ def employees_performance(request):
         messages.error(request, 'ليس لديك صلاحية لعرض هذه الصفحة')
         return redirect('statistics')
 
-    employees = CustomUser.objects.all().prefetch_related('invoices')
+    employees = CustomUser.objects.all()
 
     filter_type = request.GET.get('filter_type') 
     start_date_str = request.GET.get('start_date')
@@ -2162,10 +2165,15 @@ def employees_performance(request):
     for emp in employees:
         total = emp.get_invoices_total(start_date, end_date)
         count = emp.get_invoices_count(start_date, end_date)
+        average_invoice = total / count if count > 0 else 0
+
+
         employee_data.append({
             'user': emp,
             'total_income': total,
             'invoice_count': count,
+            'average_invoice': average_invoice,
+
         })
         total_income_all += total
         total_invoices_all += count
@@ -2181,17 +2189,241 @@ def employees_performance(request):
     }
     return render(request, 'employees_performance.html', context)
 
+@login_required
+def employee_performance_print(request):
+    today = timezone.now().date()
+    employee_id = request.GET.get('employee_id')
+    
+    invoices = Invoice.objects.filter(
+        created_at__date=today
+    ).exclude(status=InvoiceStatus.CANCELLED)
+    
+    if employee_id:
+        invoices = invoices.filter(created_by_id=employee_id)
+    
+    employees = CustomUser.objects.all()
+    selected_employee = None
+    if employee_id:
+        selected_employee = get_object_or_404(CustomUser, pk=employee_id)
+    
+    total_invoices = invoices.count()
+    total_revenue = invoices.aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
+    total_paid = invoices.aggregate(total=Sum('paid_amount'))['total'] or Decimal('0')
+    total_remaining = invoices.aggregate(total=Sum('remaining_amount'))['total'] or Decimal('0')
+    total_discount = invoices.aggregate(total=Sum('discount'))['total'] or Decimal('0')
+    total_commission = invoices.aggregate(total=Sum('commission'))['total'] or Decimal('0')
+    
+    rent_invoices = invoices.filter(invoice_type=InvoiceType.RENT)
+    sale_invoices = invoices.filter(invoice_type=InvoiceType.SALE)
+    total_rent_revenue = rent_invoices.aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
+    total_sale_revenue = sale_invoices.aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
+    
+    invoice_items = InvoiceItem.objects.filter(invoice__in=invoices)
+    total_items = invoice_items.count()
+    total_rent_days = invoice_items.aggregate(total=Sum('days'))['total'] or 0
+    
+    sale_items = invoice_items.filter(invoice__invoice_type=InvoiceType.SALE)
+    sale_product_cost = sale_items.aggregate(total=Sum('product__cost_price'))['total'] or Decimal('0')
+    
+    total_gross_profit = total_revenue - sale_product_cost
+    
+    total_penalties = Penalty.objects.filter(
+        invoice__in=invoices
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    
+    customer_payments = CustomerPayment.objects.filter(
+        payment_date__date=today
+    )
+    total_payments = customer_payments.aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    
+    context = {
+        'today': today,
+        'invoices': invoices,
+        'employees': employees,
+        'selected_employee': selected_employee,
+        'total_invoices': total_invoices,
+        'total_revenue': total_revenue,
+        'total_paid': total_paid,
+        'total_remaining': total_remaining,
+        'total_discount': total_discount,
+        'total_commission': total_commission,
+        'total_rent_revenue': total_rent_revenue,
+        'total_sale_revenue': total_sale_revenue,
+        'total_items': total_items,
+        'total_rent_days': total_rent_days,
+        'sale_product_cost': sale_product_cost,
+        'total_gross_profit': total_gross_profit,
+        'total_penalties': total_penalties,
+        'total_payments': total_payments,
+    }
+    return render(request, 'employee_performance_print.html', context)
 
 
 @login_required
+def admin_daily_report_print(request):
+    today = timezone.now().date()
+    
+    invoices = Invoice.objects.filter(
+        created_at__date=today
+    ).exclude(status=InvoiceStatus.CANCELLED)
+    
+    rent_invoices = invoices.filter(invoice_type=InvoiceType.RENT)
+    sale_invoices = invoices.filter(invoice_type=InvoiceType.SALE)
+    
+    total_invoices = invoices.count()
+    total_rent_invoices = rent_invoices.count()
+    total_sale_invoices = sale_invoices.count()
+    
+    total_revenue = invoices.aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
+    total_rent_revenue = rent_invoices.aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
+    total_sale_revenue = sale_invoices.aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
+    
+    total_paid = invoices.aggregate(total=Sum('paid_amount'))['total'] or Decimal('0')
+    total_remaining = invoices.aggregate(total=Sum('remaining_amount'))['total'] or Decimal('0')
+    total_discount = invoices.aggregate(total=Sum('discount'))['total'] or Decimal('0')
+    total_commission = invoices.aggregate(total=Sum('commission'))['total'] or Decimal('0')
+    
+    invoice_items = InvoiceItem.objects.filter(invoice__in=invoices)
+    total_items = invoice_items.count()
+    total_rent_days = invoice_items.aggregate(total=Sum('days'))['total'] or 0
+    
+    sale_items = invoice_items.filter(invoice__invoice_type=InvoiceType.SALE)
+    rent_items = invoice_items.filter(invoice__invoice_type=InvoiceType.RENT)
+    
+    sale_product_cost = sale_items.aggregate(total=Sum('product__cost_price'))['total'] or Decimal('0')
+    rent_product_cost = rent_items.aggregate(total=Sum('product__cost_price'))['total'] or Decimal('0')
+    
+    total_old_revenue = ProductOldRevenue.objects.filter(
+        date=today
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    
+    total_penalties = Penalty.objects.filter(
+        invoice__in=invoices
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    
+    total_gross_revenue = total_revenue + total_old_revenue + total_penalties
+    total_gross_profit = total_gross_revenue - sale_product_cost
+    
+    expenses = Expense.objects.filter(
+        expense_date=today
+    )
+    total_expenses = expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    
+    total_salaries_paid = MonthlySalaryPayment.objects.filter(
+        payment_date=today
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    
+    repairs = RepairAndClean.objects.filter(
+        created_at__date=today
+    )
+    total_repair_cost = repairs.aggregate(total=Sum('total_cost'))['total'] or Decimal('0')
+    repair_count = repairs.filter(kind='repair').count()
+    clean_count = repairs.filter(kind='clean').count()
+    
+    total_operating_expenses = total_expenses + total_salaries_paid + total_repair_cost
+    total_net_profit = total_gross_revenue - sale_product_cost - total_operating_expenses
+    
+    profit_margin = 0
+    if total_gross_revenue > 0:
+        profit_margin = (total_gross_profit / total_gross_revenue) * 100
+    
+    net_profit_margin = 0
+    if total_gross_revenue > 0:
+        net_profit_margin = (total_net_profit / total_gross_revenue) * 100
+    
+    top_customers = Customer.objects.filter(
+        invoice__in=invoices
+    ).annotate(
+        total_spent=Sum('invoice__total_amount'),
+        total_invoices=Count('invoice')
+    ).order_by('-total_spent')[:10]
+    
+    invoices_with_users = invoices.select_related('created_by', 'customer')
+    
+    context = {
+        'today': today,
+        'invoices': invoices_with_users,
+        'total_invoices': total_invoices,
+        'total_rent_invoices': total_rent_invoices,
+        'total_sale_invoices': total_sale_invoices,
+        'total_revenue': total_revenue,
+        'total_rent_revenue': total_rent_revenue,
+        'total_sale_revenue': total_sale_revenue,
+        'total_paid': total_paid,
+        'total_remaining': total_remaining,
+        'total_discount': total_discount,
+        'total_commission': total_commission,
+        'total_items': total_items,
+        'total_rent_days': total_rent_days,
+        'sale_product_cost': sale_product_cost,
+        'rent_product_cost': rent_product_cost,
+        'total_old_revenue': total_old_revenue,
+        'total_penalties': total_penalties,
+        'total_gross_revenue': total_gross_revenue,
+        'total_gross_profit': total_gross_profit,
+        'profit_margin': profit_margin,
+        'total_expenses': total_expenses,
+        'total_salaries_paid': total_salaries_paid,
+        'total_repair_cost': total_repair_cost,
+        'repair_count': repair_count,
+        'clean_count': clean_count,
+        'total_operating_expenses': total_operating_expenses,
+        'total_net_profit': total_net_profit,
+        'net_profit_margin': net_profit_margin,
+        'top_customers': top_customers,
+    }
+    return render(request, 'admin_daily_report_print.html', context)
+
+@login_required
 def provider_list(request):
+    today = timezone.now().date()
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    filter_type = request.GET.get('filter_type')
+    
+    if filter_type == 'today':
+        start_date = today
+        end_date = today
+    elif start_date:
+        start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+    else:
+        start_date = None
+    
+    if end_date:
+        end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+    elif not filter_type == 'today':
+        end_date = None
+    
     providers = repairandcleanprovider.objects.all().prefetch_related('services', 'payments')
     
+    if start_date and end_date:
+        provider_ids = []
+        for provider in providers:
+            services = provider.services.filter(created_at__date__gte=start_date, created_at__date__lte=end_date)
+            payments = provider.payments.filter(payment_date__date__gte=start_date, payment_date__date__lte=end_date)
+            if services.exists() or payments.exists():
+                provider_ids.append(provider.id)
+        providers = providers.filter(id__in=provider_ids)
+    
     total_providers = providers.count()
-    total_services = sum(p.get_total_services() for p in providers)
-    total_paid = sum(p.get_total_paid() for p in providers)
-    total_pending = sum(p.get_total_pending() for p in providers)
-    total_remaining = sum(p.get_total_remaining() for p in providers)
+    
+    total_services = 0
+    total_paid = 0
+    total_pending = 0
+    total_remaining = 0
+    
+    for provider in providers:
+        services = provider.services.all()
+        if start_date and end_date:
+            services = services.filter(created_at__date__gte=start_date, created_at__date__lte=end_date)
+        payments = provider.payments.all()
+        if start_date and end_date:
+            payments = payments.filter(payment_date__date__gte=start_date, payment_date__date__lte=end_date)
+        
+        total_services += services.count()
+        total_paid += sum(p.amount for p in payments.filter(status='paid'))
+        total_pending += sum(p.amount for p in payments.filter(status='pending'))
+        total_remaining += sum(service.get_remaining_amount() for service in services)
     
     context = {
         'providers': providers,
@@ -2200,8 +2432,61 @@ def provider_list(request):
         'total_paid': total_paid,
         'total_pending': total_pending,
         'total_remaining': total_remaining,
+        'start_date': start_date,
+        'end_date': end_date,
+        'today': today,
     }
     return render(request, 'providers/provider_list.html', context)
+
+
+@login_required
+def provider_detail(request, pk):
+    today = timezone.now().date()
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    filter_type = request.GET.get('filter_type')
+    
+    if filter_type == 'today':
+        start_date = today
+        end_date = today
+    elif start_date:
+        start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+    else:
+        start_date = None
+    
+    if end_date:
+        end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+    elif not filter_type == 'today':
+        end_date = None
+    
+    provider = get_object_or_404(repairandcleanprovider, pk=pk)
+    services = provider.services.all()
+    payments = provider.payments.all()
+    
+    if start_date and end_date:
+        services = services.filter(created_at__date__gte=start_date, created_at__date__lte=end_date)
+        payments = payments.filter(payment_date__date__gte=start_date, payment_date__date__lte=end_date)
+    
+    total_services_cost = sum(service.total_cost for service in services)
+    total_paid = sum(payment.amount for payment in payments.filter(status='paid'))
+    total_pending = sum(payment.amount for payment in payments.filter(status='pending'))
+    balance = total_services_cost - total_paid
+    total_unpaid = sum(service.get_remaining_amount() for service in services)
+    
+    context = {
+        'provider': provider,
+        'services': services,
+        'payments': payments,
+        'total_services_cost': total_services_cost,
+        'total_paid': total_paid,
+        'total_pending': total_pending,
+        'balance': balance,
+        'total_unpaid': total_unpaid,
+        'start_date': start_date,
+        'end_date': end_date,
+        'today': today,
+    }
+    return render(request, 'providers/provider_detail.html', context)
 
 
 @login_required
@@ -2243,29 +2528,6 @@ def provider_edit(request, pk):
     return render(request, 'providers/provider_form.html', context)
 
 
-@login_required
-def provider_detail(request, pk):
-    provider = get_object_or_404(repairandcleanprovider, pk=pk)
-    services = provider.services.all()
-    payments = provider.payments.all()
-    
-    total_services_cost = provider.get_total_services_cost()
-    total_paid = provider.get_total_paid()
-    total_pending = provider.get_total_pending()
-    balance = provider.get_total_remaining()
-    total_unpaid = provider.get_total_unpaid_amount()
-    
-    context = {
-        'provider': provider,
-        'services': services,
-        'payments': payments,
-        'total_services_cost': total_services_cost,
-        'total_paid': total_paid,
-        'total_pending': total_pending,
-        'balance': balance,
-        'total_unpaid': total_unpaid,
-    }
-    return render(request, 'providers/provider_detail.html', context)
 
 
 @login_required
@@ -2477,3 +2739,44 @@ def product_old_revenue_detail(request, pk):
         'title': 'تفاصيل الإيراد القديم',
     }
     return render(request, 'product_old_revenue_detail.html', context)
+
+@login_required
+def product_old_revenue_print(request):
+    revenues = ProductOldRevenue.objects.select_related('product').all()
+    
+    product_id = request.GET.get('product', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    
+    if product_id:
+        revenues = revenues.filter(product_id=product_id)
+    if date_from:
+        revenues = revenues.filter(date__gte=date_from)
+    if date_to:
+        revenues = revenues.filter(date__lte=date_to)
+    
+    grouped_data = {}
+    for revenue in revenues:
+        key = revenue.product_id
+        if key not in grouped_data:
+            grouped_data[key] = {
+                'product': revenue.product,
+                'total_amount': 0,
+                'count': 0,
+                'dates': []
+            }
+        grouped_data[key]['total_amount'] += revenue.amount
+        grouped_data[key]['count'] += 1
+        grouped_data[key]['dates'].append(revenue.date)
+    
+    grouped_list = list(grouped_data.values())
+    total_sum = sum(item['total_amount'] for item in grouped_list)
+    
+    context = {
+        'grouped_data': grouped_list,
+        'total_sum': total_sum,
+        'date_from': date_from,
+        'date_to': date_to,
+        'product_id': product_id,
+    }
+    return render(request, 'product_old_revenue_print.html', context)

@@ -104,6 +104,11 @@ urlpatterns = [
     path('product-old-revenue/<int:pk>/edit/', product_old_revenue_edit, name='product_old_revenue_edit'),
     path('product-old-revenue/<int:pk>/delete/', product_old_revenue_delete, name='product_old_revenue_delete'),
     path('product-old-revenue/<int:pk>/', product_old_revenue_detail, name='product_old_revenue_detail'),
+    path('product-old-revenue/print/', product_old_revenue_print, name='product_old_revenue_print'),
+
+    path('reports/employee-performance/', employee_performance_print, name='employee_performance_print'),
+    path('reports/admin-daily/', admin_daily_report_print, name='admin_daily_report_print'),
+
 ]
 
 

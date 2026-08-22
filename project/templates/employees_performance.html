@@ -134,10 +134,10 @@
                         </div>
                     </td>
                     <td class="count">{{ data.invoice_count }}</td>
-                    <td class="income">{{ data.total_income|floatformat:2|intcomma }}</td>
+                    <td class="income">{{ data.total_income|intcomma }}</td>
                     <td>
                         {% if data.invoice_count > 0 %}
-                        {{ data.total_income|divisibleby:data.invoice_count|floatformat:2|intcomma }}
+                        {{ data.average_invoice|intcomma }}
                         {% else %}
                         <span class="text-muted">-</span>
                         {% endif %}
@@ -167,7 +167,7 @@
             </div>
             <div class="ec-details">
                 <div class="ec-item"><span class="label">عدد الفواتير</span><span>{{ data.invoice_count }}</span></div>
-                <div class="ec-item"><span class="label">إجمالي الدخل</span><span class="value income">{{ data.total_income|floatformat:2|intcomma }}</span></div>
+                <div class="ec-item"><span class="label">إجمالي الدخل</span><span class="value income">{{ data.total_income|intcomma }}</span></div>
             </div>
         </div>
         {% empty %}

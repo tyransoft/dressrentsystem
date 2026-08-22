@@ -89,7 +89,7 @@
 
 <div class="profit-summary">
   <div class="item">
-    <div class="num gold">{{ total_revenue|floatformat:0|intcomma }}</div>
+    <div class="num gold">{{ total_gross_revenue|floatformat:0|intcomma }}</div>
     <div class="label">إجمالي الإيرادات</div>
   </div>
   <div class="item">
@@ -112,9 +112,9 @@
 
 <div class="stats-grid">
   <div class="stat-card primary">
-    <div class="stat-number">{{ total_revenue|floatformat:0|intcomma }}</div>
+    <div class="stat-number">{{ total_gross_revenue|floatformat:0|intcomma }}</div>
     <div class="stat-label">إجمالي الإيرادات</div>
-    <div class="stat-sub">{{ total_revenue|floatformat:2|intcomma }} د.ل</div>
+    <div class="stat-sub">{{ total_gross_revenue|floatformat:2|intcomma }} د.ل</div>
   </div>
   <div class="stat-card success">
     <div class="stat-number">{{ total_gross_profit|floatformat:0|intcomma }}</div>
@@ -129,7 +129,7 @@
   <div class="stat-card red">
     <div class="stat-number">{{ total_operating_expenses|floatformat:0|intcomma }}</div>
     <div class="stat-label">المصاريف التشغيلية</div>
-    <div class="stat-sub">مصاريف + رواتب</div>
+    <div class="stat-sub">مصاريف + رواتب + صيانة</div>
   </div>
 </div>
 
@@ -305,7 +305,10 @@
   <div class="card-body">
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">
       <div><strong>إجمالي الفواتير:</strong> {{ total_invoices }}</div>
-      <div><strong>إجمالي الإيرادات:</strong> {{ total_revenue|floatformat:2 }} د.ل</div>
+      <div><strong>إجمالي الإيرادات:</strong> {{ total_gross_revenue|floatformat:2 }} د.ل</div>
+      <div><strong>إيرادات الفواتير:</strong> {{ total_revenue|floatformat:2 }} د.ل</div>
+      <div><strong>الإيرادات القديمة:</strong> {{ total_old_revenue|floatformat:2 }} د.ل</div>
+      <div><strong>الغرامات:</strong> {{ total_penalties|floatformat:2 }} د.ل</div>
       <div><strong>الربح الإجمالي:</strong> {{ total_gross_profit|floatformat:2 }} د.ل</div>
       <div><strong>هامش الربح الإجمالي:</strong> {{ profit_margin|floatformat:1 }}%</div>
       <div><strong>صافي الربح:</strong> {{ total_net_profit|floatformat:2 }} د.ل</div>
@@ -317,10 +320,10 @@
       <div><strong>تكلفة الرواتب الشهرية:</strong> {{ total_employee_salary_cost|floatformat:2 }} د.ل</div>
       <div><strong>عدد الغيابات:</strong> {{ total_absences }}</div>
       <div><strong>خصم الغيابات:</strong> {{ total_absence_deductions|floatformat:2 }} د.ل</div>
-      <div><strong>تكلفة المنتجات المباعة:</strong> {{ total_product_cost|floatformat:2 }} د.ل</div>
+      <div><strong>تكلفة المنتجات المباعة:</strong> {{ sale_product_cost|floatformat:2 }} د.ل</div>
+      <div><strong>تكلفة المنتجات المؤجرة:</strong> {{ rent_product_cost|floatformat:2 }} د.ل</div>
       <div><strong>إجمالي الخصومات:</strong> {{ total_discount|floatformat:2 }} د.ل</div>
       <div><strong>إجمالي العمولات:</strong> {{ total_commission|floatformat:2 }} د.ل</div>
-      <div><strong>إجمالي الغرامات:</strong> {{ total_penalties|floatformat:2 }} د.ل</div>
       <div><strong>إجمالي تسديدات العملاء:</strong> {{ total_payments|floatformat:2 }} د.ل</div>
       <div><strong>تكلفة الصيانة:</strong> {{ total_repair_cost|floatformat:2 }} د.ل</div>
       <div><strong>ربح الإيجار:</strong> {{ rent_profit|floatformat:2 }} د.ل</div>

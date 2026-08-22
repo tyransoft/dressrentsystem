@@ -8,8 +8,8 @@ from django.db.models import Sum
 from django.core.validators import MinValueValidator
 import random
 import json
-import qrcode
 
+import qrcode
 from io import BytesIO
 from django.conf import settings
 from django.core.files import File
@@ -53,7 +53,7 @@ class CustomUser(AbstractUser):
         return self.role == Role.EMPLOYEE
     
     def get_invoices_total(self, start_date=None, end_date=None):
-        qs = Invoice.objects.filter(invoice_type=InvoiceType.RENT)
+        qs = Invoice.objects.filter(created_by=self).exclude(status=InvoiceStatus.CANCELLED)
         if start_date:
             qs = qs.filter(created_at__date__gte=start_date)
         if end_date:
@@ -62,7 +62,7 @@ class CustomUser(AbstractUser):
         return result or 0
 
     def get_invoices_count(self, start_date=None, end_date=None):
-        qs = Invoice.objects.filter(invoice_type=InvoiceType.RENT)
+        qs = Invoice.objects.filter(created_by=self).exclude(status=InvoiceStatus.CANCELLED)
         if start_date:
             qs = qs.filter(created_at__date__gte=start_date)
         if end_date:

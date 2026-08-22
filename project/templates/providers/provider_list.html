@@ -364,7 +364,21 @@ tbody td {
             <div class="stat-label">إجمالي المتبقي</div>
         </div>
     </div>
-
+<div class="filter-section" style="background:#fff;border:1px solid #eaecf0;border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;gap:15px;flex-wrap:wrap;align-items:flex-end;">
+    <form method="get" style="display:flex;gap:15px;flex-wrap:wrap;width:100%;align-items:flex-end;">
+        <div class="form-group">
+            <label>من تاريخ</label>
+            <input type="date" name="start_date" class="form-control" value="{{ start_date|date:'Y-m-d' }}" style="padding:8px 14px;border:1.5px solid #eaecf0;border-radius:8px;font-size:14px;min-width:150px;">
+        </div>
+        <div class="form-group">
+            <label>إلى تاريخ</label>
+            <input type="date" name="end_date" class="form-control" value="{{ end_date|date:'Y-m-d' }}" style="padding:8px 14px;border:1.5px solid #eaecf0;border-radius:8px;font-size:14px;min-width:150px;">
+        </div>
+        <button type="submit" class="btn" style="padding:8px 24px;background:#D4AF37;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">تطبيق</button>
+        <button type="submit" name="filter_type" value="today" class="btn" style="padding:8px 24px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">اليوم</button>
+        <a href="{% url 'provider_list' %}" class="btn" style="padding:8px 24px;background:transparent;border:1.5px solid #eaecf0;color:#374151;border-radius:8px;font-weight:600;text-decoration:none;">إعادة تعيين</a>
+    </form>
+</div>
     <div class="table-responsive">
         <table>
             <thead>

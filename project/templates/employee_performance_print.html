@@ -1,0 +1,287 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block page_title %}تقرير أداء الموظف - اليوم{% endblock %}
+
+{% block content %}
+<style>
+@media print {
+    .no-print { display: none !important; }
+    body { background: #fff !important; }
+    .print-container { padding: 20px; }
+}
+.print-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #fff;
+}
+.header {
+    text-align: center;
+    border-bottom: 3px solid #D4AF37;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+.header h2 {
+    margin: 0;
+    color: #1e293b;
+    font-size: 24px;
+}
+.header p {
+    margin: 5px 0 0;
+    color: #6b7280;
+    font-size: 14px;
+}
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.stat-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 12px 16px;
+    border: 1px solid #eaecf0;
+}
+.stat-card .stat-number {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+}
+.stat-card .stat-label {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: 4px;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+thead {
+    background: #f8fafc;
+    border-bottom: 2px solid #e5e7eb;
+}
+thead th {
+    padding: 10px 12px;
+    text-align: right;
+    font-weight: 700;
+    color: #4b5563;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+tbody tr {
+    border-bottom: 1px solid #f1f3f5;
+}
+tbody td {
+    padding: 8px 12px;
+    vertical-align: middle;
+}
+tbody tr:last-child {
+    border-bottom: none;
+}
+.amount {
+    font-weight: 600;
+}
+.amount-revenue {
+    color: #16a34a;
+}
+.amount-remaining {
+    color: #dc2626;
+}
+.footer {
+    text-align: center;
+    margin-top: 30px;
+    padding-top: 15px;
+    border-top: 1px solid #eaecf0;
+    color: #9ca3af;
+    font-size: 12px;
+}
+.btn-print {
+    background: #D4AF37;
+    color: #fff;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    margin: 10px;
+}
+.btn-print:hover {
+    background: #B8960F;
+}
+.btn-back {
+    background: #f3f4f6;
+    color: #4b5563;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    margin: 10px;
+}
+.btn-back:hover {
+    background: #e5e7eb;
+}
+.actions {
+    text-align: center;
+    margin-bottom: 20px;
+}
+.filter-section {
+    background: #fff;
+    border: 1px solid #eaecf0;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+}
+.filter-section form {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    width: 100%;
+    align-items: flex-end;
+}
+.filter-section .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.filter-section .form-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+}
+.filter-section .form-control {
+    padding: 8px 14px;
+    border: 1.5px solid #eaecf0;
+    border-radius: 8px;
+    font-size: 14px;
+    min-width: 180px;
+}
+.filter-section .btn {
+    padding: 8px 24px;
+    background: #D4AF37;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    .filter-section form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .filter-section .form-control {
+        min-width: 100%;
+    }
+}
+</style>
+
+<div class="print-container">
+    <div class="header">
+        <h2>تقرير أداء الموظف - اليوم</h2>
+        <p>
+            التاريخ: {{ today|date:"Y-m-d" }}
+            {% if selected_employee %}
+            | الموظف: {{ selected_employee.get_full_name }}
+            {% else %}
+            | جميع الموظفين
+            {% endif %}
+        </p>
+        <p style="font-size: 12px; color: #9ca3af;">وقت الطباعة: {% now "Y-m-d H:i:s" %}</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">{{ total_invoices }}</div>
+            <div class="stat-label">عدد الفواتير</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ total_revenue|floatformat:0|intcomma }} د.ل</div>
+            <div class="stat-label">إجمالي الإيرادات</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ total_gross_profit|floatformat:0|intcomma }} د.ل</div>
+            <div class="stat-label">الربح الإجمالي</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ total_paid|floatformat:0|intcomma }} د.ل</div>
+            <div class="stat-label">المدفوع</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ total_remaining|floatformat:0|intcomma }} د.ل</div>
+            <div class="stat-label">المتبقي</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ total_items }}</div>
+            <div class="stat-label">عدد المنتجات</div>
+        </div>
+    </div>
+
+    {% if invoices %}
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>رقم الفاتورة</th>
+                <th>العميل</th>
+                <th>النوع</th>
+                <th>المبلغ</th>
+                <th>المدفوع</th>
+                <th>المتبقي</th>
+                <th>الخصم</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for invoice in invoices %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>#{{ invoice.id }}</td>
+                <td>{{ invoice.customer.full_name|default:'-' }}</td>
+                <td>{{ invoice.get_invoice_type_display }}</td>
+                <td class="amount amount-revenue">{{ invoice.total_amount|floatformat:2 }} د.ل</td>
+                <td>{{ invoice.paid_amount|floatformat:2 }} د.ل</td>
+                <td class="amount amount-remaining">{{ invoice.remaining_amount|floatformat:2 }} د.ل</td>
+                <td>{{ invoice.discount|floatformat:2 }} د.ل</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="text-align:center;padding:40px;color:#9ca3af;">
+        <h3>لا توجد فواتير اليوم</h3>
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        <p>هذا التقرير صادر عن نظام إدارة المحل</p>
+    </div>
+</div>
+
+<div class="actions no-print">
+    <button class="btn-print" onclick="window.print()"> طباعة</button>
+    <a href="{% url 'admin_daily_report' %}" class="btn-back">رجوع</a>
+</div>
+
+<script>
+window.onload = function() {
+    setTimeout(function() {
+        window.print();
+    }, 500);
+};
+</script>
+{% endblock %}
