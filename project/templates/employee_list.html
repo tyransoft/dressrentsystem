@@ -368,6 +368,8 @@ tbody td {
                 <a href="{% url 'employee_edit' emp.pk %}" class="btn-action btn-edit">تعديل</a>
                 <a href="{% url 'monthly_salary_statement' emp.pk %}" class="btn-action btn-view">كشف</a>
                 <a href="{% url 'monthly_salary_payment' emp.pk %}" class="btn-action btn-pay">دفع</a>
+                <a href="{% url 'employee_performance_print' %}?employee_id={{ request.user.id }}" class="btn-action btn-view"> تقرير</a>
+
                 <a href="{% url 'employee_delete' emp.pk %}" class="btn-action btn-delete" onclick="return confirm('هل انت متأكد من حذف هذا الموظف؟')">حذف</a>
             </div>
         </div>
