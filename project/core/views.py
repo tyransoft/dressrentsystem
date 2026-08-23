@@ -2399,8 +2399,8 @@ def provider_list(request):
     if start_date and end_date:
         provider_ids = []
         for provider in providers:
-            services = provider.services.filter(created_at__date__gte=start_date, created_at__date__lte=end_date)
-            payments = provider.payments.filter(payment_date__date__gte=start_date, payment_date__date__lte=end_date)
+            services = provider.services.filter(created_at__gte=start_date, created_at__lte=end_date)
+            payments = provider.payments.filter(payment_date__gte=start_date, payment_date__lte=end_date)
             if services.exists() or payments.exists():
                 provider_ids.append(provider.id)
         providers = providers.filter(id__in=provider_ids)
@@ -2415,10 +2415,10 @@ def provider_list(request):
     for provider in providers:
         services = provider.services.all()
         if start_date and end_date:
-            services = services.filter(created_at__date__gte=start_date, created_at__date__lte=end_date)
+            services = services.filter(created_at__gte=start_date, created_at__lte=end_date)
         payments = provider.payments.all()
         if start_date and end_date:
-            payments = payments.filter(payment_date__date__gte=start_date, payment_date__date__lte=end_date)
+            payments = payments.filter(payment_date__gte=start_date, payment_date__lte=end_date)
         
         total_services += services.count()
         total_paid += sum(p.amount for p in payments.filter(status='paid'))
@@ -2464,8 +2464,8 @@ def provider_detail(request, pk):
     payments = provider.payments.all()
     
     if start_date and end_date:
-        services = services.filter(created_at__date__gte=start_date, created_at__date__lte=end_date)
-        payments = payments.filter(payment_date__date__gte=start_date, payment_date__date__lte=end_date)
+        services = services.filter(created_at__gte=start_date, created_at__lte=end_date)
+        payments = payments.filter(payment_date__gte=start_date, payment_date__lte=end_date)
     
     total_services_cost = sum(service.total_cost for service in services)
     total_paid = sum(payment.amount for payment in payments.filter(status='paid'))
