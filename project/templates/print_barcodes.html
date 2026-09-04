@@ -1,190 +1,239 @@
+{% load static %}
 <!DOCTYPE html>
-<html dir="rtl">
+<html dir="rtl" lang="ar">
 <head>
   <meta charset="UTF-8">
-  <title>طباعة  QR</title>
+  <title>طباعة بطاقات المنتجات</title>
   <style>
     @page {
-      size: A4;
-      margin: 0;
+      size: A4 portrait;
+      margin: 8mm;
     }
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+    :root {
+      --gold: #c8982e;
+      --gold-dark: #8b6418;
+      --ink: #27242a;
+      --muted: #6c6870;
+      --card-border: #d9bd78;
     }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: white;
-      padding: 0;
+      background: #f3f1f4;
+      color: var(--ink);
+      font-family: Arial, "Segoe UI", Tahoma, sans-serif;
     }
-    .label-grid {
-      display: block;
-    }
-    .label-item {
-      width: 100%;
-      height: 100vh;
-      page-break-after: always;
+
+    
+    .print-page {
+      min-height: 281mm;
       break-after: page;
-      page-break-inside: avoid;
-      border: none;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      background: white;
-      padding: 20px;
+      page-break-after: always;
     }
-    .label-item:last-child {
+    .print-page:last-child {
+      break-after: auto;
       page-break-after: auto;
     }
-    .label-item .qr-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
+    .label-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-rows: repeat(4, 1fr);
+      gap: 3mm;
       width: 100%;
-      min-height: 300px;
+      min-height: 281mm;
+      direction: rtl;
     }
-    .label-item .qr-container img {
-      max-width: 300px;
-      max-height: 300px;
-      width: auto;
-      height: auto;
-    }
-    .label-item .product-name {
-      font-size: 28px;
-      font-weight: 800;
-      color: #1a2236;
-      margin-top: 16px;
+    .label-item {
+      position: relative;
+      display: flex;
+      min-width: 0;
+      min-height: 0;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      overflow: hidden;
+      padding: 4mm 5mm 3mm;
+      border: .45mm solid var(--card-border);
+      border-radius: 2.5mm;
+      background: #fff;
       text-align: center;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .card-logo {
+      display: block;
+      width: 30mm;
+      height: 12mm;
+      margin: 0 auto 1mm;
+      object-fit: contain;
+      object-position: center;
+    }
+    .card-divider {
+      width: 55%;
+      margin: 0 auto 1.5mm;
+      border: 0;
+      border-top: .25mm solid #eadbb8;
+    }
+    .qr-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 28mm;
+      width: 100%;
+    }
+    .qr-container img {
+      display: block;
+      width: 26mm;
+      height: 26mm;
+      object-fit: contain;
+    }
+    .no-qr {
+      color: #a4a0a6;
+      font-size: 9px;
+    }
+    .product-name {
+      width: 100%;
+      margin-top: 1mm;
+      overflow: hidden;
+      color: var(--ink);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.25;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .product-info {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      width: 100%;
+      margin-top: 2mm;
+      border-top: .2mm solid #eee9ed;
+      border-bottom: .2mm solid #eee9ed;
+    }
+    .info-cell {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      padding: 1mm 1mm .8mm;
+      border-left: .2mm solid #eee9ed;
+    }
+    .info-cell:last-child { border-left: 0; }
+    .info-label {
+      color: var(--muted);
+      font-size: 7px;
       line-height: 1.3;
     }
-    .label-item .product-info {
-      font-size: 20px;
-      color: #374151;
-      margin-top: 10px;
-      text-align: center;
-      line-height: 1.8;
-      width: 80%;
-      max-width: 500px;
-    }
-    .label-item .product-info .info-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 4px 12px;
-      border-bottom: 1px dashed #e5e7eb;
-    }
-    .label-item .product-info .info-row:last-child {
-      border-bottom: none;
-    }
-    .label-item .product-info .label {
-      color: #6b7280;
-      font-weight: 500;
-    }
-    .label-item .product-info .value {
-      color: #1a2236;
-      font-weight: 600;
-    }
-    .label-item .product-price {
-      font-size: 24px;
-      color: #181716;
+    .info-value {
+      overflow: hidden;
+      color: #38343b;
+      font-size: 8px;
       font-weight: 700;
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 2px solid #e5e7eb;
-      width: 60%;
-      max-width: 400px;
+      line-height: 1.4;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
-    
-    @media print {
-      body {
-        margin: 0;
-        padding: 0;
-      }
+    .product-price {
+      margin-top: 1.5mm;
+      color: var(--gold-dark);
+      font-size: 9px;
+      font-weight: 700;
+    }
+    .cut-mark {
+      position: absolute;
+      width: 2mm;
+      height: 2mm;
+      border-color: var(--gold);
+      border-style: solid;
+      opacity: .75;
+    }
+    .cut-mark.top-right { top: -0.45mm; right: -0.45mm; border-width: .45mm 0 0 .45mm; }
+    .cut-mark.top-left { top: -0.45mm; left: -0.45mm; border-width: .45mm .45mm 0 0; }
+    .cut-mark.bottom-right { right: -0.45mm; bottom: -0.45mm; border-width: 0 0 .45mm .45mm; }
+    .cut-mark.bottom-left { bottom: -0.45mm; left: -0.45mm; border-width: 0 .45mm .45mm 0; }
+
+    .no-print {
+      padding: 18px;
+      background: #fff;
+      text-align: center;
+    }
+    .no-print button {
+      margin: 0 4px;
+      padding: 10px 28px;
+      border: 0;
+      border-radius: 7px;
+      background: var(--gold);
+      color: #fff;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .no-print .close-button { background: #727078; }
+
+    @media screen {
       .label-grid {
-        display: flex !important;
-        flex-direction: column !important;
+        width: 194mm;
+        margin: 12mm auto;
       }
-      .label-item {
-        width: 100%;
-        height: 100vh;
-        page-break-after: always;
-        break-after: page;
-        page-break-inside: avoid;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        border: none;
-        padding: 20px;
-      }
-      .label-item:last-child {
-        page-break-after: auto;
-      }
-      .no-print {
-        display: none !important;
-      }
+      .label-item { min-height: 0; }
     }
-    
-    @media (max-width: 600px) {
-      .label-item .qr-container img {
-        max-width: 200px;
-        max-height: 200px;
-      }
-      .label-item .product-name {
-        font-size: 20px;
-      }
-      .label-item .product-info {
-        font-size: 16px;
-      }
-      .label-item .product-price {
-        font-size: 18px;
-      }
+    @media print {
+      body { background: #fff; }
+      .no-print { display: none !important; }
+      .label-grid { margin: 0; }
     }
   </style>
 </head>
 <body>
-
-<div class="label-grid">
   {% for product in products %}
-    {% for i in copies_range %}
-    <div class="label-item">
-      <div class="qr-container">
-        {% if product.qr %}
-          <img src="{{ product.qr.url }}" alt="QR Code">
-        {% else %}
-          <div style="font-size:20px;color:#999;">لا يوجد QR</div>
-        {% endif %}
-      </div>
-      <div class="product-name">{{ product.name }}</div>
-      <div class="product-info">
-        <div class="info-row">
-          <span class="label">المقاس</span>
-          <span class="value">{{ product.size|default:"-" }}</span>
+  <section class="print-page">
+    <div class="label-grid">
+      {% for i in copies_range %}
+      <article class="label-item">
+        <span class="cut-mark top-right"></span>
+        <span class="cut-mark top-left"></span>
+        <span class="cut-mark bottom-right"></span>
+        <span class="cut-mark bottom-left"></span>
+
+        <img class="card-logo"
+             src="{% static 'img/image.png' %}"
+             alt="ZEEZBEE Fashion House">
+        <hr class="card-divider">
+
+        <div class="qr-container">
+          {% if product.qr %}
+            <img src="{{ product.qr.url }}" alt="QR Code">
+          {% else %}
+            <span class="no-qr">لا يوجد QR</span>
+          {% endif %}
         </div>
-        <div class="info-row">
-          <span class="label">اللون</span>
-          <span class="value">{{ product.color|default:"-" }}</span>
+
+        <div class="product-name">{{ product.name }}</div>
+        <div class="product-info">
+          <div class="info-cell">
+            <span class="info-label">المقاس</span>
+            <span class="info-value">{{ product.size|default:"-" }}</span>
+          </div>
+          <div class="info-cell">
+            <span class="info-label">اللون</span>
+            <span class="info-value">{{ product.color|default:"-" }}</span>
+          </div>
+          <div class="info-cell">
+            <span class="info-label">الباركود</span>
+            <span class="info-value">{{ product.barcode|default:"-" }}</span>
+          </div>
         </div>
-        <div class="info-row">
-          <span class="label">الباركود</span>
-          <span class="value">{{ product.barcode|default:"-" }}</span>
+        <div class="product-price">
+          سعر الإيجار: {{ product.selling_price|floatformat:2 }} د.ل
         </div>
-      </div>
-      <div class="product-price">سعر الإيجار: {{ product.selling_price|floatformat:2 }} د.ل</div>
+      </article>
+      {% endfor %}
     </div>
-    {% endfor %}
+  </section>
   {% endfor %}
-</div>
 
-<div class="no-print" style="text-align:center;margin-top:20px;padding:20px;border-top:2px solid #ddd;">
-  <button onclick="window.print();" style="padding:12px 30px;background:#D4AF37;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;margin:0 5px;">
-     طباعة
-  </button>
-  <button onclick="window.location.href='{% url 'invoice_list' %}'" style="padding:12px 30px;background:#6b7280;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;margin:0 5px;">
-     إغلاق
-  </button>
-</div>
-
+  <div class="no-print">
+    <button type="button" onclick="window.print()">طباعة البطاقات</button>
+    <button class="close-button" type="button" onclick="window.location.href='{% url 'invoice_list' %}'">إغلاق</button>
+  </div>
 </body>
 </html>
