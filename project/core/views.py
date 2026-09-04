@@ -12,6 +12,7 @@ from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime, timedelta,time
 from django.utils import timezone
 from django.urls import reverse
+from math import ceil
 
 
 
@@ -1739,39 +1740,56 @@ def select_barcodes(request):
         'categories': categories,
     }
     return render(request, 'select_barcodes.html', context)
-
 @login_required
 def print_qr_preview(request):
-    if request.method != 'POST':
-        return redirect('select_barcodes')
-    
-    product_ids = request.POST.getlist('product_ids')
-    copies = int(request.POST.get('copies', 1))
-    label_size = request.POST.get('label_size', 'medium')
-    
+    if request.method != "POST":
+        return redirect("select_barcodes")
+    product_ids = request.POST.getlist("product_ids")
+    try:
+        copies = int(request.POST.get("copies", 1))
+    except (TypeError, ValueError):
+        copies = 1
+    if copies < 1:
+        messages.warning(request, "عدد النسخ يجب أن يكون نسخة واحدة على الأقل")
+        return redirect("select_barcodes")
+    label_size = request.POST.get("label_size", "medium")
     if not product_ids:
-        messages.warning(request, 'الرجاء اختيار منتج واحد على الأقل')
-        return redirect('select_barcodes')
-    
-    products = Product.objects.filter(id__in=product_ids, is_active=True)
-    
+        messages.warning(request, "الرجاء اختيار منتج واحد على الأقل")
+        return redirect("select_barcodes")
+    products = list(
+        Product.objects.filter(
+            id__in=product_ids,
+            is_active=True
+        )
+    )
     if not products:
-        messages.warning(request, 'المنتجات المحددة غير موجودة')
-        return redirect('select_barcodes')
-    
+        messages.warning(request, "المنتجات المحددة غير موجودة")
+        return redirect("select_barcodes")
     for product in products:
         if not product.qr:
             product.generate_qr()
             product.save()
-    
+    labels = [
+        product
+        for product in products
+        for _ in range(copies)
+    ]
+    labels_per_page = 8
+    total_labels = len(labels)
+    total_pages = ceil(total_labels / labels_per_page)
+    pages = [
+        labels[start:start + labels_per_page]
+        for start in range(0, total_labels, labels_per_page)
+    ]
     context = {
-        'products': products,
-        'copies': copies,
-        'copies_range': range(8),
-        'label_size': label_size,
+        "pages": pages,
+        "copies": copies,
+        "total_labels": total_labels,
+        "total_pages": total_pages,
+        "labels_per_page": labels_per_page,
+        "label_size": label_size,
     }
-    
-    return render(request, 'print_barcodes.html', context)
+    return render(request, "print_barcodes.html", context)
 
 
 @login_required
