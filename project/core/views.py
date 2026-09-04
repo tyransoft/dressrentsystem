@@ -1767,7 +1767,7 @@ def print_qr_preview(request):
     context = {
         'products': products,
         'copies': copies,
-        'copies_range': range(copies),
+        'copies_range': range(8),
         'label_size': label_size,
     }
     
