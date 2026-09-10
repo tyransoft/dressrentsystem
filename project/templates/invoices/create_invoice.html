@@ -906,12 +906,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     var today = new Date().toISOString().split('T')[0];
-    updateRentDates();
-checkAvailability();
+    
     document.getElementById('rent_start_date_input').value = today;
     document.getElementById('rent_start_date_input').min = today;
     document.getElementById('rent_end_date_input').min = today;
-    
+ updateRentDates();
+checkAvailability();   
 document.getElementById('rent_start_date_input').addEventListener('change', function() {
     updateRentDates();
     checkAvailability();
@@ -1101,7 +1101,22 @@ barcode: card.dataset.barcode
 function addToCart(id) {
 var product = getProductData(id);
 if (!product) return;
+    if (invoiceType === 'rent') {
+        if (product.status === 'inrepair') {
+            showToast('المنتج قيد الصيانة ولا يمكن تأجيره', 'error');
+            return;
+        }
 
+        if (product.status === 'inclean') {
+            showToast('المنتج قيد التنظيف ولا يمكن تأجيره', 'error');
+            return;
+        }
+
+        if (product.status === 'sold') {
+            showToast('المنتج تم بيعه ولا يمكن تأجيره', 'error');
+            return;
+        }
+    }
 if (cart[id]) {
 if (invoiceType === 'rent') {
 cart[id].days += 1;

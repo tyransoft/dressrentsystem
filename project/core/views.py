@@ -1127,28 +1127,25 @@ def create_invoice(request):
                 data = json.loads(request.body)
             else:
                 data = request.POST.dict()
-            
-            cart = request.session.get('cart', [])
-            
-            if not cart:
+
                 products_data = []
+
                 for key, value in data.items():
-                    if key.startswith('product_') and key.endswith('_id'):
-                        product_id = value
-                        days_key = key.replace('_id', '_days')
-                        price_key = key.replace('_id', '_price')
-                        
-                        if days_key in data and price_key in data:
-                            products_data.append({
-                                'product_id': int(product_id),
-                                'days': int(data[days_key]),
-                                'price': float(data[price_key])
-                            })
-                if products_data:
-                    cart = products_data
-                    request.session['cart'] = cart
-                    request.session.modified = True
+                  if key.startswith('product_') and key.endswith('_id'):
+                    product_id = int(value)
+
+                    days_key = key.replace('_id', '_days')
+                    price_key = key.replace('_id', '_price')
+
+                    products_data.append({
+                     'product_id': product_id,
+                     'days': int(data.get(days_key, 1)),
+                     'price': float(data.get(price_key, 0)),
+                   })
+
+                    cart = products_data            
             
+               
             if not cart:
                 messages.error(request, 'السلة فارغة')
                 return redirect('invoice_list')
