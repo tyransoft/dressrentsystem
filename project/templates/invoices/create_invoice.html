@@ -703,6 +703,8 @@ border: 1px solid #fcd34d;
 <input type="radio"
        name="invoice_type"
        value="rent"
+       checked
+
        onchange="toggleInvoiceType()">
             <span>ايجار</span>
         </label>
@@ -729,11 +731,7 @@ data-price="{{ product.selling_price }}"
 data-barcode="{{ product.barcode|default:'' }}"
 data-status="{{ product.status }}"
 data-search="{{ product.name|lower }} {{ product.barcode|default:'' }}">
-{% if product.image %}
-<img src="{{ product.image.url }}" alt="{{ product.name }}">
-{% else %}
-<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'%3E%3Crect width='90' height='90' fill='%23f3f4f6'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%239ca3af' font-size='12'%3Eلا صورة%3C/text%3E%3C/svg%3E" alt="">
-{% endif %}
+
 <div class="barcode">{{ product.barcode|default:"-" }}</div>
 <div class="pname">{{ product.name }}</div>
 <div class="status-badge status-{{ product.status }}">
@@ -882,6 +880,8 @@ data-search="{{ product.name|lower }} {{ product.barcode|default:'' }}">
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    toggleInvoiceType();
+
     var urlParams = new URLSearchParams(window.location.search);
     var barcode = urlParams.get('barcode');
     
@@ -906,6 +906,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     var today = new Date().toISOString().split('T')[0];
+    updateRentDates();
+checkAvailability();
     document.getElementById('rent_start_date_input').value = today;
     document.getElementById('rent_start_date_input').min = today;
     document.getElementById('rent_end_date_input').min = today;
@@ -914,11 +916,11 @@ document.getElementById('rent_start_date_input').addEventListener('change', func
     updateRentDates();
     checkAvailability();
 });
-    
-    document.getElementById('rent_end_date_input').addEventListener('change', function() {
-        updateRentDates();
-        checkAvailability();
-    });
+
+document.getElementById('rent_end_date_input').addEventListener('change', function() {
+    updateRentDays();
+    checkAvailability();
+});
     
     document.getElementById('product-search').addEventListener('input', function() {
         var q = this.value.trim().toLowerCase();
@@ -979,13 +981,18 @@ function getFirstProductId() {
     }
     return null;
 }
+
+
 function updateRentDates() {
     var startDateInput = document.getElementById('rent_start_date_input');
     var endDateInput = document.getElementById('rent_end_date_input');
 
     var startDate = startDateInput.value;
-
     var keys = Object.keys(cart);
+
+    if (!startDate) {
+        return;
+    }
 
     if (keys.length > 0 && invoiceType === 'rent') {
         var firstItem = cart[keys[0]];
@@ -994,29 +1001,24 @@ function updateRentDates() {
         document.getElementById('modal-rent-days').textContent = days;
         document.getElementById('form_rent_days').value = days;
 
-        if (startDate) {
-            var start = new Date(startDate + 'T00:00:00');
+        var start = new Date(startDate + 'T00:00:00');
 
-            start.setDate(start.getDate() + days);
+        start.setDate(start.getDate() + days);
 
-            var year = start.getFullYear();
-            var month = String(start.getMonth() + 1).padStart(2, '0');
-            var day = String(start.getDate()).padStart(2, '0');
+        var year = start.getFullYear();
+        var month = String(start.getMonth() + 1).padStart(2, '0');
+        var day = String(start.getDate()).padStart(2, '0');
 
-            var endDate = year + '-' + month + '-' + day;
+        var endDate = year + '-' + month + '-' + day;
 
-            endDateInput.value = endDate;
-            endDateInput.min = startDate;
+        endDateInput.value = endDate;
+        endDateInput.min = startDate;
 
-            document.getElementById('form_rent_end_date').value = endDate;
-        }
+        document.getElementById('form_rent_end_date').value = endDate;
     }
 
-    if (startDate) {
-        document.getElementById('form_rent_start_date').value = startDate;
-    }
+    document.getElementById('form_rent_start_date').value = startDate;
 }
-
 var cart = {};
 var customers = [
 {% for customer in customers %}
@@ -1134,8 +1136,9 @@ updateRentPrice();
 updateSalePrice();
 showToast('تمت الاضافة: ' + product.name, 'success');
 if (invoiceType === 'rent') {
-checkAvailability();
+
 updateRentDates();
+checkAvailability();
 }
 }
 
@@ -1147,8 +1150,9 @@ renderCart();
 updateRentPrice();
 updateSalePrice();
 if (invoiceType === 'rent') {
-checkAvailability();
+
 updateRentDates();
+checkAvailability();
 }
 }
 
@@ -1165,8 +1169,8 @@ cart[id].total = cart[id].days * cart[id].price;
 renderCart();
 calcModalTotals();
 if (invoiceType === 'rent') {
-checkAvailability();
 updateRentDates();
+checkAvailability();
 }
 }
 
@@ -1181,7 +1185,30 @@ return Object.values(cart).reduce(function(s, p) { return s + p.days; }, 0);
 return Object.values(cart).reduce(function(s, p) { return s + p.qty; }, 0);
 }
 }
+function updateRentDays() {
+    var startDate = document.getElementById('rent_start_date_input').value;
+    var endDate = document.getElementById('rent_end_date_input').value;
 
+    if (!startDate || !endDate) {
+        document.getElementById('modal-rent-days').textContent = '0';
+        document.getElementById('form_rent_days').value = '0';
+        return;
+    }
+
+    var start = new Date(startDate + 'T00:00:00');
+    var end = new Date(endDate + 'T00:00:00');
+
+    var diff = Math.round((end - start) / (1000 * 60 * 60 * 24));
+
+    if (diff < 1) {
+        document.getElementById('modal-rent-days').textContent = '0';
+        document.getElementById('form_rent_days').value = '0';
+        return;
+    }
+
+    document.getElementById('modal-rent-days').textContent = diff;
+    document.getElementById('form_rent_days').value = diff;
+}
 function renderCart() {
 var keys = Object.keys(cart);
 var fc = document.getElementById('floating-cart');
