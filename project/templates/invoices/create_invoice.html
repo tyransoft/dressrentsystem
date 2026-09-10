@@ -588,8 +588,97 @@ border: 1px solid #fcd34d;
 .rent-dates-grid { grid-template-columns: 1fr; }
 .rent-dates-grid .form-group { margin-bottom: 10px; }
 }
-</style>
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin: 20px 0 120px;
+    direction: rtl;
+}
 
+.page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 18px;
+    background: #D4AF37;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    transition: background 0.2s;
+}
+
+.page-btn:hover {
+    background: #E6C76A;
+}
+
+.page-info {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+}
+.product-search-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    justify-content: center;
+}
+
+.product-search-form input {
+    width: 60%;
+    max-width: 400px;
+}
+
+.page-btn {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 8px;
+    background: #D4AF37;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.page-btn:hover {
+    background: #E6C76A;
+}
+
+@media (max-width: 600px) {
+    .page-search-bar {
+        flex-direction: column;
+    }
+
+    .product-search-form {
+        width: 100%;
+    }
+
+    .product-search-form input {
+        width: 100%;
+    }
+}
+</style>
+<form method="get" class="page-search-bar" id="product-search-form">
+
+    <input
+        type="text"
+        name="search"
+        id="product-search"
+        value="{{ search }}"
+        placeholder="ابحث عن منتج بالاسم او الباركود"
+        autocomplete="off"
+        autofocus
+    >
+
+    <button type="submit" class="page-btn">
+        بحث
+    </button>
+
+</form>
 <form method="post" id="sale-invoice-form" action="{% url 'create_invoice' %}">
 {% csrf_token %}
 
@@ -609,20 +698,26 @@ border: 1px solid #fcd34d;
 <div id="form-products-container"></div>
 
 <div class="page-search-bar">
+    <div class="search-type-group" id="type-selector">
+        <label class="active-label" id="rent-label">
+<input type="radio"
+       name="invoice_type"
+       value="rent"
+       onchange="toggleInvoiceType()">
+            <span>ايجار</span>
+        </label>
 
-<div class="search-type-group" id="type-selector">
-<label class="active-label" id="rent-label">
-<input type="radio" name="invoice_type" value="rent" checked onchange="toggleInvoiceType()">
-<span>ايجار</span>
-</label>
-<label id="sale-label">
-<input type="radio" name="invoice_type" value="sale" onchange="toggleInvoiceType()">
-<span>بيع</span>
-</label>
-</div>
-<input type="text" id="product-search" placeholder="ابحث عن منتج بالاسم او الباركود" autocomplete="off" autofocus>
+        <label id="sale-label">
 
+<input type="radio"
+       name="invoice_type"
+       value="sale"
+       onchange="toggleInvoiceType()">     
+              <span>بيع</span>
+        </label>
+    </div>
 </div>
+
 
 <div class="products-grid" id="products-grid">
 {% for product in products %}
@@ -652,7 +747,27 @@ data-search="{{ product.name|lower }} {{ product.barcode|default:'' }}">
 {% endfor %}
 <div class="no-results-msg" id="no-results">لا توجد منتجات مطابقة</div>
 </div>
+<div class="pagination">
 
+    {% if products.has_previous %}
+        <a href="?search={{ search|urlencode }}&page={{ products.previous_page_number }}"
+           class="page-btn">
+            السابق
+        </a>
+    {% endif %}
+
+    <span class="page-info">
+        صفحة {{ products.number }} من {{ products.paginator.num_pages }}
+    </span>
+
+    {% if products.has_next %}
+        <a href="?search={{ search|urlencode }}&page={{ products.next_page_number }}"
+           class="page-btn">
+            التالي
+        </a>
+    {% endif %}
+
+</div>
 </form>
 
 <div class="floating-cart" id="floating-cart">
@@ -795,15 +910,10 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('rent_start_date_input').min = today;
     document.getElementById('rent_end_date_input').min = today;
     
-    document.getElementById('rent_start_date_input').addEventListener('change', function() {
-        var startDate = this.value;
-        document.getElementById('rent_end_date_input').min = startDate;
-        if (document.getElementById('rent_end_date_input').value && document.getElementById('rent_end_date_input').value < startDate) {
-            document.getElementById('rent_end_date_input').value = startDate;
-        }
-        updateRentDates();
-        checkAvailability();
-    });
+document.getElementById('rent_start_date_input').addEventListener('change', function() {
+    updateRentDates();
+    checkAvailability();
+});
     
     document.getElementById('rent_end_date_input').addEventListener('change', function() {
         updateRentDates();
@@ -869,23 +979,41 @@ function getFirstProductId() {
     }
     return null;
 }
-
 function updateRentDates() {
-    var startDate = document.getElementById('rent_start_date_input').value;
-    var endDate = document.getElementById('rent_end_date_input').value;
-    
+    var startDateInput = document.getElementById('rent_start_date_input');
+    var endDateInput = document.getElementById('rent_end_date_input');
+
+    var startDate = startDateInput.value;
+
+    var keys = Object.keys(cart);
+
+    if (keys.length > 0 && invoiceType === 'rent') {
+        var firstItem = cart[keys[0]];
+        var days = parseInt(firstItem.days) || 1;
+
+        document.getElementById('modal-rent-days').textContent = days;
+        document.getElementById('form_rent_days').value = days;
+
+        if (startDate) {
+            var start = new Date(startDate + 'T00:00:00');
+
+            start.setDate(start.getDate() + days);
+
+            var year = start.getFullYear();
+            var month = String(start.getMonth() + 1).padStart(2, '0');
+            var day = String(start.getDate()).padStart(2, '0');
+
+            var endDate = year + '-' + month + '-' + day;
+
+            endDateInput.value = endDate;
+            endDateInput.min = startDate;
+
+            document.getElementById('form_rent_end_date').value = endDate;
+        }
+    }
+
     if (startDate) {
         document.getElementById('form_rent_start_date').value = startDate;
-    }
-    if (endDate) {
-        document.getElementById('form_rent_end_date').value = endDate;
-    }
-    
-    var keys = Object.keys(cart);
-    if (keys.length > 0) {
-        var firstItem = cart[keys[0]];
-        document.getElementById('modal-rent-days').textContent = firstItem.days || 0;
-        document.getElementById('form_rent_days').value = firstItem.days || 0;
     }
 }
 

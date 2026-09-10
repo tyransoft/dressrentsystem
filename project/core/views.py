@@ -1088,18 +1088,39 @@ def print_receipt(request, invoice_id):
 @login_required
 def create_invoice(request):
     if request.method == 'GET':
-        products = Product.objects.filter(is_active=True)
+        products = Product.objects.filter(
+            is_active=True
+        ).order_by('id')
+
+        search = request.GET.get('search', '').strip()
+
+        if search:
+            products = products.filter(
+                Q(name__icontains=search) |
+                Q(barcode__icontains=search)
+            )
+
+        paginator = Paginator(products, 30)
+        page_number = request.GET.get('page', 1)
+        products_page = paginator.get_page(page_number)
+
         customers = Customer.objects.filter(is_active=True)
         payment_methods = PaymentMethod.objects.filter(is_active=True)
-        
+
         context = {
-            'products': products,
+            'products': products_page,
             'customers': customers,
             'payment_methods': payment_methods,
             'invoice_types': InvoiceType.choices,
+            'search': search,
         }
-        return render(request, 'invoices/create_invoice.html', context)
-    
+
+        return render(
+            request,
+            'invoices/create_invoice.html',
+            context
+        )
+
     elif request.method == 'POST':
         try:
             if request.content_type == 'application/json':
@@ -1347,8 +1368,7 @@ def invoice_list(request):
     if search_query:
         invoices = invoices.filter(
             Q(invoice_number__icontains=search_query) |
-            Q(customer__full_name__icontains=search_query) |
-            Q(customer_name__icontains=search_query)
+            Q(customer__full_name__icontains=search_query) 
         )
     
     total_invoices = invoices.count()
