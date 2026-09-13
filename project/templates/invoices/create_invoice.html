@@ -1102,16 +1102,7 @@ function addToCart(id) {
 var product = getProductData(id);
 if (!product) return;
     if (invoiceType === 'rent') {
-        if (product.status === 'inrepair') {
-            showToast('المنتج قيد الصيانة ولا يمكن تأجيره', 'error');
-            return;
-        }
-
-        if (product.status === 'inclean') {
-            showToast('المنتج قيد التنظيف ولا يمكن تأجيره', 'error');
-            return;
-        }
-
+       
         if (product.status === 'sold') {
             showToast('المنتج تم بيعه ولا يمكن تأجيره', 'error');
             return;

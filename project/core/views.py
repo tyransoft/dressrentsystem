@@ -1179,14 +1179,7 @@ def create_invoice(request):
                             messages.error(request, f'المنتج {product.name} تم بيعه ولا يمكن تأجيره')
                             return redirect('invoice_list')
                         
-                        if product.status == Dstatus.INCLEAN:
-                            messages.error(request, f'المنتج {product.name} قيد التنظيف')
-                            return redirect('invoice_list')
-                        
-                        if product.status == Dstatus.INREPAIR:
-                            messages.error(request, f'المنتج {product.name} قيد الصيانة')
-                            return redirect('invoice_list')
-                        
+                       
                         is_available, message = Invoice.check_product_availability(
                             product, rent_start_date, rent_end_date
                         )
