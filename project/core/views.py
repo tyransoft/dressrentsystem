@@ -1865,18 +1865,7 @@ def check_product_availability_api(request):
                     'message': 'المنتج تم بيعه'
                 })
             
-            if product.status == Dstatus.INCLEAN:
-                return JsonResponse({
-                    'available': False,
-                    'message': 'المنتج قيد التنظيف'
-                })
-            
-            if product.status == Dstatus.INREPAIR:
-                return JsonResponse({
-                    'available': False,
-                    'message': 'المنتج قيد الصيانة'
-                })
-            
+           
             is_available, message = Invoice.check_product_availability(
                 product, start_date, end_date
             )
