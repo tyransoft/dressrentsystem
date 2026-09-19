@@ -1100,15 +1100,12 @@ def create_invoice(request):
                 Q(barcode__icontains=search)
             )
 
-        paginator = Paginator(products, 50)
-        page_number = request.GET.get('page', 1)
-        products_page = paginator.get_page(page_number)
 
         customers = Customer.objects.filter(is_active=True)
         payment_methods = PaymentMethod.objects.filter(is_active=True)
 
         context = {
-            'products': products_page,
+            'products': products,
             'customers': customers,
             'payment_methods': payment_methods,
             'invoice_types': InvoiceType.choices,

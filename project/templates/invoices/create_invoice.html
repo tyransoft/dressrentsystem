@@ -745,27 +745,7 @@ data-search="{{ product.name|lower }} {{ product.barcode|default:'' }}">
 {% endfor %}
 <div class="no-results-msg" id="no-results">لا توجد منتجات مطابقة</div>
 </div>
-<div class="pagination">
 
-    {% if products.has_previous %}
-        <a href="?search={{ search|urlencode }}&page={{ products.previous_page_number }}"
-           class="page-btn">
-            السابق
-        </a>
-    {% endif %}
-
-    <span class="page-info">
-        صفحة {{ products.number }} من {{ products.paginator.num_pages }}
-    </span>
-
-    {% if products.has_next %}
-        <a href="?search={{ search|urlencode }}&page={{ products.next_page_number }}"
-           class="page-btn">
-            التالي
-        </a>
-    {% endif %}
-
-</div>
 </form>
 
 <div class="floating-cart" id="floating-cart">
