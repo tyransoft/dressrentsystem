@@ -1100,7 +1100,7 @@ def create_invoice(request):
                 Q(barcode__icontains=search)
             )
 
-        paginator = Paginator(products, 15)
+        paginator = Paginator(products, 50)
         page_number = request.GET.get('page', 1)
         products_page = paginator.get_page(page_number)
 
