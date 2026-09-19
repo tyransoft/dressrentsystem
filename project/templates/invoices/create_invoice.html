@@ -731,7 +731,15 @@ data-price="{{ product.selling_price }}"
 data-barcode="{{ product.barcode|default:'' }}"
 data-status="{{ product.status }}"
 data-search="{{ product.name|lower }} {{ product.barcode|default:'' }}">
-
+<img
+    src="/static/images/placeholder.webp"
+    data-src="{% if product.image %}{{ product.image.url }}{% endif %}"
+    width="90"
+    height="90"
+    loading="lazy"
+    alt="{{ product.name }}"
+    class="product-image"
+>
 <div class="barcode">{{ product.barcode|default:"-" }}</div>
 <div class="pname">{{ product.name }}</div>
 <div class="status-badge status-{{ product.status }}">
@@ -1437,5 +1445,37 @@ container.appendChild(fprice);
 
 document.getElementById('sale-invoice-form').submit();
 }
+document.addEventListener('DOMContentLoaded', function () {
+
+    const images = document.querySelectorAll('.product-image[data-src]');
+
+    const imageObserver = new IntersectionObserver(function(entries, observer) {
+
+        entries.forEach(function(entry) {
+
+            if (!entry.isIntersecting) {
+                return;
+            }
+
+            const img = entry.target;
+            const src = img.dataset.src;
+
+            if (src) {
+                img.src = src;
+                img.removeAttribute('data-src');
+            }
+
+            observer.unobserve(img);
+        });
+
+    }, {
+        rootMargin: '300px 0px'
+    });
+
+    images.forEach(function(img) {
+        imageObserver.observe(img);
+    });
+
+});
 </script>
 {% endblock %}
