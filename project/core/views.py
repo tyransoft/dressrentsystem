@@ -1032,16 +1032,13 @@ def add_penalty(request):
         invoice_id = request.POST.get('invoice_id')
         amount = request.POST.get('amount')
         reason = request.POST.get('reason')
-        penalty_type = request.POST.get('penalty_type', 'تأخير')
         
         invoice = get_object_or_404(Invoice, id=invoice_id)
         
         penalty = Penalty.objects.create(
             invoice=invoice,
-            customer=invoice.customer,
             amount=amount,
             reason=reason,
-            notes=f"نوع الغرامة: {penalty_type}"
         )
         
         invoice.total_amount += Decimal(amount)
