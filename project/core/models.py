@@ -573,8 +573,8 @@ class Invoice(models.Model):
             invoice_type=InvoiceType.RENT,
             status__in=[InvoiceStatus.PENDING, InvoiceStatus.PAID, InvoiceStatus.PARTIAL,InvoiceStatus.DELIVERED],
             items__product=product,
-            rent_start_date__lte=end_date,
-            rent_end_date__gte=start_date
+            rent_start_date__lt=end_date,
+            rent_end_date__gt=start_date
         ).distinct()
         
         if exclude_invoice:
@@ -585,9 +585,9 @@ class Invoice(models.Model):
             for invoice in invoices:
                 conflicting_dates.append(f"{invoice.rent_start_date} إلى {invoice.rent_end_date}")
             
-            return False, f"المنتج غير متاح في هذه الفترة. فاتورة موجودة من {', '.join(conflicting_dates)}"
+            return False, f"الفستان غير متاح في هذه الفترة. فاتورة موجودة من {', '.join(conflicting_dates)}"
         
-        return True, "المنتج متاح"
+        return True, "الفستان متاح"
 
     def save(self, *args, **kwargs):
         if not self.invoice_number:
