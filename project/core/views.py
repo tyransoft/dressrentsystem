@@ -1384,6 +1384,8 @@ def invoice_list(request):
         'total_amount': total_amount,
         'total_paid': total_paid,
         'total_remaining': total_remaining,
+        'invoice_type_choices': InvoiceType.choices,
+
     }
     return render(request, 'invoices/invoice_list.html', context)
 
