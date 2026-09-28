@@ -855,7 +855,13 @@ textarea.form-control { resize: vertical; min-height: 90px; }
     left: 50%;
     transform: translateX(50%);
 }
-
+.form-control,
+.form-select,
+input[type="number"],
+input[type="date"] {
+    direction: ltr;
+    text-align: right;
+}
 </style>
     {% block extra_css %}{% endblock %}
 </head>
