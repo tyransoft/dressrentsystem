@@ -122,17 +122,28 @@ def user_delete(request, pk):
 def product_list(request):
     query = request.GET.get('q', '')
     category_id = request.GET.get('category', '')
+    status = request.GET.get('status', '')
+
     products = Product.objects.select_related('category').filter(is_active=True)
+
     if query:
-        products = products.filter(Q(name__icontains=query)  | Q(barcode__icontains=query))
+        products = products.filter(
+            Q(name__icontains=query) | Q(barcode__icontains=query)
+        )
     if category_id:
         products = products.filter(category_id=category_id)
+    if status:
+        products = products.filter(status=status)
+
     categories = Category.objects.filter(is_active=True)
+
     return render(request, 'products/list.html', {
         'products': products,
         'categories': categories,
         'query': query,
         'selected_category': category_id,
+        'selected_status': status,
+        'status_choices': Dstatus.choices,
     })
 
 
@@ -1275,9 +1286,10 @@ def create_invoice(request):
             invoice.total_amount += invoice.commission
             
             invoice.remaining_amount = invoice.total_amount - invoice.paid_amount
-            
-            invoice.status = InvoiceStatus.PENDING
-            
+            if invoice_type == InvoiceType.RENT:
+              invoice.status = InvoiceStatus.PENDING
+            else:
+              invoice.status = InvoiceStatus.RECIEVED
             if invoice.customer and invoice.remaining_amount > Decimal('0'):
                 invoice.customer.debt_balance += invoice.remaining_amount
                 invoice.customer.save()
@@ -1347,6 +1359,9 @@ def invoice_list(request):
     status_filter = request.GET.get('status')
     if status_filter:
         invoices = invoices.filter(status=status_filter)
+    type_filter = request.GET.get('invoice_type', '')
+    if type_filter:
+        invoices = invoices.filter(invoice_type=type_filter)
     
     search_query = request.GET.get('search','')
     if search_query:

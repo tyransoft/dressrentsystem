@@ -47,6 +47,13 @@
         <option value="{{ cat.pk }}" {% if selected_category == cat.pk|stringformat:'s' %}selected{% endif %}>{{ cat.name }}</option>
         {% endfor %}
       </select>
+        <select name="status" class="form-select">
+    <option value="">كل الحالات</option>
+    {% for value, label in status_choices %}
+    <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+
       <button type="submit" class="btn btn-primary">بحث</button>
       <a href="{% url 'products_list' %}" class="btn btn-outline">إعادة تعيين</a>
     </form>
