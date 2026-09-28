@@ -2823,3 +2823,156 @@ def product_old_revenue_print(request):
         'product_id': product_id,
     }
     return render(request, 'product_old_revenue_print.html', context)
+
+from django.db import transaction
+
+@login_required
+def edit_invoice(request, pk):
+    
+    invoice = get_object_or_404(Invoice, pk=pk)
+
+    if invoice.status == InvoiceStatus.CANCELLED:
+        messages.error(request, 'لا يمكن تعديل فاتورة ملغاة')
+        return redirect('invoice_detail', pk=invoice.pk)
+
+    if request.method == 'GET':
+        customers = Customer.objects.filter(is_active=True)
+        payment_methods = PaymentMethod.objects.filter(is_active=True)
+
+        invoice_items = invoice.items.select_related('product').all()
+
+        context = {
+            'invoice': invoice,
+            'invoice_items': invoice_items,
+            'customers': customers,
+            'payment_methods': payment_methods,
+            'invoice_types': InvoiceType.choices,
+        }
+        return render(request, 'invoices/edit_invoice.html', context)
+
+    elif request.method == 'POST':
+        try:
+            with transaction.atomic():
+                old_customer = invoice.customer
+                old_remaining = invoice.remaining_amount or Decimal('0')
+                old_total = invoice.total_amount or Decimal('0')
+
+                invoice_type = invoice.invoice_type       
+
+                rent_start_date = invoice.rent_start_date
+                rent_end_date = invoice.rent_end_date
+
+                if invoice_type == InvoiceType.RENT:
+                    start_str = request.POST.get('rent_start_date')
+                    end_str = request.POST.get('rent_end_date')
+
+                    if not start_str or not end_str:
+                        messages.error(request, 'يرجى تحديد تاريخ بداية ونهاية الإيجار')
+                        return redirect('edit_invoice', pk=invoice.pk)
+
+                    try:
+                        rent_start_date = datetime.strptime(start_str, '%Y-%m-%d').date()
+                        rent_end_date = datetime.strptime(end_str, '%Y-%m-%d').date()
+                    except ValueError:
+                        messages.error(request, 'صيغة التاريخ غير صحيحة')
+                        return redirect('edit_invoice', pk=invoice.pk)
+
+                    if rent_start_date > rent_end_date:
+                        messages.error(request, 'تاريخ البداية يجب أن يكون قبل تاريخ النهاية')
+                        return redirect('edit_invoice', pk=invoice.pk)
+
+                    for item in invoice.items.select_related('product').all():
+                        is_available, msg = Invoice.check_product_availability(
+                            item.product,
+                            rent_start_date,
+                            rent_end_date,
+                            exclude_invoice=invoice
+                        )
+                        if not is_available:
+                            messages.error(
+                                request,
+                                f'المنتج {item.product.name}: {msg}'
+                            )
+                            return redirect('edit_invoice', pk=invoice.pk)
+
+                is_cash_customer = request.POST.get('is_cash_customer', '0') == '1'
+                new_customer = None
+
+                if is_cash_customer:
+                    new_customer = None
+                else:
+                    customer_id = request.POST.get('customer_id')
+                    if not customer_id:
+                        messages.error(request, 'يرجى اختيار عميل أو تحديد عميل نقدي')
+                        return redirect('edit_invoice', pk=invoice.pk)
+                    try:
+                        new_customer = Customer.objects.get(id=int(customer_id))
+                    except Customer.DoesNotExist:
+                        messages.error(request, 'العميل غير موجود')
+                        return redirect('edit_invoice', pk=invoice.pk)
+
+                try:
+                    discount = Decimal(str(request.POST.get('discount', '0') or '0'))
+                    paid_amount = Decimal(str(request.POST.get('paid_amount', '0') or '0'))
+                    commission = Decimal(str(request.POST.get('commission', '0') or '0'))
+                except Exception:
+                    messages.error(request, 'قيم المبالغ غير صحيحة')
+                    return redirect('edit_invoice', pk=invoice.pk)
+
+                if discount < 0 or paid_amount < 0:
+                    messages.error(request, 'لا يمكن أن تكون القيم سالبة')
+                    return redirect('edit_invoice', pk=invoice.pk)
+
+                payment_method_id = request.POST.get('payment_method')
+                new_payment_method = None
+                if payment_method_id:
+                    try:
+                        new_payment_method = PaymentMethod.objects.get(id=int(payment_method_id))
+                    except PaymentMethod.DoesNotExist:
+                        new_payment_method = None
+
+                notes = request.POST.get('notes', '')
+                identity_verified = request.POST.get(
+                    'identity_verified', 'true'
+                ) in ['true', 'True', '1', 'on']
+
+                subtotal = sum(
+                    (item.days or 1) * item.unit_price
+                    for item in invoice.items.all()
+                )
+
+                new_total = subtotal - discount + commission
+
+                if old_customer and old_remaining > 0:
+                    old_customer.debt_balance -= old_remaining
+                    if old_customer.debt_balance < 0:
+                        old_customer.debt_balance = Decimal('0')
+                    old_customer.save()
+
+                invoice.customer = new_customer
+                invoice.rent_start_date = rent_start_date
+                invoice.rent_end_date = rent_end_date
+                invoice.discount = discount
+                invoice.commission = commission
+                invoice.paid_amount = paid_amount
+                invoice.payment_method = new_payment_method
+                invoice.notes = notes
+                invoice.identity_verified = identity_verified
+                invoice.total_amount = new_total
+                invoice.remaining_amount = new_total - paid_amount
+
+                invoice.save()
+
+                if invoice.customer and invoice.remaining_amount > 0:
+                    invoice.customer.debt_balance += invoice.remaining_amount
+                    invoice.customer.save()
+
+                messages.success(request, 'تم تعديل الفاتورة بنجاح')
+                return redirect('print_receipt', invoice.pk)
+
+        except Exception as e:
+            messages.error(request, f'حدث خطأ: {str(e)}')
+            return redirect('edit_invoice', pk=invoice.pk)
+
+    messages.error(request, 'حدث خطأ غير معروف!')
+    return redirect('invoice_list')

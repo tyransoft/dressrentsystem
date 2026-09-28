@@ -1,0 +1,353 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}تعديل فاتورة {{ invoice.invoice_number }}{% endblock %}
+{% block page_title %}تعديل فاتورة{% endblock %}
+
+{% block content %}
+<style>
+    body { background: #f4f6fb; }
+
+    .edit-card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        padding: 24px;
+        max-width: 860px;
+        margin: 0 auto 40px;
+    }
+
+    .edit-card h2 {
+        font-size: 20px;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 6px;
+        text-align: center;
+    }
+
+    .edit-card .inv-number {
+        text-align: center;
+        font-size: 13px;
+        color: #6b7280;
+        margin-bottom: 22px;
+    }
+
+    .section-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 18px 0 10px;
+        border-right: 4px solid #D4AF37;
+        padding-right: 8px;
+    }
+
+    .form-group { margin-bottom: 14px; }
+    .form-label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 5px;
+    }
+    .form-control, .form-select {
+        width: 100%;
+        padding: 9px 12px;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.2s;
+        background: #fff;
+        box-sizing: border-box;
+    }
+    .form-control:focus, .form-select:focus { border-color: #D4AF37; }
+    .form-control:disabled { background: #f3f4f6; cursor: not-allowed; }
+
+    .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
+
+    .items-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 16px;
+    }
+    .items-table th, .items-table td {
+        padding: 10px 8px;
+        text-align: right;
+        font-size: 13px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .items-table th {
+        background: #f8fafc;
+        color: #475569;
+        font-weight: 700;
+    }
+    .items-table td.price { color: #D4AF37; font-weight: 700; }
+
+    .locked-note {
+        background: #fef3c7;
+        border: 1px solid #fcd34d;
+        color: #92400e;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        margin-bottom: 14px;
+    }
+
+    .summary-box {
+        background: #f8fafc;
+        border-radius: 10px;
+        padding: 14px 16px;
+        margin-top: 16px;
+    }
+    .summary-box .row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        padding: 4px 0;
+        color: #4b5563;
+    }
+    .summary-box .row.total {
+        font-size: 16px;
+        font-weight: 800;
+        color: #1e293b;
+        border-top: 1px solid #e5e7eb;
+        margin-top: 6px;
+        padding-top: 8px;
+    }
+
+    .btn-row {
+        display: flex;
+        gap: 10px;
+        margin-top: 22px;
+    }
+    .btn-save {
+        flex: 1;
+        padding: 12px 0;
+        background: #D4AF37;
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .btn-save:hover { background: #E6C76A; }
+    .btn-cancel {
+        flex: 1;
+        padding: 12px 0;
+        background: #e5e7eb;
+        color: #374151;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        text-align: center;
+        text-decoration: none;
+    }
+    .btn-cancel:hover { background: #d1d5db; }
+
+    @media (max-width: 600px) {
+        .grid-2 { grid-template-columns: 1fr; }
+        .edit-card { padding: 16px; }
+    }
+</style>
+
+<div class="edit-card">
+    <h2>تعديل الفاتورة</h2>
+    <div class="inv-number">رقم الفاتورة: {{ invoice.invoice_number }}</div>
+
+    <form method="post" id="edit-invoice-form">
+        {% csrf_token %}
+
+        <!-- ===== المنتجات (للعرض فقط) ===== -->
+        <div class="section-title">المنتجات (غير قابلة للتعديل)</div>
+        <div class="locked-note">
+            ⚠️ لا يمكن تعديل المنتجات أو الكميات بعد إنشاء الفاتورة.
+        </div>
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>المنتج</th>
+                    <th>الأيام</th>
+                    <th>سعر الوحدة</th>
+                    <th>الإجمالي</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in invoice_items %}
+                <tr>
+                    <td>{{ item.product.name }}</td>
+                    <td>{{ item.days }}</td>
+                    <td class="price">{{ item.unit_price|floatformat:2 }}</td>
+                    <td class="price">
+                        {% widthratio item.days 1 item.unit_price as line_total %}
+                        {{ line_total|floatformat:2 }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" style="text-align:center;color:#9ca3af;">لا توجد بنود</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- ===== التواريخ (للإيجار فقط) ===== -->
+        {% if invoice.invoice_type == 'rent' %}
+        <div class="section-title">تواريخ الإيجار</div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">تاريخ البداية <span style="color:red;">*</span></label>
+                <input type="date" name="rent_start_date" class="form-control"
+                       value="{{ invoice.rent_start_date|date:'Y-m-d' }}" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">تاريخ النهاية <span style="color:red;">*</span></label>
+                <input type="date" name="rent_end_date" class="form-control"
+                       value="{{ invoice.rent_end_date|date:'Y-m-d' }}" required>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ===== العميل ===== -->
+        <div class="section-title">العميل</div>
+        <div class="form-group">
+            <label class="form-label">
+                <input type="checkbox" name="is_cash_customer" value="1"
+                       id="is-cash-checkbox"
+                       {% if not invoice.customer %}checked{% endif %}>
+                عميل نقدي
+            </label>
+        </div>
+
+        <div class="form-group" id="customer-select-group"
+             {% if not invoice.customer %}style="display:none;"{% endif %}>
+            <label class="form-label">اختر العميل</label>
+            <select name="customer_id" class="form-select">
+                <option value="">-- اختر عميل --</option>
+                {% for c in customers %}
+                <option value="{{ c.id }}"
+                        {% if invoice.customer and invoice.customer.id == c.id %}selected{% endif %}>
+                    {{ c.full_name }} - {{ c.phone|default:"-" }}
+                    (دين: {{ c.debt_balance|floatformat:2 }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- ===== المبالغ ===== -->
+        <div class="section-title">المبالغ</div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">الخصم</label>
+                <input type="number" name="discount" id="discount-input"
+                       class="form-control" step="0.01" min="0"
+                       value="{{ invoice.discount|floatformat:2 }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">عمولة إضافية</label>
+                <input type="number" name="commission" id="commission-input"
+                       class="form-control" step="0.01" min="0"
+                       value="{{ invoice.commission|floatformat:2 }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">المبلغ المدفوع</label>
+                <input type="number" name="paid_amount" id="paid-input"
+                       class="form-control" step="0.01" min="0"
+                       value="{{ invoice.paid_amount|floatformat:2 }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">طريقة الدفع</label>
+                <select name="payment_method" class="form-select">
+                    <option value="">بدون رسوم</option>
+                    {% for m in payment_methods %}
+                    <option value="{{ m.id }}"
+                            {% if invoice.payment_method and invoice.payment_method.id == m.id %}selected{% endif %}>
+                        {{ m.name }}{% if m.increase_percentage > 0 %} (+{{ m.increase_percentage }}%){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- ===== ملاحظات ===== -->
+        <div class="section-title">ملاحظات</div>
+        <div class="form-group">
+            <textarea name="notes" class="form-control" rows="3">{{ invoice.notes }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">
+                <input type="checkbox" name="identity_verified" value="true"
+                       {% if invoice.identity_verified %}checked{% endif %}>
+                تأكيد استلام بطاقة الهوية
+            </label>
+        </div>
+
+        <!-- ===== ملخص ===== -->
+        <div class="summary-box">
+            <div class="row">
+                <span>المجموع الفرعي (ثابت)</span>
+                <span id="subtotal-display">{{ invoice.total_amount|floatformat:2 }}</span>
+            </div>
+            <div class="row total">
+                <span>الإجمالي المتوقع</span>
+                <span id="total-display">{{ invoice.total_amount|floatformat:2 }}</span>
+            </div>
+            <div class="row">
+                <span>المتبقي</span>
+                <span id="remaining-display">{{ invoice.remaining_amount|floatformat:2 }}</span>
+            </div>
+        </div>
+
+        <div class="btn-row">
+            <button type="submit" class="btn-save">حفظ التعديلات</button>
+            <a href="{% url 'invoice_detail' invoice.pk %}" class="btn-cancel">إلغاء</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    const cashCheckbox = document.getElementById('is-cash-checkbox');
+    const customerSelectGroup = document.getElementById('customer-select-group');
+
+    function toggleCustomerSelect() {
+        customerSelectGroup.style.display = cashCheckbox.checked ? 'none' : 'block';
+    }
+    cashCheckbox.addEventListener('change', toggleCustomerSelect);
+    toggleCustomerSelect();
+
+    const subtotal = {{ invoice.total_amount|default:0 }} - {{ invoice.discount|default:0 }} + {{ invoice.commission|default:0 }};
+    const realSubtotal = {{ invoice.total_amount|default:0 }}
+        + {{ invoice.discount|default:0 }}
+        - {{ invoice.commission|default:0 }};
+
+    const discountInput = document.getElementById('discount-input');
+    const commissionInput = document.getElementById('commission-input');
+    const paidInput = document.getElementById('paid-input');
+    const totalDisplay = document.getElementById('total-display');
+    const remainingDisplay = document.getElementById('remaining-display');
+
+    function recalc() {
+        const d = parseFloat(discountInput.value) || 0;
+        const c = parseFloat(commissionInput.value) || 0;
+        const p = parseFloat(paidInput.value) || 0;
+
+        const total = realSubtotal - d + c;
+        const remaining = total - p;
+
+        totalDisplay.textContent = total.toFixed(2);
+        remainingDisplay.textContent = remaining.toFixed(2);
+        remainingDisplay.style.color = remaining > 0 ? '#dc2626' : '#22c55e';
+    }
+
+    [discountInput, commissionInput, paidInput].forEach(function(el) {
+        el.addEventListener('input', recalc);
+    });
+    recalc();
+</script>
+{% endblock %}

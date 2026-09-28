@@ -755,6 +755,11 @@
             <i class="fa-solid fa-check"></i> تسليم
         </button>
         {% endif %}
+        {% if invoice.status != 'cancelled' %}
+<a href="{% url 'edit_invoice' invoice.pk %}" class="btn btn-warning">
+    تعديل الفاتورة
+</a>
+{% endif %}
         <button type="button" class="btn-outline-gold" 
                 onclick="sendWhatsappReminder(
                     '{{ reservation.customer.phone }}', 

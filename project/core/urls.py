@@ -54,6 +54,7 @@ urlpatterns = [
     path('invoices/cancel/<int:invoice_id>/',cancel_invoice, name='cancel_invoice'),
     path('invoices/print-receipt/<int:invoice_id>/',print_receipt, name='print_receipt'),
     path('employees-performance/', employees_performance, name='employees_performance'),
+    path('invoices/<int:pk>/edit/', edit_invoice, name='edit_invoice'),
 
     path('dashboard/', statistics, name='statistics'),
 

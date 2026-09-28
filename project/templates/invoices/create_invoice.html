@@ -1276,10 +1276,7 @@ var html = '<div class="os-row"><span>المجموع الفرعي</span><span>' 
 document.getElementById('order-summary-box').innerHTML = html;
 document.getElementById('order-final-totals').innerHTML = html;
 
-var paidInput = document.getElementById('modal-paid-amount');
-if (paidInput && parseFloat(paidInput.value) === 0) {
-paidInput.value = total.toFixed(2);
-}
+
 }
 
 function openOrderModal() {
