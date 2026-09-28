@@ -756,7 +756,7 @@
         </button>
         {% endif %}
         {% if invoice.status != 'cancelled' %}
-<a href="{% url 'edit_invoice' invoice.pk %}" class="btn btn-warning">
+<a href="{% url 'edit_invoice' reservation.pk %}" class="btn btn-warning">
     تعديل الفاتورة
 </a>
 {% endif %}
