@@ -556,8 +556,7 @@ def reservations_list(request):
 def reservation_detail(request, invoice_id):
     try:
         reservation = Invoice.objects.get(
-            id=invoice_id,
-            invoice_type=InvoiceType.RENT
+            id=invoice_id
         )
         
 
