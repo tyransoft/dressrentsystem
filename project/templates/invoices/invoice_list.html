@@ -182,6 +182,9 @@
     <option value="{{ value }}" {% if current_type == value %}selected{% endif %}>{{ label }}</option>
     {% endfor %}
   </select>
+    <input type="date" name="date_from" value="{{ date_from }}" class="form-control" placeholder="من تاريخ" title="من تاريخ الإنشاء">
+  <input type="date" name="date_to" value="{{ date_to }}" class="form-control" placeholder="إلى تاريخ" title="إلى تاريخ الإنشاء">
+
       <button type="submit" class="btn btn-primary">
         <i class="fas fa-search"></i> بحث
       </button>

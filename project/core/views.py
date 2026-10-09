@@ -1097,7 +1097,8 @@ def create_invoice(request):
     if request.method == 'GET':
         products = Product.objects.filter(
             is_active=True
-        ).order_by('id')
+        ).exclude(
+    status=Dstatus.SOLD).order_by('id')
 
         search = request.GET.get('search', '').strip()
 
@@ -1352,17 +1353,38 @@ def mark_as_delivered(request, invoice_id):
             'message': str(e)
         })
 
+from datetime import datetime
+
 def invoice_list(request):
     invoices = Invoice.objects.all().order_by('-created_at')
     
     status_filter = request.GET.get('status')
     if status_filter:
         invoices = invoices.filter(status=status_filter)
+    
     type_filter = request.GET.get('invoice_type', '')
     if type_filter:
         invoices = invoices.filter(invoice_type=type_filter)
     
-    search_query = request.GET.get('search','')
+    # فلترة بتاريخ الإنشاء (من تاريخ محدد أو بعده)
+    date_from = request.GET.get('date_from', '')
+    if date_from:
+        try:
+            date_from_parsed = datetime.strptime(date_from, '%Y-%m-%d').date()
+            invoices = invoices.filter(created_at__date__gte=date_from_parsed)
+        except ValueError:
+            date_from = ''
+    
+    # فلترة حتى تاريخ محدد (اختياري)
+    date_to = request.GET.get('date_to', '')
+    if date_to:
+        try:
+            date_to_parsed = datetime.strptime(date_to, '%Y-%m-%d').date()
+            invoices = invoices.filter(created_at__date__lte=date_to_parsed)
+        except ValueError:
+            date_to = ''
+    
+    search_query = request.GET.get('search', '')
     if search_query:
         invoices = invoices.filter(
             Q(invoice_number__icontains=search_query) |
@@ -1384,10 +1406,10 @@ def invoice_list(request):
         'total_paid': total_paid,
         'total_remaining': total_remaining,
         'invoice_type_choices': InvoiceType.choices,
-
+        'date_from': date_from,
+        'date_to': date_to,
     }
     return render(request, 'invoices/invoice_list.html', context)
-
 
 @csrf_exempt
 def cancel_invoice(request, invoice_id):
