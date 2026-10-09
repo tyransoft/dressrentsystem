@@ -6,7 +6,7 @@ from django.contrib import messages
 import json
 from .forms import *
 from django.core.paginator import Paginator
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from django.db.models import Q ,Sum, Count
 from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime, timedelta,time
@@ -804,26 +804,56 @@ def customer_edit(request, pk):
     return render(request, 'customers/form.html', {'form': form, 'title': f'تعديل: {customer.full_name}', 'customer': customer})
 
 
+
+
 @login_required
 def customer_detail(request, pk):
     customer = get_object_or_404(Customer, pk=pk)
-    
-    invoices = Invoice.objects.filter(customer=customer).order_by('-created_at')
-    
+
+    invoices = Invoice.objects.filter(
+        customer=customer
+    ).order_by('-created_at')
+
     total_invoices = invoices.count()
-    total_purchases = sum(inv.total_amount for inv in invoices)
-    total_paid = sum(inv.paid_amount for inv in invoices)
-    total_remaining = sum(inv.remaining_amount for inv in invoices)
-    
-    penalties = Penalty.objects.filter(invoice__customer=customer)
-    total_penalties = sum(p.amount for p in penalties)
+    total_purchases = sum((i.total_amount or 0) for i in invoices)
+    total_paid = sum((i.paid_amount or 0) for i in invoices)
+    total_remaining = sum((i.remaining_amount or 0) for i in invoices)
+
+    penalties = Penalty.objects.filter(
+        invoice__customer=customer
+    ).order_by('-created_at')
+
+    total_penalties = sum((p.amount or 0) for p in penalties)
     penalties_count = penalties.count()
-    
-    payments = CustomerPayment.objects.filter(customer=customer).order_by('-payment_date')
-    total_payments = sum(p.amount for p in payments)
-    
+
+    all_payments = CustomerPayment.objects.filter(
+        customer=customer
+    ).order_by('-payment_date')
+
+    total_payments = sum((p.amount or 0) for p in all_payments)
+
+    # فلترة المدفوعات
+    payment_from = request.GET.get('payment_from', '')
+    payment_to = request.GET.get('payment_to', '')
+    payment_search = request.GET.get('payment_search', '').strip()
+
+    payments = all_payments
+
+    if payment_from:
+        payments = payments.filter(payment_date__date__gte=payment_from)
+
+    if payment_to:
+        payments = payments.filter(payment_date__date__lte=payment_to)
+
+    if payment_search:
+        payments = payments.filter(
+            Q(notes__icontains=payment_search) |
+            Q(receipt_number__icontains=payment_search)
+        )
+
+    # كامل السجل، لا يتأثر بفلترة المدفوعات
     history = []
-    
+
     for invoice in invoices:
         history.append({
             'type': 'invoice',
@@ -836,9 +866,8 @@ def customer_detail(request, pk):
             'status': invoice.get_status_display(),
             'status_class': invoice.status,
             'date': invoice.created_at,
-            'items': invoice.items.all()
         })
-    
+
     for penalty in penalties:
         history.append({
             'type': 'penalty',
@@ -846,22 +875,22 @@ def customer_detail(request, pk):
             'invoice_number': penalty.invoice.invoice_number,
             'reason': penalty.reason,
             'amount': penalty.amount,
-            'date': penalty.created_at
+            'date': penalty.created_at,
         })
-    
-    for payment in payments:
+
+    for payment in all_payments:
         history.append({
             'type': 'payment',
             'type_display': 'تسديد',
             'amount': payment.amount,
             'notes': payment.notes,
             'receipt_number': payment.receipt_number,
-            'date': payment.payment_date
+            'date': payment.payment_date,
         })
-    
+
     history.sort(key=lambda x: x['date'], reverse=True)
-    
-    context = {
+
+    return render(request, 'customers/detail.html', {
         'customer': customer,
         'invoices': invoices,
         'total_invoices': total_invoices,
@@ -871,12 +900,12 @@ def customer_detail(request, pk):
         'total_penalties': total_penalties,
         'penalties_count': penalties_count,
         'total_payments': total_payments,
-        'history': history,
         'payments': payments,
-    }
-    
-    return render(request, 'customers/detail.html', context)
-
+        'payment_from': payment_from,
+        'payment_to': payment_to,
+        'payment_search': payment_search,
+        'history': history,
+    })
 
 @login_required
 def customer_search_ajax(request):
@@ -896,47 +925,131 @@ def customer_search_ajax(request):
     return JsonResponse({'customers': data})
 
 
+from decimal import Decimal, InvalidOperation
 
 
 
 
 @login_required
 def customer_payment_create(request, pk):
-    customer = get_object_or_404(Customer, pk=pk)
-    
     if request.method == 'POST':
-        amount = Decimal(request.POST.get('amount', 0))
+        try:
+            amount = Decimal(request.POST.get('amount', '0'))
+        except (InvalidOperation, TypeError, ValueError):
+            messages.error(request, 'المبلغ المدخل غير صحيح')
+            return redirect('customer_payment_create', pk=pk)
+
         notes = request.POST.get('notes', '')
-        
-        if amount <= 0:
+
+        if not amount.is_finite() or amount <= 0:
             messages.error(request, 'المبلغ يجب أن يكون أكبر من صفر')
             return redirect('customer_payment_create', pk=pk)
-        
-        if amount > customer.debt_balance:
-            messages.error(request, f'المبلغ المدخل أكبر من الدين المستحق ({customer.debt_balance:,.2f} د.ل)')
-            return redirect('customer_payment_create', pk=pk)
-        
-        payment = CustomerPayment.objects.create(
-            customer=customer,
-            amount=amount,
-            notes=notes,
-            created_by=request.user
+
+        with transaction.atomic():
+            customer = get_object_or_404(
+                Customer.objects.select_for_update(),
+                pk=pk
+            )
+
+            if amount > customer.debt_balance:
+                messages.error(
+                    request,
+                    f'المبلغ أكبر من الدين المستحق '
+                    f'({customer.debt_balance:,.2f} د.ل)'
+                )
+                return redirect('customer_payment_create', pk=pk)
+
+            invoices = list(
+                Invoice.objects.select_for_update()
+                .filter(
+                    customer=customer,
+                    remaining_amount__gt=0,
+                    status__in=[
+                        InvoiceStatus.PENDING,
+                        InvoiceStatus.PAID,
+                        InvoiceStatus.PARTIAL,
+                        InvoiceStatus.DELIVERED,
+                        InvoiceStatus.OVERDUE,
+                    ]
+                )
+                .order_by('created_at', 'pk')
+            )
+
+            total_remaining = sum(
+                (invoice.remaining_amount for invoice in invoices),
+                Decimal('0.00')
+            )
+
+            if amount > total_remaining:
+                messages.error(
+                    request,
+                    f'إجمالي المتبقي في الفواتير هو '
+                    f'{total_remaining:,.2f} د.ل، '
+                    f'ولا يمكن توزيع الدفعة بالكامل عليها.'
+                )
+                return redirect('customer_payment_create', pk=pk)
+
+            payment = CustomerPayment.objects.create(
+                customer=customer,
+                amount=amount,
+                notes=notes,
+                created_by=request.user
+            )
+
+            remaining_payment = amount
+
+            for invoice in invoices:
+                if remaining_payment <= 0:
+                    break
+
+                applied_amount = min(
+                    remaining_payment,
+                    invoice.remaining_amount
+                )
+
+                invoice.paid_amount += applied_amount
+                invoice.remaining_amount -= applied_amount
+
+                if invoice.remaining_amount == 0:
+                    invoice.status = InvoiceStatus.PAID
+                else:
+                    invoice.status = InvoiceStatus.PARTIAL
+
+                invoice.save(update_fields=[
+                    'paid_amount',
+                    'remaining_amount',
+                    'status',
+                    'updated_at',
+                ])
+
+                remaining_payment -= applied_amount
+
+            customer.debt_balance -= amount
+            customer.save(update_fields=[
+                'debt_balance',
+                'updated_at',
+            ])
+
+        messages.success(
+            request,
+            f'تم تسديد {amount:,.2f} د.ل من دين العميل '
+            f'{customer.full_name} وتحديث الفواتير'
         )
-        
-        customer.debt_balance -= amount
-        customer.save()
-        
-        
-        messages.success(request, f'تم تسديد {amount:,.2f} د.ل من دين العميل {customer.full_name}')
-        
+
         return redirect('customer_payment_receipt', pk=payment.pk)
-    
+
+    customer = get_object_or_404(Customer, pk=pk)
+
     context = {
         'customer': customer,
         'debt_amount': customer.debt_balance,
     }
-    return render(request, 'customers/payment_create.html', context)
 
+    return render(
+        request,
+        'customers/payment_create.html',
+        context
+    )
 
 @login_required
 def customer_payment_receipt(request, pk):
@@ -1284,8 +1397,10 @@ def create_invoice(request):
             
             invoice.total_amount -= invoice.discount
             invoice.total_amount += invoice.commission
-            
-            invoice.remaining_amount = invoice.total_amount - invoice.paid_amount
+            if invoice.total_amount < invoice.paid_amount:
+                invoice.remaining_amount = 0
+            else:  
+              invoice.remaining_amount = invoice.total_amount - invoice.paid_amount
             if invoice_type == InvoiceType.RENT:
               invoice.status = InvoiceStatus.PENDING
             else:
