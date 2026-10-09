@@ -1091,6 +1091,7 @@ def confirm_return(request, invoice_id):
                 invoice.remaining_amount = 0
                 
                 CustomerPayment.objects.create(
+                    invoice=invoice,
                     customer=invoice.customer,
                     amount=remaining,
                     notes=f'تسوية  عند استلام الفاتورة {invoice.invoice_number}'
