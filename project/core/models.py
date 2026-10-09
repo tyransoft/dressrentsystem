@@ -466,7 +466,7 @@ class CustomerPayment(models.Model):
     receipt_number = models.CharField(max_length=50, unique=True, blank=True, verbose_name='رقم الإيصال')
     created_by = models.ForeignKey('core.CustomUser', on_delete=models.SET_NULL, null=True, verbose_name='تم بواسطة')
     created_at = models.DateTimeField(auto_now_add=True)
-    
+    invoice = models.ForeignKey('Invoice',on_delete=models.SET_NULL,null=True,blank=True,related_name='customer_payments',verbose_name='الفاتورة المرتبطة')
     class Meta:
         verbose_name = 'تسديد دين عميل'
         verbose_name_plural = 'تسديدات ديون العملاء'

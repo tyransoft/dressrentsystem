@@ -811,7 +811,8 @@ def customer_detail(request, pk):
     customer = get_object_or_404(Customer, pk=pk)
 
     invoices = Invoice.objects.filter(
-        customer=customer
+        customer=customer).prefetch_related(
+        'items__product' 
     ).order_by('-created_at')
 
     total_invoices = invoices.count()
@@ -1021,7 +1022,9 @@ def customer_payment_create(request, pk):
                     'status',
                     'updated_at',
                 ])
-
+                if payment.invoice is None:
+                  payment.invoice = invoice
+                  payment.save(update_fields=['invoice'])
                 remaining_payment -= applied_amount
 
             customer.debt_balance -= amount

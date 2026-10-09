@@ -64,6 +64,12 @@
   .empty-icon{font-size:40px;margin-bottom:10px;opacity:0.6;}
   .empty-state h5{font-size:16px;color:#1a2236;margin-bottom:4px;}
   
+  .dress-cell{display:flex;align-items:center;gap:8px;justify-content:center;}
+  .dress-thumb{width:38px;height:38px;border-radius:6px;object-fit:cover;border:1px solid #eaecf0;flex-shrink:0;background:#f8fafc;}
+  .dress-thumb-placeholder{width:38px;height:38px;border-radius:6px;border:1px solid #eaecf0;background:#f8fafc;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:16px;flex-shrink:0;}
+  .dress-name-mini{font-size:12px;color:#1a2236;font-weight:600;line-height:1.3;text-align:right;max-width:120px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+  .invoice-num-mini{font-size:12px;color:#2563eb;font-weight:600;}
+  
   @media(max-width:768px){
     .action-bar .btn{min-width:80px;font-size:13px;padding:8px 14px;}
   }
@@ -123,6 +129,8 @@
               <th>رقم الإيصال</th>
               <th>التاريخ</th>
               <th class="money">المبلغ المسدد</th>
+              <th>الفستان</th>
+              <th>الفاتورة</th>
               <th>ملاحظات</th>
               <th>تم بواسطة</th>
               <th></th>
@@ -134,6 +142,33 @@
               <td class="fw-600">{{ payment.receipt_number }}</td>
               <td>{{ payment.payment_date|date:"Y-m-d H:i" }}</td>
               <td class="money text-success fw-bold">{{ payment.amount|floatformat:2|intcomma }} د.ل</td>
+              <td>
+                {% if payment.invoice %}
+                  {% with item=payment.invoice.items.first %}
+                    {% if item and item.product %}
+                      <div class="dress-cell">
+                        {% if item.product.image %}
+                          <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="dress-thumb" title="{{ item.product.name }}">
+                        {% else %}
+                          <div class="dress-thumb-placeholder" title="{{ item.product.name }}">👗</div>
+                        {% endif %}
+                        <span class="dress-name-mini">{{ item.product.name }}</span>
+                      </div>
+                    {% else %}
+                      <span class="text-muted">—</span>
+                    {% endif %}
+                  {% endwith %}
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if payment.invoice %}
+                  <span class="invoice-num-mini">{{ payment.invoice.invoice_number }}</span>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
               <td>{{ payment.notes|default:"-" }}</td>
               <td>{{ payment.created_by.get_full_name|default:'-'}}</td>
               <td>
@@ -144,7 +179,7 @@
             </tr>
             {% empty %}
             <tr>
-              <td colspan="6">
+              <td colspan="8">
                 <div class="empty-state">
                   <h5>لا توجد تسديدات مسجلة</h5>
                   <p class="text-muted">لم يقم هذا العميل بأي تسديدات حتى الآن</p>
@@ -175,6 +210,31 @@
           <span class="mobile-payment-label">المبلغ المسدد</span>
           <span class="mobile-payment-value fw-bold text-success">{{ payment.amount|floatformat:2|intcomma }} د.ل</span>
         </div>
+        {% if payment.invoice %}
+        <div class="mobile-payment-row">
+          <span class="mobile-payment-label">الفستان</span>
+          <span class="mobile-payment-value">
+            {% with item=payment.invoice.items.first %}
+              {% if item and item.product %}
+                <div class="dress-cell" style="justify-content:flex-start;">
+                  {% if item.product.image %}
+                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="dress-thumb" title="{{ item.product.name }}">
+                  {% else %}
+                    <div class="dress-thumb-placeholder" title="{{ item.product.name }}">👗</div>
+                  {% endif %}
+                  <span class="dress-name-mini">{{ item.product.name }}</span>
+                </div>
+              {% else %}
+                —
+              {% endif %}
+            {% endwith %}
+          </span>
+        </div>
+        <div class="mobile-payment-row">
+          <span class="mobile-payment-label">الفاتورة</span>
+          <span class="mobile-payment-value invoice-num-mini">{{ payment.invoice.invoice_number }}</span>
+        </div>
+        {% endif %}
         <div class="mobile-payment-row">
           <span class="mobile-payment-label">ملاحظات</span>
           <span class="mobile-payment-value">{{ payment.notes|default:"-" }}</span>
