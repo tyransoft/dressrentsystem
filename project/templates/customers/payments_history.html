@@ -148,7 +148,8 @@
                     {% if item and item.product %}
                       <div class="dress-cell">
                         {% if item.product.image %}
-                          <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="dress-thumb" title="{{ item.product.name }}">
+                          <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="dress-thumb"      loading="lazy"
+     decoding="async" title="{{ item.product.name }}">
                         {% else %}
                           <div class="dress-thumb-placeholder" title="{{ item.product.name }}">👗</div>
                         {% endif %}
@@ -170,7 +171,7 @@
                 {% endif %}
               </td>
               <td>{{ payment.notes|default:"-" }}</td>
-              <td>{{ payment.created_by.get_full_name|default:'-'}}</td>
+              <td>{{ payment.created_by.username|default:'-'}}</td>
               <td>
                 <a href="{% url 'customer_payment_receipt' payment.pk %}" class="btn btn-outline btn-icon btn-sm" target="_blank" title="طباعة">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
@@ -218,7 +219,8 @@
               {% if item and item.product %}
                 <div class="dress-cell" style="justify-content:flex-start;">
                   {% if item.product.image %}
-                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="dress-thumb" title="{{ item.product.name }}">
+                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}"      loading="lazy"
+     decoding="async" class="dress-thumb" title="{{ item.product.name }}">
                   {% else %}
                     <div class="dress-thumb-placeholder" title="{{ item.product.name }}">👗</div>
                   {% endif %}
@@ -241,7 +243,7 @@
         </div>
         <div class="mobile-payment-row">
           <span class="mobile-payment-label">تم بواسطة</span>
-          <span class="mobile-payment-value">{{ payment.created_by.get_full_name|default:'-' }}</span>
+          <span class="mobile-payment-value">{{ payment.created_by.username|default:'-' }}</span>
         </div>
         <div class="mobile-payment-actions">
           <a href="{% url 'customer_payment_receipt' payment.pk %}" class="btn btn-outline btn-sm" target="_blank">طباعة</a>

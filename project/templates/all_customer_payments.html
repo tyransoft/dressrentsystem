@@ -159,7 +159,8 @@
                     {% if item and item.product %}
                       <div class="dress-cell">
                         {% if item.product.image %}
-                          <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="dress-thumb">
+                          <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}"      loading="lazy"
+     decoding="async" class="dress-thumb">
                         {% else %}
                           <div class="dress-placeholder">👗</div>
                         {% endif %}
@@ -175,7 +176,7 @@
                 {% else %}—{% endif %}
               </td>
               <td>{{ payment.notes|default:"-" }}</td>
-              <td>{{ payment.created_by.get_full_name|default:"-" }}</td>
+              <td>{{ payment.created_by.username|default:"-" }}</td>
               <td>
                 <a href="{% url 'customer_payment_receipt' payment.pk %}" class="btn btn-outline btn-icon btn-sm" target="_blank" rel="noopener" title="طباعة الإيصال">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -229,7 +230,8 @@
               {% if item and item.product %}
                 <div class="dress-cell" style="justify-content:flex-start">
                   {% if item.product.image %}
-                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="dress-thumb">
+                    <img src="{{ item.product.image.url }}"      loading="lazy"
+     decoding="async" alt="{{ item.product.name }}" class="dress-thumb">
                   {% else %}
                     <div class="dress-placeholder">👗</div>
                   {% endif %}
@@ -253,7 +255,7 @@
 
         <div class="mobile-payment-row">
           <span class="mobile-payment-label">تم بواسطة</span>
-          <span class="mobile-payment-value">{{ payment.created_by.get_full_name|default:"-" }}</span>
+          <span class="mobile-payment-value">{{ payment.created_by.username|default:"-" }}</span>
         </div>
 
         <div class="mobile-payment-actions">

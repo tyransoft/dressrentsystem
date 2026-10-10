@@ -157,7 +157,8 @@
                   {% if item and item.product %}
                     <div class="dress-cell">
                       {% if item.product.image %}
-                        <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="dress-thumb" title="{{ item.product.name }}">
+                        <img src="{{ item.product.image.url }}"      loading="lazy"
+     decoding="async" alt="{{ item.product.name }}" class="dress-thumb" title="{{ item.product.name }}">
                       
                       {% else %}
                         <div class="dress-thumb-placeholder" title="{{ item.product.name }}"></div>
@@ -253,7 +254,8 @@
                       {% if item and item.product %}
                         <div class="dress-cell">
                           {% if item.product.image %}
-                            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="dress-thumb" title="{{ item.product.name }}">
+                            <img src="{{ item.product.image.url }}"      loading="lazy"
+     decoding="async" alt="{{ item.product.name }}" class="dress-thumb" title="{{ item.product.name }}">
                           {% else %}
                             <div class="dress-thumb-placeholder" title="{{ item.product.name }}">👗</div>
                           {% endif %}

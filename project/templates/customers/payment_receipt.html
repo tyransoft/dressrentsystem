@@ -83,7 +83,7 @@
     
     <div class="info-row">
       <span>تم بواسطة</span>
-      <span>{{ payment.created_by.get_full_name|default:payment.created_by.username }}</span>
+      <span>{{ payment.created_by.username|default:payment.created_by.username }}</span>
     </div>
     
     <div class="info-row">
