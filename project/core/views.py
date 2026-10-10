@@ -1094,6 +1094,7 @@ def confirm_return(request, invoice_id):
                     invoice=invoice,
                     customer=invoice.customer,
                     amount=remaining,
+                    created_by=request.user,
                     notes=f'تسوية  عند استلام الفاتورة {invoice.invoice_number}'
                 )
             
