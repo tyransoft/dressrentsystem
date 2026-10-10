@@ -2011,6 +2011,55 @@ def statistics(request):
 
     return render(request, 'statistics.html', context)
 
+
+
+@login_required
+def all_customer_payments(request):
+    payments = CustomerPayment.objects.select_related(
+        'customer', 'invoice', 'created_by'
+    ).prefetch_related(
+        'invoice__items__product'
+    ).all()
+
+    # البحث باسم العميل
+    search = request.GET.get('search', '').strip()
+    if search:
+        payments = payments.filter(
+            Q(customer__full_name__icontains=search)
+        )
+
+    # الفلترة حسب تاريخ التسديد
+    date_from = request.GET.get('date_from', '').strip()
+    date_to = request.GET.get('date_to', '').strip()
+
+    if date_from:
+        payments = payments.filter(payment_date__date__gte=date_from)
+
+    if date_to:
+        payments = payments.filter(payment_date__date__lte=date_to)
+
+    # ترتيب المدفوعات من الأحدث إلى الأقدم
+    payments = payments.order_by('-payment_date', '-pk')
+
+    # الإجمالي حسب البحث والفلاتر، قبل تقسيم الصفحات
+    total_paid = payments.aggregate(
+        total=Sum('amount')
+    )['total'] or Decimal('0.00')
+
+    paginator = Paginator(payments, 25)
+    page_number = request.GET.get('page')
+    payments_page = paginator.get_page(page_number)
+
+    return render(request, 'all_customer_payments.html', {
+        'payments': payments_page,
+        'total_paid': total_paid,
+        'search': search,
+        'date_from': date_from,
+        'date_to': date_to,
+    })
+
+
+
 @login_required
 def inventory_report(request):
     products = Product.objects.filter(is_active=True).order_by('name')

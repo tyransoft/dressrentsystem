@@ -988,8 +988,12 @@ input[type="date"] {
         <a href="{% url 'reservations_list' %}" class="section-btn">
             <i class="fa-solid fa-calendar-check nav-icon"></i> الحجوزات
         </a>
+
         <a href="{% url 'unreturned_invoices' %}" class="section-btn">
             <i class="fa-solid fa-clock-rotate-left nav-icon"></i> فساتين مستأجرة
+        </a>
+         <a href="{% url 'all_customer_payments' %}" class="section-btn">
+            <i class="fa-solid fa-file-lines nav-icon"></i> تسديدات العملاء
         </a>
     </div>
 

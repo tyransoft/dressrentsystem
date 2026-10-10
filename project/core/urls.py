@@ -46,7 +46,7 @@ urlpatterns = [
     path('customers/<int:pk>/payment/', customer_payment_create, name='customer_payment_create'),
     path('customers/payment-receipt/<int:pk>/', customer_payment_receipt, name='customer_payment_receipt'),
     path('customers/<int:pk>/payments/', customer_payments_history, name='customer_payments_history'),
-
+    path('payments/',all_customer_payments,name='all_customer_payments'),
     path('invoices/',invoice_list, name='invoice_list'),
     path('invoices/create/',create_invoice, name='create_invoice'),
     path('invoice/confirm-return/<int:invoice_id>/',confirm_return, name='confirm_return'),

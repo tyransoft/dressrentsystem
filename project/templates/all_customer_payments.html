@@ -1,0 +1,283 @@
+
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}سجل جميع التسديدات{% endblock %}
+{% block page_title %}سجل جميع التسديدات{% endblock %}
+{% block nav_customers %}active{% endblock %}
+
+{% block content %}
+<style>
+*{box-sizing:border-box}
+
+.action-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+
+.card{background:#fff;border-radius:12px;border:1px solid #eaecf0;box-shadow:0 1px 3px rgba(0,0,0,.04);margin-bottom:20px}
+.card-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding:14px 16px;border-bottom:1px solid #eaecf0}
+.card-title{font-size:15px;font-weight:700;color:#1a2236;margin:0}
+.card-body{padding:16px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;min-height:42px;white-space:nowrap}
+.btn-primary{background:#D4AF37;color:#fff}
+.btn-success{background:#16a34a;color:#fff}
+.btn-outline{background:transparent;border:1px solid #d1d5db;color:#374151}
+.btn-sm{padding:7px 12px;font-size:12px;min-height:36px}
+.btn-icon{width:36px;height:36px;padding:0}
+
+.filters{display:grid;grid-template-columns:2fr 1fr 1fr auto auto;gap:12px;align-items:end}
+.filter-field{min-width:0}
+.filter-field label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px}
+.filter-field input{width:100%;min-width:0;height:42px;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;background:#fff;font-size:14px}
+
+.stats-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.stat-box{padding:16px 12px;border-radius:12px;text-align:center;background:#f0fdf4}
+.stat-label{font-size:13px;color:#6b7280}
+.stat-value{font-size:23px;font-weight:700;color:#16a34a;margin-top:6px;overflow-wrap:anywhere}
+
+.table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.erp-table{width:100%;min-width:850px;font-size:13px;border-collapse:collapse}
+.erp-table th{background:#f8fafc;font-weight:600;color:#374151;padding:12px 10px;text-align:center;border-bottom:2px solid #eaecf0;white-space:nowrap}
+.erp-table td{padding:11px 10px;text-align:center;border-bottom:1px solid #f1f3f5;vertical-align:middle}
+.erp-table tbody tr:nth-child(even){background:#fafafa}
+.erp-table tbody tr:hover{background:#f0f4ff}
+
+.customer-name{font-weight:700;color:#1a2236;white-space:nowrap}
+.invoice-num{font-size:12px;color:#2563eb;font-weight:600}
+.money{white-space:nowrap;direction:ltr;font-weight:700;color:#16a34a}
+.text-muted{color:#6b7280;font-size:12px}
+.dress-cell{display:flex;align-items:center;justify-content:center;gap:8px}
+.dress-thumb{width:36px;height:36px;border-radius:6px;object-fit:cover;border:1px solid #eaecf0;flex-shrink:0}
+.dress-placeholder{width:36px;height:36px;border-radius:6px;border:1px solid #eaecf0;background:#f8fafc;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dress-name{font-size:12px;font-weight:600;max-width:120px;text-align:right;overflow-wrap:anywhere}
+
+.mobile-cards{display:none}
+.mobile-payment-card{padding:14px;border-bottom:1px solid #eaecf0}
+.mobile-payment-card:last-child{border-bottom:none}
+.mobile-payment-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:6px 0}
+.mobile-payment-label{font-size:12px;color:#6b7280;font-weight:600;flex-shrink:0}
+.mobile-payment-value{font-size:13px;color:#1a2236;text-align:left;overflow-wrap:anywhere}
+.mobile-payment-actions{margin-top:10px}
+.mobile-payment-actions .btn{width:100%}
+
+.empty-state{text-align:center;padding:35px 15px;color:#6b7280}
+.pagination-row{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;padding:16px}
+.page-info{font-size:13px;color:#6b7280}
+
+@media(max-width:900px){
+.filters{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:600px){
+.card-body{padding:12px}
+.card-header{padding:12px}
+.stats-grid{grid-template-columns:1fr}
+.stat-value{font-size:21px}
+.filters{grid-template-columns:1fr}
+.filters .btn{width:100%}
+.desktop-table{display:none}
+.mobile-cards{display:block}
+.mobile-payment-card{display:block}
+}
+@media print{
+.filters,.action-bar,.pagination-row,.mobile-payment-actions,.btn{display:none!important}
+.table-wrap{overflow:visible}
+.erp-table{min-width:0;font-size:10px}
+.erp-table th,.erp-table td{padding:5px}
+}
+</style>
+
+<div class="action-bar">
+  <a href="{% url 'dashboard_home' %}" class="btn btn-outline btn-sm">العودة للرئيسية</a>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">سجل جميع تسديدات العملاء</h3>
+    <span class="text-muted">عدد النتائج: {{ payments.paginator.count|intcomma }}</span>
+  </div>
+
+  <div class="card-body">
+    <form method="get" class="filters">
+      <div class="filter-field">
+        <label for="search">اسم العميل</label>
+        <input type="text" id="search" name="search" value="{{ search }}" placeholder="ابحث باسم العميل">
+      </div>
+
+      <div class="filter-field">
+        <label for="date_from">من تاريخ</label>
+        <input type="date" id="date_from" name="date_from" value="{{ date_from }}">
+      </div>
+
+      <div class="filter-field">
+        <label for="date_to">إلى تاريخ</label>
+        <input type="date" id="date_to" name="date_to" value="{{ date_to }}">
+      </div>
+
+      <button type="submit" class="btn btn-primary">بحث وفلترة</button>
+      <a href="{% url 'all_customer_payments' %}" class="btn btn-outline">إعادة تعيين</a>
+    </form>
+  </div>
+
+  <div class="card-body">
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-label">إجمالي المدفوعات حسب الفلترة</div>
+        <div class="stat-value">{{ total_paid|floatformat:2|intcomma }} د.ل</div>
+      </div>
+
+      <div class="stat-box" style="background:#eff6ff">
+        <div class="stat-label">عدد التسديدات حسب الفلترة</div>
+        <div class="stat-value" style="color:#2563eb">{{ payments.paginator.count|intcomma }}</div>
+      </div>
+    </div>
+
+    <div class="desktop-table">
+      <div class="table-wrap">
+        <table class="erp-table">
+          <thead>
+            <tr>
+              <th>رقم الإيصال</th>
+              <th>اسم العميل</th>
+              <th>تاريخ التسديد</th>
+              <th>المبلغ المسدد</th>
+              <th>الفستان</th>
+              <th>رقم الفاتورة</th>
+              <th>ملاحظات</th>
+              <th>تم بواسطة</th>
+              <th>الإيصال</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for payment in payments %}
+            <tr>
+              <td>{{ payment.receipt_number|default:"-" }}</td>
+              <td class="customer-name">{{ payment.customer.full_name|default:"-" }}</td>
+              <td>{{ payment.payment_date|date:"Y-m-d H:i" }}</td>
+              <td class="money">{{ payment.amount|floatformat:2|intcomma }} د.ل</td>
+              <td>
+                {% if payment.invoice %}
+                  {% with item=payment.invoice.items.first %}
+                    {% if item and item.product %}
+                      <div class="dress-cell">
+                        {% if item.product.image %}
+                          <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="dress-thumb">
+                        {% else %}
+                          <div class="dress-placeholder">👗</div>
+                        {% endif %}
+                        <span class="dress-name">{{ item.product.name }}</span>
+                      </div>
+                    {% else %}—{% endif %}
+                  {% endwith %}
+                {% else %}—{% endif %}
+              </td>
+              <td>
+                {% if payment.invoice %}
+                  <span class="invoice-num">{{ payment.invoice.invoice_number }}</span>
+                {% else %}—{% endif %}
+              </td>
+              <td>{{ payment.notes|default:"-" }}</td>
+              <td>{{ payment.created_by.get_full_name|default:"-" }}</td>
+              <td>
+                <a href="{% url 'customer_payment_receipt' payment.pk %}" class="btn btn-outline btn-icon btn-sm" target="_blank" rel="noopener" title="طباعة الإيصال">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9V2h12v7"></path>
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                    <rect x="6" y="14" width="12" height="8"></rect>
+                  </svg>
+                </a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="9">
+                <div class="empty-state">لا توجد تسديدات مطابقة لخيارات البحث.</div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="mobile-cards">
+      {% for payment in payments %}
+      <div class="mobile-payment-card">
+        <div class="mobile-payment-row">
+          <span class="mobile-payment-label">اسم العميل</span>
+          <span class="mobile-payment-value customer-name">{{ payment.customer.full_name|default:"-" }}</span>
+        </div>
+
+        <div class="mobile-payment-row">
+          <span class="mobile-payment-label">رقم الإيصال</span>
+          <span class="mobile-payment-value">{{ payment.receipt_number|default:"-" }}</span>
+        </div>
+
+        <div class="mobile-payment-row">
+          <span class="mobile-payment-label">تاريخ التسديد</span>
+          <span class="mobile-payment-value">{{ payment.payment_date|date:"Y-m-d H:i" }}</span>
+        </div>
+
+        <div class="mobile-payment-row">
+          <span class="mobile-payment-label">المبلغ المسدد</span>
+          <span class="mobile-payment-value money">{{ payment.amount|floatformat:2|intcomma }} د.ل</span>
+        </div>
+
+        {% if payment.invoice %}
+        <div class="mobile-payment-row">
+          <span class="mobile-payment-label">الفستان</span>
+          <span class="mobile-payment-value">
+            {% with item=payment.invoice.items.first %}
+              {% if item and item.product %}
+                <div class="dress-cell" style="justify-content:flex-start">
+                  {% if item.product.image %}
+                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="dress-thumb">
+                  {% else %}
+                    <div class="dress-placeholder">👗</div>
+                  {% endif %}
+                  <span class="dress-name">{{ item.product.name }}</span>
+                </div>
+              {% else %}—{% endif %}
+            {% endwith %}
+          </span>
+        </div>
+
+        <div class="mobile-payment-row">
+          <span class="mobile-payment-label">رقم الفاتورة</span>
+          <span class="mobile-payment-value invoice-num">{{ payment.invoice.invoice_number }}</span>
+        </div>
+        {% endif %}
+
+        <div class="mobile-payment-row">
+          <span class="mobile-payment-label">ملاحظات</span>
+          <span class="mobile-payment-value">{{ payment.notes|default:"-" }}</span>
+        </div>
+
+        <div class="mobile-payment-row">
+          <span class="mobile-payment-label">تم بواسطة</span>
+          <span class="mobile-payment-value">{{ payment.created_by.get_full_name|default:"-" }}</span>
+        </div>
+
+        <div class="mobile-payment-actions">
+          <a href="{% url 'customer_payment_receipt' payment.pk %}" class="btn btn-outline btn-sm" target="_blank" rel="noopener">طباعة الإيصال</a>
+        </div>
+      </div>
+      {% empty %}
+      <div class="empty-state">لا توجد تسديدات مطابقة لخيارات البحث.</div>
+      {% endfor %}
+    </div>
+
+    {% if payments.has_other_pages %}
+    <div class="pagination-row">
+      {% if payments.has_previous %}
+      <a href="?search={{ search|urlencode }}&date_from={{ date_from|urlencode }}&date_to={{ date_to|urlencode }}&page={{ payments.previous_page_number }}" class="btn btn-outline btn-sm">السابق</a>
+      {% endif %}
+
+      <span class="page-info">صفحة {{ payments.number }} من {{ payments.paginator.num_pages }}</span>
+
+      {% if payments.has_next %}
+      <a href="?search={{ search|urlencode }}&date_from={{ date_from|urlencode }}&date_to={{ date_to|urlencode }}&page={{ payments.next_page_number }}" class="btn btn-outline btn-sm">التالي</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
