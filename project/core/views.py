@@ -3406,7 +3406,13 @@ def delete_customer_payment(request, pk):
                 Decimal('0.00'),
                 invoice.total_amount - invoice.paid_amount
             )
-
+            customer = invoice.customer
+            if customer:
+                customer.debt_balance = max(
+                    Decimal('0.00'),
+                    (customer.debt_balance or Decimal('0.00')) - payment.amount
+                )
+                customer.save(update_fields=['debt_balance'])
             invoice.save(update_fields=[
                 'paid_amount',
                 'remaining_amount',
