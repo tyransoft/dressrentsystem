@@ -4,15 +4,19 @@ from .models import *
 admin.site.register(CustomUser)
 admin.site.register(MonthlySalaryPayment)
 admin.site.register(Penalty)
+
 @admin.register(Customer)
+class CustomerAdmin(admin.ModelAdmin):
+    list_display = (
+        'full_name',
+        'phone',
+        'debt_balance',
+        'is_active',
+    )
+
 
 @admin.register(CustomerPayment)
 class CustomerPaymentAdmin(admin.ModelAdmin):
-    search_fields = [
-        'receipt_number',
-        'customer__full_name',
-        'customer__phone',
-    ]
     list_display = (
         'receipt_number',
         'customer',
@@ -20,7 +24,6 @@ class CustomerPaymentAdmin(admin.ModelAdmin):
         'payment_date',
         'invoice',
     )
-    list_filter = ('payment_date',)
 
 @admin.register(Invoice)
 class InvoiceAdmin(admin.ModelAdmin):
