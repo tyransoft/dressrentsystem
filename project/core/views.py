@@ -3514,11 +3514,11 @@ def penalty_delete(request, pk):
 
     with transaction.atomic():
         penalty = get_object_or_404(
-            Penalty.objects.select_for_update().select_related(
-                'invoice', 'invoice__customer', 'payment'
-            ),
-            pk=pk,
-        )
+            Penalty.objects.select_for_update(of=('self',)).select_related(
+              'invoice', 'invoice__customer', 'payment'
+             ),
+           pk=pk
+               )
 
         invoice = Invoice.objects.select_for_update().get(
             pk=penalty.invoice_id
