@@ -1381,7 +1381,41 @@ return;
 }
 
 var invoiceTypeValue = invoiceTypeRadio.value;
+if (isCash) {
+    var subtotal = cartTotal();
 
+    var discount = parseFloat(
+        document.getElementById('modal-discount').value
+    ) || 0;
+
+    var paidAmount = parseFloat(
+        document.getElementById('modal-paid-amount').value
+    ) || 0;
+
+    var paymentMethod = document.getElementById('modal-payment-method');
+    var selectedOption = paymentMethod.options[paymentMethod.selectedIndex];
+
+    var increasePercentage = parseFloat(
+        selectedOption ? selectedOption.dataset.increase : 0
+    ) || 0;
+
+    var total = (subtotal - discount);
+    total += total * increasePercentage / 100;
+
+    if (discount < 0 || discount > subtotal) {
+        showToast('الخصم غير صحيح', 'error');
+        return;
+    }
+
+    if (paidAmount < total) {
+        showToast(
+            'العميل النقدي يجب أن يدفع كامل المبلغ: ' +
+            total.toFixed(2) + ' د.ل',
+            'error'
+        );
+        return;
+    }
+}
 if (invoiceTypeValue === 'rent') {
 var startDate = document.getElementById('rent_start_date_input');
 var endDate = document.getElementById('rent_end_date_input');

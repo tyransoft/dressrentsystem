@@ -459,7 +459,7 @@ class Customer(models.Model):
 
 
 class CustomerPayment(models.Model):
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='payments')
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='payments',  null=True, blank=True)
     amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name='المبلغ المسدد')
     payment_date = models.DateTimeField(default=timezone.now, verbose_name='تاريخ التسديد')
     notes = models.TextField(blank=True, verbose_name='ملاحظات')

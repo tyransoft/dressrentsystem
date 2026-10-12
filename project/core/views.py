@@ -1354,15 +1354,18 @@ def create_invoice(request):
             invoice.identity_verified = data.get('identity_verified', 'true') in ['true', 'True', '1', 'on']
             
             invoice.save()
-               
-            CustomerPayment.objects.create(
-            invoice=invoice,
-            customer=invoice.customer,
-            amount=invoice.paid_amount,
-            created_by=request.user,
-            notes=f'عربون -  {invoice.invoice_number}'
-            )
-                        
+            if invoice.paid_amount > 0:
+               CustomerPayment.objects.create(
+                 invoice=invoice,
+                 customer=invoice.customer,
+                 amount=invoice.paid_amount,
+                 created_by=request.user,
+                  notes=(
+                      f'دفعة عميل نقدي - الفاتورة {invoice.invoice_number}'
+                      if is_cash_customer
+                      else f'عربون - الفاتورة {invoice.invoice_number}'
+                     )
+                )        
             invoice.total_amount = Decimal('0')
             
             for cart_item in cart:
