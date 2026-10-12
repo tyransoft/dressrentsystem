@@ -37,7 +37,7 @@ urlpatterns = [
     path('repairs/<int:pk>/delete/', repair_delete, name='repair_delete'),
     path('repairs/<int:pk>/finish/', repair_finish, name='repair_finish'),
     path('repairs/<int:pk>/payment/', repair_payment, name='repair_payment'),
-
+    path('payments/<int:pk>/delete/',delete_customer_payment,name='delete_customer_payment'),
     path('customers/', customer_list, name='customers_list'),
     path('customers/create/', customer_create, name='customers_create'),
     path('customers/<int:pk>/', customer_detail, name='customers_detail'),
@@ -56,6 +56,9 @@ urlpatterns = [
     path('employees-performance/', employees_performance, name='employees_performance'),
     path('invoices/<int:pk>/edit/', edit_invoice, name='edit_invoice'),
 
+    path('customers/<int:pk>/penalty/create/',penalty_create,name='penalty_create'),
+
+    path('penalties/<int:pk>/delete/',penalty_delete, name='penalty_delete'),
     path('dashboard/', statistics, name='statistics'),
 
 

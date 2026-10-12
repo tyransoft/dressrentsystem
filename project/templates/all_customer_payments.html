@@ -185,6 +185,16 @@
                     <rect x="6" y="14" width="12" height="8"></rect>
                   </svg>
                 </a>
+                   {% if request.user.is_main_admin %}
+          <form method="post"
+      action="{% url 'delete_customer_payment' payment.pk %}"
+      onsubmit="return confirm('هل أنت متأكد من حذف هذه الدفعة؟');">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger btn-sm">
+        حذف الدفعة
+    </button>
+            </form>
+        {% endif %}
               </td>
             </tr>
             {% empty %}
@@ -260,6 +270,16 @@
 
         <div class="mobile-payment-actions">
           <a href="{% url 'customer_payment_receipt' payment.pk %}" class="btn btn-outline btn-sm" target="_blank" rel="noopener">طباعة الإيصال</a>
+        {% if request.user.is_main_admin %}
+          <form method="post"
+      action="{% url 'delete_customer_payment' payment.pk %}"
+      onsubmit="return confirm('هل أنت متأكد من حذف هذه الدفعة؟');">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger btn-sm">
+        حذف الدفعة
+    </button>
+            </form>
+        {% endif %}
         </div>
       </div>
       {% empty %}

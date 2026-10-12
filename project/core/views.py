@@ -14,7 +14,7 @@ from django.utils import timezone
 from django.urls import reverse
 from math import ceil
 
-
+from django.views.decorators.http import require_POST
 
 @login_required
 def home(request):
@@ -851,8 +851,11 @@ def customer_detail(request, pk):
             Q(notes__icontains=payment_search) |
             Q(receipt_number__icontains=payment_search)
         )
-
-    # كامل السجل، لا يتأثر بفلترة المدفوعات
+    penalties = Penalty.objects.filter(
+     invoice__customer=customer
+      ).select_related(
+          'invoice', 'payment'
+      ).order_by('-created_at')
     history = []
 
     for invoice in invoices:
@@ -904,6 +907,7 @@ def customer_detail(request, pk):
         'payments': payments,
         'payment_from': payment_from,
         'payment_to': payment_to,
+        'penalties': penalties,
         'payment_search': payment_search,
         'history': history,
     })
@@ -930,10 +934,13 @@ from decimal import Decimal, InvalidOperation
 
 
 
-
 @login_required
 def customer_payment_create(request, pk):
+    customer = get_object_or_404(Customer, pk=pk)
+
     if request.method == 'POST':
+        invoice_id = request.POST.get('invoice_id')
+
         try:
             amount = Decimal(request.POST.get('amount', '0'))
         except (InvalidOperation, TypeError, ValueError):
@@ -952,82 +959,63 @@ def customer_payment_create(request, pk):
                 pk=pk
             )
 
-            if amount > customer.debt_balance:
-                messages.error(
-                    request,
-                    f'المبلغ أكبر من الدين المستحق '
-                    f'({customer.debt_balance:,.2f} د.ل)'
-                )
-                return redirect('customer_payment_create', pk=pk)
-
-            invoices = list(
-                Invoice.objects.select_for_update()
-                .filter(
-                    customer=customer,
-                    remaining_amount__gt=0,
-                    status__in=[
-                        InvoiceStatus.PENDING,
-                        InvoiceStatus.PAID,
-                        InvoiceStatus.PARTIAL,
-                        InvoiceStatus.DELIVERED,
-                        InvoiceStatus.OVERDUE,
-                    ]
-                )
-                .order_by('created_at', 'pk')
+            invoice = get_object_or_404(
+                Invoice.objects.select_for_update(),
+                pk=invoice_id,
+                customer=customer,
+                remaining_amount__gt=0,
+                status__in=[
+                    InvoiceStatus.PENDING,
+                    InvoiceStatus.PAID,
+                    InvoiceStatus.PARTIAL,
+                    InvoiceStatus.DELIVERED,
+                    InvoiceStatus.OVERDUE,
+                ]
             )
 
-            total_remaining = sum(
-                (invoice.remaining_amount for invoice in invoices),
-                Decimal('0.00')
-            )
-
-            if amount > total_remaining:
+            if amount > invoice.remaining_amount:
                 messages.error(
                     request,
-                    f'إجمالي المتبقي في الفواتير هو '
-                    f'{total_remaining:,.2f} د.ل، '
-                    f'ولا يمكن توزيع الدفعة بالكامل عليها.'
+                    f'المبلغ أكبر من المتبقي في الفاتورة '
+                    f'{invoice.invoice_number} '
+                    f'({invoice.remaining_amount:,.2f} د.ل)'
                 )
                 return redirect('customer_payment_create', pk=pk)
 
             payment = CustomerPayment.objects.create(
                 customer=customer,
+                invoice=invoice,
                 amount=amount,
                 notes=notes,
                 created_by=request.user
             )
 
-            remaining_payment = amount
+            invoice.paid_amount = (
+                invoice.paid_amount or Decimal('0.00')
+            ) + amount
 
-            for invoice in invoices:
-                if remaining_payment <= 0:
-                    break
+            invoice.remaining_amount = (
+                invoice.total_amount - invoice.paid_amount
+            )
 
-                applied_amount = min(
-                    remaining_payment,
-                    invoice.remaining_amount
-                )
+            if invoice.remaining_amount <= 0:
+                invoice.remaining_amount = Decimal('0.00')
+                invoice.status = InvoiceStatus.PAID
+            else:
+                invoice.status = InvoiceStatus.PARTIAL
 
-                invoice.paid_amount += applied_amount
-                invoice.remaining_amount -= applied_amount
+            invoice.save(update_fields=[
+                'paid_amount',
+                'remaining_amount',
+                'status',
+                'updated_at',
+            ])
 
-                if invoice.remaining_amount == 0:
-                    invoice.status = InvoiceStatus.PAID
-                else:
-                    invoice.status = InvoiceStatus.PARTIAL
+            customer.debt_balance = max(
+                Decimal('0.00'),
+                (customer.debt_balance or Decimal('0.00')) - amount
+            )
 
-                invoice.save(update_fields=[
-                    'paid_amount',
-                    'remaining_amount',
-                    'status',
-                    'updated_at',
-                ])
-                if payment.invoice is None:
-                  payment.invoice = invoice
-                  payment.save(update_fields=['invoice'])
-                remaining_payment -= applied_amount
-
-            customer.debt_balance -= amount
             customer.save(update_fields=[
                 'debt_balance',
                 'updated_at',
@@ -1035,17 +1023,22 @@ def customer_payment_create(request, pk):
 
         messages.success(
             request,
-            f'تم تسديد {amount:,.2f} د.ل من دين العميل '
-            f'{customer.full_name} وتحديث الفواتير'
+            f'تم تسديد {amount:,.2f} د.ل من الفاتورة '
+            f'{invoice.invoice_number} للعميل {customer.full_name}'
         )
 
         return redirect('customer_payment_receipt', pk=payment.pk)
 
-    customer = get_object_or_404(Customer, pk=pk)
+    invoices = Invoice.objects.filter(
+        customer=customer,
+        remaining_amount__gt=0,
+       
+    ).order_by('created_at', 'pk')
 
     context = {
         'customer': customer,
         'debt_amount': customer.debt_balance,
+        'invoices': invoices,
     }
 
     return render(
@@ -1053,6 +1046,7 @@ def customer_payment_create(request, pk):
         'customers/payment_create.html',
         context
     )
+
 
 @login_required
 def customer_payment_receipt(request, pk):
@@ -1330,7 +1324,31 @@ def create_invoice(request):
                 except Customer.DoesNotExist:
                     messages.error(request, 'العميل غير موجود')
                     return redirect('invoice_list')
-            
+            if invoice.customer:
+              today = timezone.localdate()
+
+              for item in cart:
+                 product_id = item['product_id']
+
+                 already_exists = Invoice.objects.filter(
+                  customer=invoice.customer,
+                  created_at__date=today,
+                   items__product_id=product_id,
+                   ).exclude(
+                       status=InvoiceStatus.CANCELLED
+                    ).exists()
+
+                 if already_exists:
+                   product = Product.objects.filter(pk=product_id).first()
+                   product_name = product.name if product else f'رقم {product_id}'
+
+                   messages.error(
+                      request,
+                     f'لا يمكن إنشاء الفاتورة: المنتج "{product_name}" '
+                      f'له فاتورة سابقة لهذا العميل اليوم.'
+                       )
+                   return redirect('invoice_list')
+                 
             if invoice_type == InvoiceType.RENT:
                 invoice.rent_start_date = rent_start_date
                 invoice.rent_end_date = rent_end_date
@@ -1612,36 +1630,21 @@ def statistics(request):
         or Decimal('0')
     )
 
-    # ==========================================
-    # حساب المدفوعات حسب الطريقة المتفق عليها
-    # ==========================================
 
-    # 1. مجموع المدفوع في الفواتير المنشأة
-    # خلال فترة الفلترة
-    invoice_paid = (
-        invoices.aggregate(total=Sum('paid_amount'))['total']
-        or Decimal('0')
-    )
-
-    # 2. مدفوعات العملاء المنشأة خلال فترة الفلترة،
-    # مع استبعاد المدفوعات المرتبطة بفواتير الفترة
     customer_payments = CustomerPayment.objects.filter(
-        created_at__date__gte=start_date,
-        created_at__date__lte=end_date,
-    ).exclude(
-        invoice__in=invoices
+      created_at__date__gte=start_date,
+      created_at__date__lte=end_date,
     )
 
-    extra_customer_payments = (
-        customer_payments.aggregate(total=Sum('amount'))['total']
-        or Decimal('0')
+    total_paid = (
+      customer_payments.aggregate(total=Sum('amount'))['total']
+      or Decimal('0')
     )
 
-    # 3. الإجمالي النهائي دون تكرار
-    total_paid = invoice_paid + extra_customer_payments
     total_payments = total_paid
 
-    # المتبقي من الفواتير المنشأة خلال الفترة
+
+
     total_remaining = (
         invoices.aggregate(total=Sum('remaining_amount'))['total']
         or Decimal('0')
@@ -1656,10 +1659,6 @@ def statistics(request):
         invoices.aggregate(total=Sum('commission'))['total']
         or Decimal('0')
     )
-
-    # ==========================================
-    # الصيانة والتنظيف
-    # ==========================================
 
     repairs = RepairAndClean.objects.filter(
         created_at__gte=start_date,
@@ -1676,10 +1675,7 @@ def statistics(request):
     repair_count = repairs.filter(kind='repair').count()
     clean_count = repairs.filter(kind='clean').count()
 
-    # ==========================================
-    # تفاصيل المنتجات في الفواتير
-    # ==========================================
-
+   
     invoice_items = InvoiceItem.objects.filter(
         invoice__in=invoices
     )
@@ -1749,10 +1745,7 @@ def statistics(request):
         or Decimal('0')
     )
 
-    # ==========================================
-    # الإيرادات القديمة والغرامات
-    # ==========================================
-
+    
     old_revenues = ProductOldRevenue.objects.filter(
         date__gte=start_date,
         date__lte=end_date
@@ -1774,10 +1767,7 @@ def statistics(request):
         total_revenue + total_old_revenue + total_penalties
     )
 
-    # ==========================================
-    # المصاريف
-    # ==========================================
-
+    
     expenses = Expense.objects.filter(
         expense_date__gte=start_date,
         expense_date__lte=end_date
@@ -1806,10 +1796,7 @@ def statistics(request):
             'total': cat.total
         })
 
-    # ==========================================
-    # الرواتب والغيابات
-    # ==========================================
-
+    
     total_salaries_paid = (
         MonthlySalaryPayment.objects.filter(
             payment_date__gte=start_date,
@@ -1841,10 +1828,6 @@ def statistics(request):
         ).aggregate(total=Sum('deduction_amount'))['total']
         or Decimal('0')
     )
-
-    # ==========================================
-    # الأرباح
-    # ==========================================
 
     total_operating_expenses = (
         total_expenses + total_salaries_paid + total_repair_cost
@@ -1908,10 +1891,7 @@ def statistics(request):
         total_sale_revenue + sale_old_revenue - sale_product_cost
     )
 
-    # ==========================================
-    # إحصائيات آخر 7 أيام
-    # ==========================================
-
+    
     daily_stats = []
 
     for i in range(7):
@@ -1934,20 +1914,12 @@ def statistics(request):
 
     daily_stats.reverse()
 
-    # ==========================================
-    # أفضل العملاء
-    # ==========================================
-
     top_customers = Customer.objects.filter(
         invoice__in=invoices
     ).annotate(
         total_spent=Sum('invoice__total_amount'),
         total_invoices=Count('invoice')
     ).order_by('-total_spent')[:10]
-
-    # ==========================================
-    # البيانات المرسلة إلى الصفحة
-    # ==========================================
 
     context = {
         'start_date': start_date,
@@ -3408,3 +3380,222 @@ def edit_invoice(request, pk):
 
     messages.error(request, 'حدث خطأ غير معروف!')
     return redirect('invoice_list')
+
+
+
+@login_required
+@require_POST
+def delete_customer_payment(request, pk):
+    with transaction.atomic():
+        payment = get_object_or_404(
+            CustomerPayment.objects.select_for_update(),
+            pk=pk
+        )
+
+        if payment.invoice_id:
+            invoice = payment.invoice.__class__.objects.select_for_update().get(
+                pk=payment.invoice_id
+            )
+
+            invoice.paid_amount = max(
+                Decimal('0.00'),
+                (invoice.paid_amount or Decimal('0.00')) - payment.amount
+            )
+
+            invoice.remaining_amount = max(
+                Decimal('0.00'),
+                invoice.total_amount - invoice.paid_amount
+            )
+
+            invoice.save(update_fields=[
+                'paid_amount',
+                'remaining_amount',
+            ])
+
+        payment.delete()
+
+    messages.success(request, 'تم حذف الدفعة وتحديث المبلغ المدفوع في الفاتورة.')
+    return redirect('all_customer_payments')
+
+
+
+
+@login_required
+def penalty_create(request, pk):
+    customer = get_object_or_404(Customer, pk=pk)
+
+    if request.method == 'POST':
+        invoice_id = request.POST.get('invoice_id')
+        amount_raw = request.POST.get('amount', '').strip()
+        reason = request.POST.get('reason', '').strip()
+
+        try:
+            amount = Decimal(amount_raw)
+            if not amount.is_finite() or amount <= 0:
+                raise ValueError
+        except (InvalidOperation, ValueError):
+            messages.error(request, 'أدخل مبلغ غرامة صحيحًا.')
+            return redirect('penalty_create', pk=customer.pk)
+
+        if not reason:
+            messages.error(request, 'يرجى إدخال سبب الغرامة.')
+            return redirect('penalty_create', pk=customer.pk)
+
+        with transaction.atomic():
+            invoice = get_object_or_404(
+                Invoice.objects.select_for_update(),
+                pk=invoice_id,
+                customer=customer,
+            )
+
+            if amount > invoice.remaining_amount:
+                messages.error(
+                    request,
+                    'مبلغ الغرامة لا يمكن أن يتجاوز المبلغ المتبقي في الفاتورة.'
+                )
+                return redirect('penalty_create', pk=customer.pk)
+
+            penalty = Penalty.objects.create(
+                invoice=invoice,
+                amount=amount,
+                reason=reason,
+            )
+
+            payment = CustomerPayment.objects.create(
+                customer=customer,
+                invoice=invoice,
+                amount=amount,
+                notes=f'غرامة: {reason}',
+                created_by=request.user,
+            )
+
+            penalty.payment = payment
+            penalty.save(update_fields=['payment'])
+
+            invoice.paid_amount += amount
+            invoice.remaining_amount -= amount
+
+            if invoice.remaining_amount <= 0:
+                invoice.remaining_amount = Decimal('0')
+                invoice.status = InvoiceStatus.PAID
+            else:
+                invoice.status = InvoiceStatus.PARTIAL
+
+            invoice.save(update_fields=[
+                'paid_amount',
+                'remaining_amount',
+                'status',
+            ])
+
+            customer.debt_balance = max(
+                Decimal('0'),
+                customer.debt_balance - amount
+            )
+            customer.save(update_fields=['debt_balance'])
+
+        messages.success(request, 'تمت إضافة الغرامة وتسجيلها كدفعة بنجاح.')
+        return redirect('customers_detail', pk=customer.pk)
+
+    invoices = Invoice.objects.filter(
+        customer=customer,
+        remaining_amount__gt=0,
+    ).order_by('created_at', 'pk')
+
+    return render(request, 'customers/penalty_create.html', {
+        'customer': customer,
+        'invoices': invoices,
+    })
+
+
+@login_required
+def penalty_delete(request, pk):
+    if request.method != 'POST':
+        return redirect('customers_list')
+
+    with transaction.atomic():
+        penalty = get_object_or_404(
+            Penalty.objects.select_for_update().select_related(
+                'invoice', 'invoice__customer', 'payment'
+            ),
+            pk=pk,
+        )
+
+        invoice = Invoice.objects.select_for_update().get(
+            pk=penalty.invoice_id
+        )
+        customer = None
+
+        if invoice.customer_id:
+            customer = Customer.objects.select_for_update().get(
+                pk=invoice.customer_id
+            )
+
+        amount = penalty.amount
+        payment = penalty.payment
+
+        if payment is None:
+            candidates = CustomerPayment.objects.filter(
+                invoice=invoice,
+                amount__gte=amount,
+            ).order_by('-created_at', '-pk')
+
+            payment = candidates.filter(
+                created_at__date=penalty.created_at.date()
+            ).first()
+
+            if payment is None:
+                payment = candidates.first()
+
+        if payment is None or payment.amount < amount:
+            messages.error(
+                request,
+                'تعذر حذف الغرامة: لم يتم العثور على دفعة مناسبة لخصم مبلغها.'
+            )
+            return redirect('customers_detail', pk=customer.pk) if customer else redirect('customers_list')
+
+        payment = CustomerPayment.objects.select_for_update().get(
+            pk=payment.pk
+        )
+
+        if payment.amount < amount:
+            messages.error(
+                request,
+                'مبلغ الدفعة أقل من مبلغ الغرامة، لم يتم الحذف.'
+            )
+            return redirect('customers_detail', pk=customer.pk) if customer else redirect('customers_list')
+
+        payment.amount -= amount
+
+        if payment.amount == 0:
+            payment.delete()
+        else:
+            payment.save(update_fields=['amount'])
+
+        invoice.paid_amount = max(
+            Decimal('0'),
+            invoice.paid_amount - amount
+        )
+        invoice.remaining_amount = max(
+            Decimal('0'),
+            invoice.total_amount - invoice.paid_amount
+        )
+
+        if invoice.remaining_amount == 0:
+            invoice.status = InvoiceStatus.PAID
+        else:
+            invoice.status = InvoiceStatus.PARTIAL
+
+        invoice.save(update_fields=[
+            'paid_amount',
+            'remaining_amount',
+            'status',
+        ])
+
+        if customer:
+            customer.debt_balance += amount
+            customer.save(update_fields=['debt_balance'])
+
+        penalty.delete()
+
+    messages.success(request, 'تم حذف الغرامة وخصم مبلغها من الدفعة.')
+    return redirect('customers_detail', pk=customer.pk) if customer else redirect('customers_list')

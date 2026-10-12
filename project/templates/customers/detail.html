@@ -296,6 +296,90 @@
       </div>
     </div>
 
+<div class="card">
+  <div class="card-header">
+    <div>
+      <span class="card-title">غرامات العميل</span>
+      <div class="text-muted" style="margin-top:5px;">
+        عدد الغرامات: {{ penalties_count }}
+        — الإجمالي: {{ total_penalties|floatformat:2|intcomma }} د.ل
+      </div>
+    </div>
+
+    <a href="{% url 'penalty_create' customer.pk %}"
+       class="btn-outline"
+       style="background:#dc2626;color:white;border-color:#dc2626;">
+      + إضافة غرامة
+    </a>
+  </div>
+
+  <div class="card-body">
+    <div class="table-wrap">
+      <table class="erp-table">
+        <thead>
+          <tr>
+            <th>الفاتورة</th>
+            <th>سبب الغرامة</th>
+            <th>المبلغ</th>
+            <th>التاريخ</th>
+            <th>الإيصال</th>
+            <th>حذف</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for penalty in penalties %}
+          <tr>
+            <td>
+              {{ penalty.invoice.invoice_number }}
+            </td>
+
+            <td>{{ penalty.reason }}</td>
+
+            <td class="text-danger fw-600">
+              {{ penalty.amount|floatformat:2|intcomma }} د.ل
+            </td>
+
+            <td>{{ penalty.created_at|date:"Y-m-d H:i" }}</td>
+
+            <td>
+              {% if penalty.payment %}
+                <a href="{% url 'customer_payment_receipt' penalty.payment.pk %}"
+                   class="invoice-link-mini">
+                  {{ penalty.payment.receipt_number }}
+                </a>
+              {% else %}
+                <span class="text-muted">لا يوجد إيصال مرتبط</span>
+              {% endif %}
+            </td>
+
+            <td>
+              <form method="post"
+                    action="{% url 'penalty_delete' penalty.pk %}"
+                    onsubmit="return confirm('هل أنت متأكد من حذف هذه الغرامة؟ سيتم تعديل حسابات الفاتورة والدفعة المرتبطة بها.');">
+                {% csrf_token %}
+                <button type="submit"
+                        class="btn-outline"
+                        style="padding:5px 10px;min-height:32px;color:#dc2626;border-color:#fecaca;">
+                  حذف
+                </button>
+              </form>
+            </td>
+          </tr>
+
+          {% empty %}
+          <tr>
+            <td colspan="6" style="padding:25px;color:#6b7280;">
+              لا توجد غرامات مسجلة لهذا العميل.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
     <div class="card">
       <div class="card-header">
         <span class="card-title">سجل العميل</span>

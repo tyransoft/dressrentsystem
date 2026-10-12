@@ -27,28 +27,66 @@
       </div>
     </div>
 
-    <form method="post">
-      {% csrf_token %}
-      <div class="form-group">
-        <label class="form-label">المبلغ المراد تسديده *</label>
-        <input type="number" name="amount" class="form-control" step="0.01"
-               min="0.01" max="{{ debt_amount }}" required
-               placeholder="أدخل المبلغ">
-        <small class="text-muted">أقصى مبلغ يمكن تسديده: {{ debt_amount|floatformat:2|intcomma }} د.ل</small>
-      </div>
-      <div class="form-group">
-        <label class="form-label">ملاحظات</label>
-        <textarea name="notes" class="form-control" rows="3"
-                  placeholder="مثال: تسديد قسط شهر يناير"></textarea>
-      </div>
-      <div class="action-row">
-        <button type="submit" class="btn btn-success" style="flex:1;" id="submit-btn">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-          تأكيد التسديد
-        </button>
-        <a href="{% url 'customers_detail' customer.pk %}" class="btn btn-outline" style="flex:1;">إلغاء</a>
-      </div>
-    </form>
+    
+<form method="post">
+  {% csrf_token %}
+
+  <div class="form-group">
+    <label class="form-label">اختر الفاتورة *</label>
+
+    <select name="invoice_id" id="invoice-select"
+            class="form-control" required>
+      <option value="">-- اختر الفاتورة --</option>
+
+      {% for invoice in invoices %}
+        <option value="{{ invoice.pk }}"
+                data-remaining="{{ invoice.remaining_amount }}">
+          {{ invoice.invoice_number }}
+          — الإجمالي: {{ invoice.total_amount|floatformat:2 }}
+          — المتبقي: {{ invoice.remaining_amount|floatformat:2 }} د.ل
+        </option>
+      {% endfor %}
+    </select>
+
+    {% if not invoices %}
+      <small class="text-danger">
+        لا توجد فواتير عليها مبالغ متبقية لهذا العميل.
+      </small>
+    {% endif %}
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">المبلغ المراد تسديده *</label>
+
+    <input type="number" name="amount" id="payment-amount"
+           class="form-control" step="0.01" min="0.01"
+           required placeholder="اختر الفاتورة أولاً" disabled>
+
+    <small class="text-muted" id="remaining-help">
+      اختر الفاتورة لمعرفة المبلغ المتبقي.
+    </small>
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">ملاحظات</label>
+    <textarea name="notes" class="form-control" rows="3"
+              placeholder="ملاحظات الدفعة"></textarea>
+  </div>
+
+  <div class="action-row">
+    <button type="submit" class="btn btn-success"
+            style="flex:1;" {% if not invoices %}disabled{% endif %}>
+      تأكيد التسديد
+    </button>
+
+    <a href="{% url 'customers_detail' customer.pk %}"
+       class="btn btn-outline" style="flex:1;">
+      إلغاء
+    </a>
+  </div>
+</form>
+
+
   </div>
 </div>
 
@@ -81,4 +119,54 @@
     .card-body { padding: 12px; }
   }
 </style>
+
+
+
+{% block extra_js %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const invoiceSelect = document.getElementById('invoice-select');
+    const amountInput = document.getElementById('payment-amount');
+    const remainingHelp = document.getElementById('remaining-help');
+
+    invoiceSelect.addEventListener('change', function () {
+        const option = this.options[this.selectedIndex];
+
+        if (!option.value) {
+            amountInput.disabled = true;
+            amountInput.value = '';
+            amountInput.removeAttribute('max');
+            remainingHelp.textContent =
+                'اختر الفاتورة لمعرفة المبلغ المتبقي.';
+            return;
+        }
+
+        const remaining = Number(option.dataset.remaining);
+
+        amountInput.disabled = false;
+        amountInput.value = '';
+        amountInput.max = remaining.toFixed(2);
+        amountInput.placeholder = 'أقصى مبلغ: ' + remaining.toFixed(2);
+
+        remainingHelp.textContent =
+            'المبلغ المتبقي في الفاتورة: ' +
+            remaining.toFixed(2) + ' د.ل';
+    });
+
+    document.querySelector('form').addEventListener('submit', function (e) {
+        const option = invoiceSelect.options[invoiceSelect.selectedIndex];
+        const amount = Number(amountInput.value);
+        const remaining = Number(option.dataset.remaining);
+
+        if (!option.value || !Number.isFinite(amount) ||
+            amount <= 0 || amount > remaining) {
+            e.preventDefault();
+            alert('اختر فاتورة صحيحة، ولا يمكن أن يتجاوز المبلغ المتبقي.');
+        }
+    });
+});
+</script>
+{% endblock %}
+
 {% endblock %}

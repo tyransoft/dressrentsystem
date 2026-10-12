@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h4>إضافة غرامة للعميل: {{ customer.full_name }}</h4>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="mb-3">
+            <label class="form-label">الفاتورة</label>
+            <select name="invoice_id" class="form-select" required>
+                <option value="">اختر الفاتورة</option>
+                {% for invoice in invoices %}
+                    <option value="{{ invoice.pk }}">
+                        {{ invoice.invoice_number }}
+                        — المتبقي: {{ invoice.remaining_amount }} د.ل
+                    </option>
+                {% endfor %}
+            </select>
+            {% if not invoices %}
+                <small class="text-danger">
+                    لا توجد فواتير عليها مبالغ متبقية.
+                </small>
+            {% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">مبلغ الغرامة</label>
+            <input
+                type="number"
+                name="amount"
+                class="form-control"
+                min="0.01"
+                step="0.01"
+                required
+            >
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">سبب الغرامة</label>
+            <input
+                type="text"
+                name="reason"
+                class="form-control"
+                maxlength="200"
+                required
+            >
+        </div>
+
+        <button
+            type="submit"
+            class="btn btn-danger"
+            {% if not invoices %}disabled{% endif %}
+        >
+            إضافة الغرامة
+        </button>
+
+        <a href="{% url 'customers_detail' customer.pk %}"
+           class="btn btn-secondary">
+            إلغاء
+        </a>
+    </form>
+</div>
+{% endblock %}

@@ -8,7 +8,7 @@ from django.db.models import Sum
 from django.core.validators import MinValueValidator
 import random
 import json
-
+from django.db import transaction
 import qrcode
 from io import BytesIO
 from django.conf import settings
@@ -514,8 +514,7 @@ class CustomerPayment(models.Model):
 
               next_number += 1
 
-
-
+ 
 class InvoiceType(models.TextChoices):
     RENT = 'rent', 'إيجار'
     SALE = 'sale', 'بيع'
@@ -714,7 +713,7 @@ class Penalty(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     reason = models.CharField(max_length=200)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+    payment = models.ForeignKey('CustomerPayment',on_delete=models.SET_NULL,null=True,blank=True,related_name='penalties')    
     class Meta:
         verbose_name = 'غرامة'
         verbose_name_plural = 'الغرامات'
