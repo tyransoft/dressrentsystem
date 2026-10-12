@@ -480,12 +480,39 @@ class CustomerPayment(models.Model):
             self.receipt_number = self._generate_receipt_number()
         super().save(*args, **kwargs)
     
+
     def _generate_receipt_number(self):
-        date_str = timezone.now().strftime('%Y%m%d')
-        count = CustomerPayment.objects.filter(
-            payment_date__date=timezone.now().date()
-        ).count() + 1
-        return f"{date_str}{count:04d}"
+       from django.utils import timezone
+       from core.models import CustomerPayment
+
+       date_str = timezone.now().strftime('%Y%m%d')
+       prefix = date_str
+
+       last_number = CustomerPayment.objects.filter(
+              receipt_number__startswith=prefix
+       ).order_by('-receipt_number').values_list(
+              'receipt_number', flat=True
+       ).first()
+
+       if last_number:
+              try:
+                     next_number = int(last_number[len(prefix):]) + 1
+              except ValueError:
+                     next_number = 1
+       else:
+              next_number = 1
+
+       while True:
+              receipt_number = f"{prefix}{next_number:04d}"
+
+              exists = CustomerPayment.objects.filter(
+                     receipt_number=receipt_number
+              ).exists()
+
+              if not exists:
+                     return receipt_number
+
+              next_number += 1
 
 
 

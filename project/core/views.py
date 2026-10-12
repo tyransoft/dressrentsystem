@@ -1354,7 +1354,15 @@ def create_invoice(request):
             invoice.identity_verified = data.get('identity_verified', 'true') in ['true', 'True', '1', 'on']
             
             invoice.save()
-            
+               
+            CustomerPayment.objects.create(
+            invoice=invoice,
+            customer=invoice.customer,
+            amount=invoice.paid_amount,
+            created_by=request.user,
+            notes=f'عربون -  {invoice.invoice_number}'
+            )
+                        
             invoice.total_amount = Decimal('0')
             
             for cart_item in cart:
@@ -1416,8 +1424,6 @@ def create_invoice(request):
             
             invoice.save()
             
-            request.session['cart'] = []
-            request.session.modified = True
             
             messages.success(request, 'تم إضافة الفاتورة بنجاح')
             return redirect('print_receipt', invoice.pk)
