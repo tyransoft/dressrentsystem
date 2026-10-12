@@ -4,6 +4,7 @@ from .models import *
 admin.site.register(CustomUser)
 admin.site.register(MonthlySalaryPayment)
 admin.site.register(Penalty)
+admin.site.register(CustomerPayment)
 
 @admin.register(Invoice)
 class InvoiceAdmin(admin.ModelAdmin):
