@@ -1591,7 +1591,7 @@ def statistics(request):
     if start_date:
         start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
     else:
-        start_date = today - timedelta(days=30)
+        start_date = today
 
     if end_date:
         end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
@@ -1632,8 +1632,8 @@ def statistics(request):
 
 
     customer_payments = CustomerPayment.objects.filter(
-      created_at__date__gte=start_date,
-      created_at__date__lte=end_date,
+      payment_date__date__gte=start_date,
+      payment_date__date__lte=end_date,
     )
 
     total_paid = (
