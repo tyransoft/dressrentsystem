@@ -22,10 +22,8 @@ def home(request):
     if not request.user.is_authenticated:
         return redirect('user_login')
     else:  
-      if user.is_accountant() or user.can_see_all_data():
         return redirect('statistics')
-      else:
-        return redirect('create_invoice')
+      
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -1755,16 +1753,18 @@ def statistics(request):
         old_revenues.aggregate(total=Sum('amount'))['total']
         or Decimal('0')
     )
-
     total_penalties = (
-        Penalty.objects.filter(
-            invoice__in=invoices
-        ).aggregate(total=Sum('amount'))['total']
-        or Decimal('0')
-    )
+    Penalty.objects.filter(
+        created_at__date__gte=start_date,
+        created_at__date__lte=end_date,
+    ).aggregate(
+        total=Sum('amount')
+    )['total']
+    or Decimal('0')
+)
 
     total_gross_revenue = (
-        total_revenue + total_old_revenue + total_penalties
+        total_revenue + total_old_revenue 
     )
 
     
@@ -1835,11 +1835,11 @@ def statistics(request):
 
     total_net_profit = (
         total_gross_revenue
-        - sale_product_cost
+        
         - total_operating_expenses
     )
 
-    total_gross_profit = total_gross_revenue - sale_product_cost
+    total_gross_profit = total_gross_revenue 
 
     profit_margin = 0
 
@@ -3473,7 +3473,8 @@ def penalty_create(request, pk):
             penalty.save(update_fields=['payment'])
 
             
-
+            invoice.paid_amount += amount
+            invoice.total_amount += amount
            
 
             invoice.save(update_fields=[

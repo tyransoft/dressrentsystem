@@ -50,13 +50,34 @@ class UserCreateForm(UserCreationForm):
         self.fields['password2'].label = 'تأكيد كلمة المرور'
 
 
+
 class UserEditForm(forms.ModelForm):
+    new_password = forms.CharField(
+        label='كلمة المرور الجديدة',
+        required=False,
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'اتركه فارغاً إذا لا تريد تغيير كلمة المرور'
+        })
+    )
+
+    confirm_password = forms.CharField(
+        label='تأكيد كلمة المرور',
+        required=False,
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'أعد كتابة كلمة المرور الجديدة'
+        })
+    )
+
     class Meta:
         model = CustomUser
-        fields = [ 'role', 'is_active']
+        fields = ['role', 'is_active']
         widgets = {
             'role': forms.Select(attrs={'class': 'form-select'}),
-            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'is_active': forms.CheckboxInput(
+                attrs={'class': 'form-check-input'}
+            ),
         }
         labels = {
             'role': 'الدور',
@@ -65,6 +86,38 @@ class UserEditForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get('new_password')
+        confirm_password = cleaned_data.get('confirm_password')
+
+        if password or confirm_password:
+            if not password:
+                self.add_error(
+                    'new_password',
+                    'يرجى إدخال كلمة المرور الجديدة'
+                )
+            elif password != confirm_password:
+                self.add_error(
+                    'confirm_password',
+                    'كلمتا المرور غير متطابقتين'
+                )
+
+        return cleaned_data
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        password = self.cleaned_data.get('new_password')
+
+        if password:
+            user.set_password(password)
+
+        if commit:
+            user.save()
+            self.save_m2m()
+
+        return user
 
      
 class CategoryForm(forms.ModelForm):

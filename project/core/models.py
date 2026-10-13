@@ -135,7 +135,7 @@ class Product(models.Model):
         verbose_name_plural = 'الفساتين'
         ordering = ['name']
     def generate_qr(self):
-      base_url = getattr(settings, "SITE_URL", "http://127.0.0.1:8000")
+      base_url = getattr(settings, "SITE_URL", "https://dressrent.tip2.libyanspider.cloud/")
     
       product_url = f"{base_url}/products/qr/{self.barcode}/"
 
