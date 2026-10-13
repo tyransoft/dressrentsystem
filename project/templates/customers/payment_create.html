@@ -66,7 +66,17 @@
       اختر الفاتورة لمعرفة المبلغ المتبقي.
     </small>
   </div>
-
+{% if request.user.is_main_admin %}
+    <div class="form-group">
+        <label class="form-label">تاريخ الدفع</label>
+        <input
+            type="date"
+            name="payment_date"
+            class="form-control"
+            value="{{ today|date:'Y-m-d' }}"
+        >
+    </div>
+{% endif %}
   <div class="form-group">
     <label class="form-label">ملاحظات</label>
     <textarea name="notes" class="form-control" rows="3"

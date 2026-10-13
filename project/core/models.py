@@ -461,7 +461,7 @@ class Customer(models.Model):
 class CustomerPayment(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='payments',  null=True, blank=True)
     amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name='المبلغ المسدد')
-    payment_date = models.DateTimeField(default=timezone.now, verbose_name='تاريخ التسديد')
+    payment_date = models.DateTimeField( verbose_name='تاريخ التسديد')
     notes = models.TextField(blank=True, verbose_name='ملاحظات')
     receipt_number = models.CharField(max_length=50, unique=True, blank=True, verbose_name='رقم الإيصال')
     created_by = models.ForeignKey('core.CustomUser', on_delete=models.SET_NULL, null=True, verbose_name='تم بواسطة')
@@ -544,6 +544,8 @@ class Invoice(models.Model):
     commission = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name='العمولة')
     paid_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name='المدفوع')
     remaining_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name='المتبقي') 
+    extra_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name='رسوم اضافية')
+
     payment_method = models.ForeignKey(PaymentMethod, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='طريقة الدفع')
     identity_verified = models.BooleanField(default=True)
     identity_verified_return = models.BooleanField(default=False)   
@@ -638,10 +640,7 @@ class Invoice(models.Model):
         self.status = InvoiceStatus.CANCELLED
         self.save()
         
-        if self.customer and self.remaining_amount > 0:
-            self.customer.debt_balance -= self.remaining_amount
-            self.customer.save()
-
+       
     def get_all_products(self):
         return [item.product for item in self.items.all()]
 
@@ -712,7 +711,7 @@ class Penalty(models.Model):
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='penalties')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     reason = models.CharField(max_length=200)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField()
     payment = models.ForeignKey('CustomerPayment',on_delete=models.SET_NULL,null=True,blank=True,related_name='penalties')    
     class Meta:
         verbose_name = 'غرامة'

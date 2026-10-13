@@ -951,6 +951,20 @@ def customer_payment_create(request, pk):
             messages.error(request, 'المبلغ يجب أن يكون أكبر من صفر')
             return redirect('customer_payment_create', pk=pk)
 
+        payment_date = timezone.localdate()
+
+        if request.user.is_main_admin:
+           date_raw = request.POST.get('payment_date', '').strip()
+
+        if date_raw:
+          try:
+            payment_date = datetime.strptime(
+                date_raw, '%Y-%m-%d'
+            ).date()
+          except ValueError:
+            messages.error(request, 'تاريخ الدفع غير صحيح.')
+            return redirect('customer_payment_create', pk=pk)
+
         with transaction.atomic():
             customer = get_object_or_404(
                 Customer.objects.select_for_update(),
@@ -984,6 +998,7 @@ def customer_payment_create(request, pk):
                 customer=customer,
                 invoice=invoice,
                 amount=amount,
+                payment_date=payment_date,
                 notes=notes,
                 created_by=request.user
             )
@@ -1037,6 +1052,8 @@ def customer_payment_create(request, pk):
         'customer': customer,
         'debt_amount': customer.debt_balance,
         'invoices': invoices,
+        'today': timezone.localdate(),
+
     }
 
     return render(
@@ -1159,6 +1176,7 @@ def add_penalty(request):
             invoice=invoice,
             amount=amount,
             reason=reason,
+            created_at=timezone.now(),
         )
         
         invoice.total_amount += Decimal(amount)
@@ -1349,6 +1367,7 @@ def create_invoice(request):
 
             invoice.discount = Decimal(str(data.get('discount', '0')))
             invoice.commission = Decimal(str(data.get('commission', '0')))
+            invoice.extra_amount = Decimal(str(data.get('extra_amount', '0')))
             invoice.paid_amount = Decimal(str(data.get('paid_amount', '0')))
 
             if invoice_type == InvoiceType.RENT:
@@ -1422,6 +1441,8 @@ def create_invoice(request):
 
             invoice.total_amount -= invoice.discount
             invoice.total_amount += invoice.commission
+            invoice.total_amount += invoice.extra_amount
+
             if invoice.total_amount == invoice.paid_amount:
                 invoice.remaining_amount = 0
                 note = f'تم دفع كامل المبلغ عند الحجز {invoice.invoice_number}'
@@ -1579,6 +1600,13 @@ def cancel_invoice(request, invoice_id):
         try:
             
             invoice.delete()
+            try:
+                customer=Customer.objects.get(id=invoice.customer.id)
+            except Customer.DoesNotExist:
+                customer = None
+            if customer and invoice.remaining_amount > 0:
+                customer.debt_balance -= invoice.remaining_amount
+                customer.save()
             
             messages.success(request, f'تم إلغاء الفاتورة  بنجاح')
             return redirect('invoice_list')
@@ -3338,6 +3366,7 @@ def edit_invoice(request, pk):
                     discount = Decimal(str(request.POST.get('discount', '0') or '0'))
                     paid_amount = Decimal(str(request.POST.get('paid_amount', '0') or '0'))
                     commission = Decimal(str(request.POST.get('commission', '0') or '0'))
+                    extra_charges = Decimal(str(request.POST.get('extra_amount', '0') or '0'))
                 except Exception:
                     messages.error(request, 'قيم المبالغ غير صحيحة')
                     return redirect('edit_invoice', pk=invoice.pk)
@@ -3364,7 +3393,7 @@ def edit_invoice(request, pk):
                     for item in invoice.items.all()
                 )
 
-                new_total = subtotal - discount + commission
+                new_total = subtotal - discount + commission + extra_charges
 
                 if old_customer and old_remaining > 0:
                     old_customer.debt_balance -= old_remaining
@@ -3383,6 +3412,7 @@ def edit_invoice(request, pk):
                 invoice.identity_verified = identity_verified
                 invoice.total_amount = new_total
                 invoice.remaining_amount = new_total - paid_amount
+                invoice.extra_amount = extra_charges
 
                 invoice.save()
 
@@ -3465,6 +3495,20 @@ def penalty_create(request, pk):
         if not reason:
             messages.error(request, 'يرجى إدخال سبب الغرامة.')
             return redirect('penalty_create', pk=customer.pk)
+        
+        payment_date = timezone.localdate()
+
+        if request.user.is_main_admin:
+            date_raw = request.POST.get('payment_date', '').strip()
+
+            if date_raw:
+                try:
+                    payment_date = datetime.strptime(
+                        date_raw, '%Y-%m-%d'
+                    ).date()
+                except ValueError:
+                    messages.error(request, 'تاريخ الدفع غير صحيح.')
+                    return redirect('penalty_create', pk=customer.pk)
 
         with transaction.atomic():
             invoice = get_object_or_404(
@@ -3478,6 +3522,7 @@ def penalty_create(request, pk):
                 invoice=invoice,
                 amount=amount,
                 reason=reason,
+                created_at=payment_date
             )
 
             payment = CustomerPayment.objects.create(
@@ -3486,6 +3531,7 @@ def penalty_create(request, pk):
                 amount=amount,
                 notes=f'غرامة: {reason}',
                 created_by=request.user,
+                payment_date=payment_date
             )
 
             penalty.payment = payment
@@ -3513,6 +3559,7 @@ def penalty_create(request, pk):
     return render(request, 'customers/penalty_create.html', {
         'customer': customer,
         'invoices': invoices,
+        'today': timezone.localdate(),
     })
 
 

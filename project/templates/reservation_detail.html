@@ -603,10 +603,18 @@
                 <span class="label">طريقة الدفع</span>
                 <span class="value">{{ reservation.payment_method.name|default:'غير محدد' }}</span>
             </div>
+            {% if reservation.commission > 0 %}
             <div class="info-row">
                 <span class="label">العمولة</span>
                 <span class="value">{{ reservation.commission|floatformat:2|intcomma }}</span>
             </div>
+            {% endif %}
+            {% if reservation.extra_amount > 0 %}
+            <div class="info-row">
+                <span class="label">الرسوم الإضافية</span>
+                <span class="value">{{ reservation.extra_amount|floatformat:2|intcomma }}</span>
+            </div>
+            {% endif %}
             {% if reservation.notes %}
             <div class="info-row">
                 <span class="label">ملاحظات</span>

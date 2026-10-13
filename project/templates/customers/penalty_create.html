@@ -36,7 +36,20 @@
                 required
             >
         </div>
-
+{% if request.user.is_main_admin %}
+    <div class="mb-3">
+        <label class="form-label">تاريخ الدفع</label>
+        <input
+            type="date"
+            name="payment_date"
+            class="form-control"
+            value="{{ today|date:'Y-m-d' }}"
+        >
+        <small class="text-muted">
+            يمكنك تحديد تاريخ تسجيل الدفعة.
+        </small>
+    </div>
+{% endif %}
         <div class="mb-3">
             <label class="form-label">سبب الغرامة</label>
             <input

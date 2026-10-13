@@ -319,6 +319,13 @@
       <span class="text-warning">+ {{ invoice.commission|floatformat:2 }} د.ل</span>
     </div>
     {% endif %}
+
+       {% if invoice.extra_amount > 0 %}
+    <div class="bottom-row">
+      <span>الرسوم الإضافية</span>
+      <span class="text-warning">+ {{ invoice.extra_amount|floatformat:2 }} د.ل</span>
+    </div>
+    {% endif %}
     <div class="bottom-row total">
       <span>الإجمالي</span>
       <span style="font-size:18px;">{{ invoice.total_amount|floatformat:2 }} د.ل</span>

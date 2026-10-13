@@ -243,6 +243,12 @@
         <div class="section-title">المبالغ</div>
         <div class="grid-2">
             <div class="form-group">
+                <label class="form-label">رسوم إضافية</label>
+                <input type="number" name="extra_amount" id="extra-amount-input"
+                       class="form-control" step="0.01" min="0"
+                       value="{{ invoice.extra_amount|floatformat:2 }}">
+            </div>
+            <div class="form-group">
                 <label class="form-label">الخصم</label>
                 <input type="number" name="discount" id="discount-input"
                        class="form-control" step="0.01" min="0"

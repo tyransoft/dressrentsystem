@@ -693,6 +693,7 @@ border: 1px solid #fcd34d;
 <input type="hidden" name="sale_price" id="form_sale_price" value="0">
 <input type="hidden" name="paid_amount" id="form_paid_amount" value="0">
 <input type="hidden" name="discount" id="form_discount" value="0">
+<input type="hidden" name="extra_amount" id="form_extra_amount" value="0">
 <input type="hidden" name="payment_method" id="form_payment_method" value="">
 <input type="hidden" name="notes" id="form_notes" value="">
 <div id="form-products-container"></div>
@@ -842,6 +843,11 @@ data-search="{{ product.name|lower }} {{ product.barcode|default:'' }}">
 <div class="form-group">
 <label class="form-label">الخصم</label>
 <input type="number" class="form-control" id="modal-discount" step="0.01" value="0" min="0" oninput="calcModalTotals()">
+</div>
+
+<div class="form-group">
+<label class="form-label">الرسوم الإضافية</label>
+<input type="number" class="form-control" id="modal-extra-amount" step="0.01" value="0" min="0" oninput="calcModalTotals()">
 </div>
 
 <div class="form-group">
@@ -1279,6 +1285,7 @@ this.textContent = body.classList.contains('collapsed') ? '\u2303' : '\u2964';
 function calcModalTotals() {
     var subtotal = cartTotal();
     var discount = parseFloat(document.getElementById('modal-discount').value) || 0;
+    var extraAmount = parseFloat(document.getElementById('modal-extra-amount').value) || 0;
     var pmSel = document.getElementById('modal-payment-method');
     var pmOpt = pmSel.options[pmSel.selectedIndex];
     var incPct = parseFloat(pmOpt ? pmOpt.dataset.increase : 0) || 0;
@@ -1287,15 +1294,18 @@ function calcModalTotals() {
     if (afterDiscount < 0) afterDiscount = 0;
     
     var fees = afterDiscount * incPct / 100;
-    var total = afterDiscount + fees;
+    var total = afterDiscount + fees + extraAmount;
 
     var html = '<div class="os-row"><span>المجموع الفرعي</span><span>' + subtotal.toFixed(2) + '</span></div>' +
     '<div class="os-row"><span>الخصم</span><span>' + discount.toFixed(2) + '</span></div>' +
     '<div class="os-row"><span>رسوم اضافية</span><span>' + fees.toFixed(2) + '</span></div>' +
+    '<div class="os-row"><span>الرسوم الإضافية</span><span>' + extraAmount.toFixed(2) + '</span></div>' +
     '<div class="os-row total"><span>الاجمالي</span><span>' + total.toFixed(2) + '</span></div>';
 
     document.getElementById('order-summary-box').innerHTML = html;
     document.getElementById('order-final-totals').innerHTML = html;
+
+    document.getElementById('form_extra_amount').value = extraAmount.toFixed(2);
 }
 
 
@@ -1419,6 +1429,10 @@ if (isCash) {
         document.getElementById('modal-discount').value
     ) || 0;
 
+    var extraAmount = parseFloat(
+        document.getElementById('modal-extra-amount').value
+    ) || 0;
+
     var paidAmount = parseFloat(
         document.getElementById('modal-paid-amount').value
     ) || 0;
@@ -1432,6 +1446,7 @@ if (isCash) {
 
     var total = (subtotal - discount);
     total += total * increasePercentage / 100;
+    total += extraAmount;
 
     if (discount < 0 || discount > subtotal) {
         showToast('الخصم غير صحيح', 'error');
@@ -1490,6 +1505,10 @@ if (invoiceTypeValue === 'sale') {
         document.getElementById('modal-discount').value
     ) || 0;
 
+    const extraAmount = parseFloat(
+        document.getElementById('modal-extra-amount').value
+    ) || 0;
+
     if (salePrice < 0 || discount < 0 || discount > salePrice) {
         showToast('يرجى التأكد من سعر البيع والخصم', 'error');
         return;
@@ -1499,7 +1518,7 @@ if (invoiceTypeValue === 'sale') {
     const option = paymentMethod.options[paymentMethod.selectedIndex];
     const increase = parseFloat(option?.dataset.increase) || 0;
 
-    const total = (salePrice - discount) * (1 + increase / 100);
+    const total = ((salePrice - discount) * (1 + increase / 100)) + extraAmount;
 
     if (paidAmount > total) {
         showToast('المبلغ المدفوع لا يمكن أن يتجاوز إجمالي الفاتورة', 'error');
@@ -1514,6 +1533,7 @@ document.getElementById('form_commission').value = '0';
 document.getElementById('form_identity_verified').value = document.getElementById('modal-identity-verified').checked ? 'true' : 'false';
 document.getElementById('form_paid_amount').value = document.getElementById('modal-paid-amount').value || '0';
 document.getElementById('form_discount').value = document.getElementById('modal-discount').value || '0';
+document.getElementById('form_extra_amount').value = document.getElementById('modal-extra-amount').value || '0';
 document.getElementById('form_payment_method').value = document.getElementById('modal-payment-method').value || '';
 document.getElementById('form_notes').value = document.getElementById('modal-notes').value || '';
 document.getElementById('form_sale_price').value = document.getElementById('sale_price_display').value || '0';
