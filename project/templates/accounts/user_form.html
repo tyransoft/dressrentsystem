@@ -16,12 +16,43 @@
       <div class="grid-2">
         <div class="form-group"><label class="form-label">الدور *</label>{{ form.role }}</div>
       </div>
-      {% if not user_obj %}
-      <div class="grid-2">
-        <div class="form-group"><label class="form-label">كلمة المرور *</label>{{ form.password1 }}</div>
-        <div class="form-group"><label class="form-label">تأكيد كلمة المرور *</label>{{ form.password2 }}</div>
-      </div>
-      {% endif %}
+
+{% if not user_obj %}
+<div class="grid-2">
+  <div class="form-group">
+    <label class="form-label">كلمة المرور *</label>
+    {{ form.password1 }}
+    {% for error in form.password1.errors %}
+      <p class="text-danger">{{ error }}</p>
+    {% endfor %}
+  </div>
+  <div class="form-group">
+    <label class="form-label">تأكيد كلمة المرور *</label>
+    {{ form.password2 }}
+    {% for error in form.password2.errors %}
+      <p class="text-danger">{{ error }}</p>
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+<div class="grid-2">
+  <div class="form-group">
+    <label class="form-label">كلمة المرور الجديدة</label>
+    {{ form.new_password }}
+    {% for error in form.new_password.errors %}
+      <p class="text-danger">{{ error }}</p>
+    {% endfor %}
+  </div>
+  <div class="form-group">
+    <label class="form-label">تأكيد كلمة المرور الجديدة</label>
+    {{ form.confirm_password }}
+    {% for error in form.confirm_password.errors %}
+      <p class="text-danger">{{ error }}</p>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
       {% if user_obj %}
       <div class="form-check" style="margin-bottom:16px;">{{ form.is_active }} <label class="form-label" style="display:inline;">نشط</label></div>
       {% endif %}
