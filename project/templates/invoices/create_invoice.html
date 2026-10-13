@@ -1547,8 +1547,13 @@ if (saveButton) {
     saveButton.textContent = 'جاري الحفظ...';
 }
 
-form.submit();
+var formEl = document.getElementById('sale-invoice-form');
+if (!formEl) {
+    showToast('حدث خطأ: لم يتم العثور على النموذج', 'error');
+    return;
+}
 
+formEl.submit();
 
 }
 document.addEventListener('DOMContentLoaded', function () {
