@@ -3454,13 +3454,7 @@ def penalty_create(request, pk):
                 customer=customer,
             )
 
-            if amount > invoice.remaining_amount:
-                messages.error(
-                    request,
-                    'مبلغ الغرامة لا يمكن أن يتجاوز المبلغ المتبقي في الفاتورة.'
-                )
-                return redirect('penalty_create', pk=customer.pk)
-
+           
             penalty = Penalty.objects.create(
                 invoice=invoice,
                 amount=amount,
