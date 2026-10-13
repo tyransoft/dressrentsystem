@@ -3,7 +3,7 @@ from .models import *
 # Register your models here.
 admin.site.register(CustomUser)
 admin.site.register(MonthlySalaryPayment)
-@admin.site.register(Penalty)
+@admin.register(Penalty)
 class PanaltyAdmin(admin.ModelAdmin):
     list_filter = ('payment',)
 @admin.register(Customer)
