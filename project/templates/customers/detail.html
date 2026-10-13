@@ -354,6 +354,7 @@
             </td>
 
             <td>
+              {% if request.user.is_main_admin%}
               <form method="post"
                     action="{% url 'penalty_delete' penalty.pk %}"
                     onsubmit="return confirm('هل أنت متأكد من حذف هذه الغرامة؟ سيتم تعديل حسابات الفاتورة والدفعة المرتبطة بها.');">
@@ -364,6 +365,7 @@
                   حذف
                 </button>
               </form>
+              {% endif %}
             </td>
           </tr>
 
