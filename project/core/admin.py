@@ -5,11 +5,7 @@ admin.site.register(CustomUser)
 admin.site.register(MonthlySalaryPayment)
 @admin.site.register(Penalty)
 class PanaltyAdmin(admin.ModelAdmin):
-    list_display = (
-        'created_at',
-        'amount',
-        'invoice',
-    )
+    list_filter = ('payment',)
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
     list_display = (
