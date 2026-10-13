@@ -803,7 +803,7 @@ data-search="{{ product.name|lower }} {{ product.barcode|default:'' }}">
 
 <div class="form-group" id="sale-price-group" style="display:none;">
 <label class="form-label">سعر البيع</label>
-<input type="number" class="form-control" id="sale_price_display" value="0" step="1" onchange="updateSalePrice()">
+<input type="number" class="form-control" id="sale_price_display" value="0" step="1" oninput="updateSalePrice()">
 </div>
 
 <div class="form-group">
@@ -1022,31 +1022,38 @@ var selectedCustomer = null;
 var invoiceType = 'rent';
 
 function toggleInvoiceType() {
-var rentRadio = document.querySelector('input[name="invoice_type"][value="rent"]');
-var saleRadio = document.querySelector('input[name="invoice_type"][value="sale"]');
-var rentLabel = document.getElementById('rent-label');
-var saleLabel = document.getElementById('sale-label');
-var salePriceGroup = document.getElementById('sale-price-group');
-var rentSection = document.getElementById('rent-dates-section');
+    var rentRadio = document.querySelector('input[name="invoice_type"][value="rent"]');
+    var saleRadio = document.querySelector('input[name="invoice_type"][value="sale"]');
+    var rentLabel = document.getElementById('rent-label');
+    var saleLabel = document.getElementById('sale-label');
+    var salePriceGroup = document.getElementById('sale-price-group');
+    var rentSection = document.getElementById('rent-dates-section');
 
-if (rentRadio && rentRadio.checked) {
-invoiceType = 'rent';
-rentLabel.classList.add('active-label');
-saleLabel.classList.remove('active-label');
-salePriceGroup.style.display = 'none';
-rentSection.style.display = 'block';
-renderCart();
-updateRentPrice();
-} else {
-invoiceType = 'sale';
-saleLabel.classList.add('active-label');
-rentLabel.classList.remove('active-label');
-salePriceGroup.style.display = 'block';
-rentSection.style.display = 'none';
-renderCart();
-updateSalePrice();
-}
-calcModalTotals();
+    if (rentRadio && rentRadio.checked) {
+        invoiceType = 'rent';
+        rentLabel.classList.add('active-label');
+        saleLabel.classList.remove('active-label');
+        salePriceGroup.style.display = 'none';
+        rentSection.style.display = 'block';
+        renderCart();
+        updateRentPrice();
+    } else {
+        invoiceType = 'sale';
+        saleLabel.classList.add('active-label');
+        rentLabel.classList.remove('active-label');
+        salePriceGroup.style.display = 'block';
+        rentSection.style.display = 'none';
+        renderCart();
+        
+        var keys = Object.keys(cart);
+        if (keys.length > 0) {
+            var saleInput = document.getElementById('sale_price_display');
+            saleInput.value = cart[keys[0]].price;
+            document.getElementById('form_sale_price').value = cart[keys[0]].price;
+        }
+        updateSalePrice();
+    }
+    calcModalTotals();
 }
 
 function updateRentPrice() {
@@ -1059,9 +1066,12 @@ document.getElementById('modal-rent-price').textContent = firstItem.price.toFixe
 }
 
 function updateSalePrice() {
-var saleInput = document.getElementById('sale_price_display');
-document.getElementById('form_sale_price').value = saleInput.value || '0';
-calcModalTotals();
+    var saleInput = document.getElementById('sale_price_display');
+    var salePrice = parseFloat(saleInput.value) || 0;
+    
+    document.getElementById('form_sale_price').value = salePrice;
+    
+    calcModalTotals();
 }
 
 function showToast(msg, type) {
@@ -1168,8 +1178,18 @@ checkAvailability();
 }
 }
 
+
 function cartTotal() {
-return Object.values(cart).reduce(function(s, p) { return s + p.total; }, 0);
+    if (invoiceType === 'sale') {
+        var salePrice = parseFloat(
+            document.getElementById('sale_price_display').value
+        ) || 0;
+        return salePrice;
+    }
+
+    return Object.values(cart).reduce(function(total, product) {
+        return total + product.total;
+    }, 0);
 }
 
 function cartCount() {
@@ -1256,42 +1276,53 @@ body.classList.toggle('collapsed');
 footer.style.display = body.classList.contains('collapsed') ? 'none' : '';
 this.textContent = body.classList.contains('collapsed') ? '\u2303' : '\u2964';
 });
-
 function calcModalTotals() {
-var subtotal = cartTotal();
-var discount = parseFloat(document.getElementById('modal-discount').value) || 0;
-var pmSel = document.getElementById('modal-payment-method');
-var pmOpt = pmSel.options[pmSel.selectedIndex];
-var incPct = parseFloat(pmOpt ? pmOpt.dataset.increase : 0) || 0;
+    var subtotal = cartTotal();
+    var discount = parseFloat(document.getElementById('modal-discount').value) || 0;
+    var pmSel = document.getElementById('modal-payment-method');
+    var pmOpt = pmSel.options[pmSel.selectedIndex];
+    var incPct = parseFloat(pmOpt ? pmOpt.dataset.increase : 0) || 0;
 
-var afterDiscount = subtotal - discount;
-var fees = afterDiscount * incPct / 100;
-var total = afterDiscount + fees;
+    var afterDiscount = subtotal - discount;
+    if (afterDiscount < 0) afterDiscount = 0;
+    
+    var fees = afterDiscount * incPct / 100;
+    var total = afterDiscount + fees;
 
-var html = '<div class="os-row"><span>المجموع الفرعي</span><span>' + subtotal.toFixed(2) + '</span></div>' +
-'<div class="os-row"><span>الخصم</span><span>' + discount.toFixed(2) + '</span></div>' +
-'<div class="os-row"><span>رسوم اضافية</span><span>' + fees.toFixed(2) + '</span></div>' +
-'<div class="os-row total"><span>الاجمالي</span><span>' + total.toFixed(2) + '</span></div>';
+    var html = '<div class="os-row"><span>المجموع الفرعي</span><span>' + subtotal.toFixed(2) + '</span></div>' +
+    '<div class="os-row"><span>الخصم</span><span>' + discount.toFixed(2) + '</span></div>' +
+    '<div class="os-row"><span>رسوم اضافية</span><span>' + fees.toFixed(2) + '</span></div>' +
+    '<div class="os-row total"><span>الاجمالي</span><span>' + total.toFixed(2) + '</span></div>';
 
-document.getElementById('order-summary-box').innerHTML = html;
-document.getElementById('order-final-totals').innerHTML = html;
-
-
+    document.getElementById('order-summary-box').innerHTML = html;
+    document.getElementById('order-final-totals').innerHTML = html;
 }
+
 
 function openOrderModal() {
-if (Object.keys(cart).length === 0) {
-showToast('السلة فارغة', 'error');
-return;
-}
-var invoiceTypeRadio = document.querySelector('input[name="invoice_type"]:checked');
-if (!invoiceTypeRadio) {
-showToast('الرجاء اختيار نوع الفاتورة', 'error');
-return;
-}
-
-calcModalTotals();
-document.getElementById('order-modal-overlay').classList.add('visible');
+    if (Object.keys(cart).length === 0) {
+        showToast('السلة فارغة', 'error');
+        return;
+    }
+    var invoiceTypeRadio = document.querySelector('input[name="invoice_type"]:checked');
+    if (!invoiceTypeRadio) {
+        showToast('الرجاء اختيار نوع الفاتورة', 'error');
+        return;
+    }
+    
+    if (invoiceType === 'sale') {
+        var saleInput = document.getElementById('sale_price_display');
+        if (parseFloat(saleInput.value) === 0) {
+            var keys = Object.keys(cart);
+            if (keys.length > 0) {
+                saleInput.value = cart[keys[0]].price;
+                document.getElementById('form_sale_price').value = cart[keys[0]].price;
+            }
+        }
+    }
+    
+    calcModalTotals();
+    document.getElementById('order-modal-overlay').classList.add('visible');
 }
 
 function closeOrderModal() {
@@ -1446,6 +1477,37 @@ var msgDiv = document.getElementById('availability-message');
     }
 }
 
+if (invoiceTypeValue === 'sale') {
+    const salePrice = parseFloat(
+        document.getElementById('sale_price_display').value
+    ) || 0;
+
+    const paidAmount = parseFloat(
+        document.getElementById('modal-paid-amount').value
+    ) || 0;
+
+    const discount = parseFloat(
+        document.getElementById('modal-discount').value
+    ) || 0;
+
+    if (salePrice < 0 || discount < 0 || discount > salePrice) {
+        showToast('يرجى التأكد من سعر البيع والخصم', 'error');
+        return;
+    }
+
+    const paymentMethod = document.getElementById('modal-payment-method');
+    const option = paymentMethod.options[paymentMethod.selectedIndex];
+    const increase = parseFloat(option?.dataset.increase) || 0;
+
+    const total = (salePrice - discount) * (1 + increase / 100);
+
+    if (paidAmount > total) {
+        showToast('المبلغ المدفوع لا يمكن أن يتجاوز إجمالي الفاتورة', 'error');
+        return;
+    }
+}
+
+
 document.getElementById('form_customer_id').value = selectedCustomer ? selectedCustomer.id : '';
 document.getElementById('form_is_cash').value = isCash ? '1' : '0';
 document.getElementById('form_commission').value = '0';
@@ -1476,11 +1538,7 @@ container.appendChild(fprice);
 
 
 
-const form = document.getElementById('sale-invoice-form');
-
-const saveButton = document.querySelector(
-    '#sale-invoice-form button[type="submit"]'
-);
+const saveButton = document.querySelector('.modal-submit-btn');
 
 if (saveButton) {
     if (saveButton.disabled) return;
@@ -1492,7 +1550,6 @@ if (saveButton) {
 form.submit();
 
 
-document.getElementById('sale-invoice-form').submit();
 }
 document.addEventListener('DOMContentLoaded', function () {
 
