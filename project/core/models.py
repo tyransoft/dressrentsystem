@@ -473,8 +473,8 @@ class CustomerPayment(models.Model):
         ordering = ['-payment_date']
     
     def __str__(self):
-        return f"{self.customer.full_name} - {self.amount} - {self.payment_date}"
-    
+        return f"{self.customer.full_name if self.customer else 'Unknown Customer'} - {self.amount} - {self.payment_date}"
+
     def save(self, *args, **kwargs):
         if not self.receipt_number:
             self.receipt_number = self._generate_receipt_number()
