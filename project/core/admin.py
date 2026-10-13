@@ -8,7 +8,7 @@ class PanaltyAdmin(admin.ModelAdmin):
     list_display = (
         'created_at',
         'amount',
-        'customer',
+        'invoice',
     )
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
