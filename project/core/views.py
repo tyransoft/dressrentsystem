@@ -2026,13 +2026,19 @@ def all_customer_payments(request):
     # الفلترة حسب تاريخ التسديد
     date_from = request.GET.get('date_from', '').strip()
     date_to = request.GET.get('date_to', '').strip()
+    today = timezone.now().date()
 
     if date_from:
+        payments = payments.filter(payment_date__date__gte=date_from)
+    else:
+        date_from = today 
         payments = payments.filter(payment_date__date__gte=date_from)
 
     if date_to:
         payments = payments.filter(payment_date__date__lte=date_to)
-
+    else:
+        date_to = today
+        payments = payments.filter(payment_date__date__lte=date_to)
     # ترتيب المدفوعات من الأحدث إلى الأقدم
     payments = payments.order_by('-payment_date', '-pk')
 
