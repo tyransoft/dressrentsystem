@@ -3504,7 +3504,6 @@ def penalty_create(request, pk):
 
     invoices = Invoice.objects.filter(
         customer=customer,
-        remaining_amount__gt=0,
     ).order_by('created_at', 'pk')
 
     return render(request, 'customers/penalty_create.html', {
