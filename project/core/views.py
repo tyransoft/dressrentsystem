@@ -1419,7 +1419,7 @@ def create_invoice(request):
                     )
                     if invoice_type != InvoiceType.RENT:
                        invoice.total_amount = invoice.sale_price  
-                                 
+
             invoice.total_amount -= invoice.discount
             invoice.total_amount += invoice.commission
             if invoice.total_amount == invoice.paid_amount:
@@ -1431,7 +1431,10 @@ def create_invoice(request):
             if invoice_type == InvoiceType.RENT:
               invoice.status = InvoiceStatus.PENDING
             else:
-              invoice.status = InvoiceStatus.RECIEVED
+              if invoice.remaining_amount > Decimal('0'):
+                invoice.status = InvoiceStatus.PARTIAL
+              else:
+               invoice.status = InvoiceStatus.RECIEVED
             if invoice.customer and invoice.remaining_amount > Decimal('0'):
                 invoice.customer.debt_balance += invoice.remaining_amount
                 invoice.customer.save()
