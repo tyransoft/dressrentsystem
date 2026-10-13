@@ -1474,6 +1474,24 @@ container.appendChild(fdays);
 container.appendChild(fprice);
 });
 
+
+
+const form = document.getElementById('sale-invoice-form');
+
+const saveButton = document.querySelector(
+    '#sale-invoice-form button[type="submit"]'
+);
+
+if (saveButton) {
+    if (saveButton.disabled) return;
+
+    saveButton.disabled = true;
+    saveButton.textContent = 'جاري الحفظ...';
+}
+
+form.submit();
+
+
 document.getElementById('sale-invoice-form').submit();
 }
 document.addEventListener('DOMContentLoaded', function () {

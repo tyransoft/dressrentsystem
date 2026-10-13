@@ -80,6 +80,8 @@
             <td>
               <div style="display:flex;gap:5px;">
                 <a href="{% url 'products_detail' product.pk %}" class="btn btn-outline btn-icon btn-sm">عرض</a>
+                <a href="{% url 'invoice_list' %}?product_id={{ product.pk }}"
+                class="btn btn-primary btn-sm">الفواتير</a>                
                 {% if user.is_main_admin %}
                 <a href="{% url 'products_edit' product.pk %}" class="btn btn-outline btn-icon btn-sm">تعديل</a>
                 <a href="{% url 'products_delete' product.pk %}" class="btn btn-outline btn-sm">حذف</a>
@@ -106,6 +108,8 @@
         <div class="pc-row"><span class="pc-label">الحالة</span><span>{% if product.is_available %}<span class="badge badge-success">متاح</span>{% else %}<span class="badge badge-danger">{{product.get_status_display}}</span>{% endif %}</span></div>
         <div class="pc-actions">
           <a href="{% url 'products_detail' product.pk %}" class="btn btn-outline btn-sm">عرض</a>
+          <a href="{% url 'invoice_list' %}?product_id={{ product.pk }}"
+          class="btn btn-primary btn-sm">الفواتير</a>
           {% if user.is_mian_admin%}
           
           <a href="{% url 'products_edit' product.pk %}" class="btn btn-outline btn-sm">تعديل</a>

@@ -1346,7 +1346,11 @@ def create_invoice(request):
                       f'له فاتورة سابقة لهذا العميل اليوم.'
                        )
                    return redirect('invoice_list')
-                 
+
+            invoice.discount = Decimal(str(data.get('discount', '0')))
+            invoice.commission = Decimal(str(data.get('commission', '0')))
+            invoice.paid_amount = Decimal(str(data.get('paid_amount', '0')))
+
             if invoice_type == InvoiceType.RENT:
                 invoice.rent_start_date = rent_start_date
                 invoice.rent_end_date = rent_end_date
@@ -1354,10 +1358,9 @@ def create_invoice(request):
                 invoice.rent_start_date = None
                 invoice.rent_end_date = None
                 invoice.sale_price = Decimal(str(data.get('sale_price', '0')))
-            
-            invoice.discount = Decimal(str(data.get('discount', '0')))
-            invoice.commission = Decimal(str(data.get('commission', '0')))
-            invoice.paid_amount = Decimal(str(data.get('paid_amount', '0')))
+                if invoice.paid_amount > invoice.sale_price:
+                    messages.error(request, 'المبلغ المدفوع أكبر من سعر البيع')
+                    return redirect('invoice_list')
             
             payment_method_id = data.get('payment_method')
             if payment_method_id:
@@ -1370,18 +1373,7 @@ def create_invoice(request):
             invoice.identity_verified = data.get('identity_verified', 'true') in ['true', 'True', '1', 'on']
             
             invoice.save()
-            if invoice.paid_amount > 0:
-               CustomerPayment.objects.create(
-                 invoice=invoice,
-                 customer=invoice.customer,
-                 amount=invoice.paid_amount,
-                 created_by=request.user,
-                  notes=(
-                      f'دفعة عميل نقدي - الفاتورة {invoice.invoice_number}'
-                      if is_cash_customer
-                      else f'عربون - الفاتورة {invoice.invoice_number}'
-                     )
-                )        
+                   
             invoice.total_amount = Decimal('0')
             
             for cart_item in cart:
@@ -1425,14 +1417,17 @@ def create_invoice(request):
                         days=1,
                         unit_price=invoice.sale_price
                     )
-                    invoice.total_amount += invoice_item.days * invoice_item.unit_price
-            
+                    if invoice_type != InvoiceType.RENT:
+                       invoice.total_amount = invoice.sale_price  
+                                 
             invoice.total_amount -= invoice.discount
             invoice.total_amount += invoice.commission
-            if invoice.total_amount < invoice.paid_amount:
+            if invoice.total_amount == invoice.paid_amount:
                 invoice.remaining_amount = 0
+                note = f'تم دفع كامل المبلغ عند الحجز {invoice.invoice_number}'
             else:  
               invoice.remaining_amount = invoice.total_amount - invoice.paid_amount
+              note = f' عربون {invoice.paid_amount}د.ل عند الحجز {invoice.invoice_number}'
             if invoice_type == InvoiceType.RENT:
               invoice.status = InvoiceStatus.PENDING
             else:
@@ -1443,7 +1438,15 @@ def create_invoice(request):
             
             invoice.save()
             
-            
+            if invoice.paid_amount > 0:
+                           CustomerPayment.objects.create(
+                             invoice=invoice,
+                             customer=invoice.customer,
+                             amount=invoice.paid_amount,
+                             created_by=request.user,
+                              notes=note
+                                 
+                            )   
             messages.success(request, 'تم إضافة الفاتورة بنجاح')
             return redirect('print_receipt', invoice.pk)
             
@@ -1502,7 +1505,16 @@ from datetime import datetime
 
 def invoice_list(request):
     invoices = Invoice.objects.all().order_by('-created_at')
-    
+
+
+    product_id = request.GET.get('product_id', '')
+
+    if product_id:
+      invoices = invoices.filter(
+        items__product_id=product_id
+      ).distinct()
+
+
     status_filter = request.GET.get('status')
     if status_filter:
         invoices = invoices.filter(status=status_filter)
@@ -1511,7 +1523,6 @@ def invoice_list(request):
     if type_filter:
         invoices = invoices.filter(invoice_type=type_filter)
     
-    # فلترة بتاريخ الإنشاء (من تاريخ محدد أو بعده)
     date_from = request.GET.get('date_from', '')
     if date_from:
         try:
@@ -1520,7 +1531,6 @@ def invoice_list(request):
         except ValueError:
             date_from = ''
     
-    # فلترة حتى تاريخ محدد (اختياري)
     date_to = request.GET.get('date_to', '')
     if date_to:
         try:
