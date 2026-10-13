@@ -3,8 +3,13 @@ from .models import *
 # Register your models here.
 admin.site.register(CustomUser)
 admin.site.register(MonthlySalaryPayment)
-admin.site.register(Penalty)
-
+@admin.site.register(Penalty)
+class PanaltyAdmin(admin.ModelAdmin):
+    list_display = (
+        'created_at',
+        'amount',
+        'customer',
+    )
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
     list_display = (

@@ -3472,14 +3472,9 @@ def penalty_create(request, pk):
             penalty.payment = payment
             penalty.save(update_fields=['payment'])
 
-            invoice.paid_amount += amount
-            invoice.remaining_amount -= amount
+            
 
-            if invoice.remaining_amount <= 0:
-                invoice.remaining_amount = Decimal('0')
-                invoice.status = InvoiceStatus.PAID
-            else:
-                invoice.status = InvoiceStatus.PARTIAL
+           
 
             invoice.save(update_fields=[
                 'paid_amount',
@@ -3487,12 +3482,7 @@ def penalty_create(request, pk):
                 'status',
             ])
 
-            customer.debt_balance = max(
-                Decimal('0'),
-                customer.debt_balance - amount
-            )
-            customer.save(update_fields=['debt_balance'])
-
+            
         messages.success(request, 'تمت إضافة الغرامة وتسجيلها كدفعة بنجاح.')
         return redirect('customers_detail', pk=customer.pk)
 
@@ -3520,13 +3510,13 @@ def penalty_delete(request, pk):
                )
 
         invoice = Invoice.objects.select_for_update().get(
-            pk=penalty.invoice_id
+            pk=penalty.invoice.pk
         )
         customer = None
 
-        if invoice.customer_id:
+        if invoice.customer:
             customer = Customer.objects.select_for_update().get(
-                pk=invoice.customer_id
+                pk=invoice.customer.pk
             )
 
         amount = penalty.amount
@@ -3556,43 +3546,7 @@ def penalty_delete(request, pk):
             pk=payment.pk
         )
 
-        if payment.amount < amount:
-            messages.error(
-                request,
-                'مبلغ الدفعة أقل من مبلغ الغرامة، لم يتم الحذف.'
-            )
-            return redirect('customers_detail', pk=customer.pk) if customer else redirect('customers_list')
-
-        payment.amount -= amount
-
-        if payment.amount == 0:
-            payment.delete()
-        else:
-            payment.save(update_fields=['amount'])
-
-        invoice.paid_amount = max(
-            Decimal('0'),
-            invoice.paid_amount - amount
-        )
-        invoice.remaining_amount = max(
-            Decimal('0'),
-            invoice.total_amount - invoice.paid_amount
-        )
-
-        if invoice.remaining_amount == 0:
-            invoice.status = InvoiceStatus.PAID
-        else:
-            invoice.status = InvoiceStatus.PARTIAL
-
-        invoice.save(update_fields=[
-            'paid_amount',
-            'remaining_amount',
-            'status',
-        ])
-
-        if customer:
-            customer.debt_balance += amount
-            customer.save(update_fields=['debt_balance'])
+      
 
         penalty.delete()
 
