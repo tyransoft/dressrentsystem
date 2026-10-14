@@ -1100,7 +1100,9 @@ def confirm_return(request, invoice_id):
                     created_by=request.user,
                     notes=f'تسوية  عند استلام الفاتورة {invoice.invoice_number}'
                 )
-            
+                customer = Customer.objects.get(id=invoice.customer.id)
+                customer.debt_balance = max(Decimal('0.00'), customer.debt_balance - invoice.remaining_amount)
+
             for item in invoice.items.all():
                 item.product.status = Dstatus.AVAILABLE
                 item.product.save()
@@ -1108,8 +1110,6 @@ def confirm_return(request, invoice_id):
             invoice.status = InvoiceStatus.RECIEVED
             invoice.identity_verified_return=True
             invoice.save()
-            customer = Customer.objects.get(id=invoice.customer.id)
-            customer.debt_balance = max(Decimal('0.00'), customer.debt_balance - invoice.remaining_amount)
 
             messages.success(request, 'تم تأكيد استلام جميع المنتجات بنجاح')
             return redirect('invoice_list')
