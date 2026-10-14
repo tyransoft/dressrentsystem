@@ -873,6 +873,17 @@ data-search="{{ product.name|lower }} {{ product.barcode|default:'' }}">
 </div>
 
 <script>
+function normalizeArabic(text) {
+    return (text || '')
+        .toLowerCase()
+        .replace(/[أإآٱ]/g, 'ا')
+        .replace(/[ىئ]/g, 'ي')
+        .replace(/ؤ/g, 'و')
+        .replace(/ة/g, 'ه')
+        .replace(/[\u064B-\u065F\u0670ـ]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}    
 document.addEventListener('DOMContentLoaded', function() {
     toggleInvoiceType();
 
@@ -917,13 +928,13 @@ document.getElementById('rent_end_date_input').addEventListener('change', functi
 });
     
     document.getElementById('product-search').addEventListener('input', function() {
-        var q = this.value.trim().toLowerCase();
+        var q = normalizeArabic(this.value);
         var cards = document.querySelectorAll('.product-card');
         var visible = 0;
         cards.forEach(function(card) {
-            var searchStr = card.dataset.search || '';
-            if (!q || searchStr.indexOf(q) !== -1) {
-                card.classList.remove('hidden-card');
+        var searchStr = normalizeArabic(card.dataset.search || '');
+        if (!q || searchStr.includes(q)) {
+            card.classList.remove('hidden-card');
                 visible++;
             } else {
                 card.classList.add('hidden-card');
@@ -1359,13 +1370,18 @@ document.getElementById('form_is_cash').value = '0';
 }
 
 document.getElementById('modal-customer-search').addEventListener('input', function() {
-var q = this.value.trim().toLowerCase();
+var q = normalizeArabic(this.value);
 var dd = document.getElementById('modal-customer-dropdown');
-if (q.length < 1) { dd.style.display = 'none'; return; }
+
+if (q.length < 1) {
+    dd.style.display = 'none';
+    return;
+}
+
 var results = customers.filter(function(c) {
-return c.full_name.toLowerCase().indexOf(q) !== -1 ||
-(c.phone && c.phone.indexOf(q) !== -1);
-}).slice(0, 10);
+    return normalizeArabic(c.full_name).includes(q) ||
+        (c.phone && c.phone.includes(this.value.trim()));
+}, this).slice(0, 10);
 if (results.length === 0) { dd.style.display = 'none'; return; }
 dd.innerHTML = '';
 results.forEach(function(c) {

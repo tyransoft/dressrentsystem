@@ -134,11 +134,19 @@ def product_list(request):
     status = request.GET.get('status', '')
 
     products = Product.objects.select_related('category').filter(is_active=True)
-
     if query:
-        products = products.filter(
-            Q(name__icontains=query) | Q(barcode__icontains=query)
-        )
+      normalized_query = normalize_arabic(query)
+
+      matching_ids = [
+        p.id
+        for p in products.only('id', 'name').iterator()
+        if normalized_query in normalize_arabic(p.name)
+      ]
+
+      products = products.filter(
+        Q(id__in=matching_ids) |
+        Q(barcode__icontains=query)
+      )
     if category_id:
         products = products.filter(category_id=category_id)
     if status:
@@ -368,10 +376,19 @@ def category_edit(request, category_id):
 def product_search_ajax(request):
     query = request.GET.get('q', '')
     branch_id = request.GET.get('branch_id', '')
-    products = Product.objects.filter(
-        Q(name__icontains=query) |  Q(barcode__icontains=query),
-        is_active=True
-    )[:20]
+    if query:
+      normalized_query = normalize_arabic(query)
+
+      matching_ids = [
+        p.id
+        for p in products.only('id', 'name').iterator()
+        if normalized_query in normalize_arabic(p.name)
+      ]
+
+      products = products.filter(
+        Q(id__in=matching_ids) |
+        Q(barcode__icontains=query)
+     )
     data = []
     for p in products:
         stock = 0
@@ -609,10 +626,18 @@ def repair_list(request):
     payment_filter = request.GET.get('payment_status', '')
     
     if query:
-        repairs = repairs.filter(
-            Q(product__name__icontains=query) |
-            Q(product__barcode__icontains=query)
-        )
+      normalized_query = normalize_arabic(query)
+
+      matching_ids = [
+        p.id
+        for p in Product.objects.only('id', 'name').iterator()
+        if normalized_query in normalize_arabic(p.name)
+      ]
+
+      repairs = repairs.filter(
+        Q(product_id__in=matching_ids) |
+        Q(product__barcode__icontains=query)
+      )
     if kind_filter:
         repairs = repairs.filter(kind=kind_filter)
     if status_filter:
@@ -775,12 +800,22 @@ def repair_payment(request, pk):
 
 @login_required
 def customer_list(request):
-    query = request.GET.get('q', '')
+    query = request.GET.get('q', '').strip()
     customers = Customer.objects.filter(is_active=True)
+
     if query:
-        customers = customers.filter(
-            Q(full_name__icontains=query) | Q(phone__icontains=query)
-        )
+      normalized_query = normalize_arabic(query)
+ 
+      matching_ids = [
+        c.id
+        for c in customers.only('id', 'full_name').iterator()
+        if normalized_query in normalize_arabic(c.full_name)
+      ]
+
+      customers = customers.filter(
+        Q(id__in=matching_ids) |
+        Q(phone__icontains=query)
+      )
     return render(request, 'customers/list.html', {'customers': customers, 'query': query})
 
 
@@ -933,7 +968,6 @@ def customer_search_ajax(request):
         'full_name': c.full_name, 
         'phone': c.phone, 
         'customer_id': c.customer_id,
-        'loyalty_points': c.loyalty_points, 
         'debt_balance': float(c.debt_balance)
     } for c in customers]
     return JsonResponse({'customers': data})
@@ -1586,7 +1620,7 @@ def invoice_list(request):
         Q(invoice_number__icontains=search_query) |
         Q(customer_id__in=matching_customer_ids)
       )
-      
+
     total_invoices = invoices.count()
     total_amount = invoices.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
     total_paid = invoices.aggregate(Sum('paid_amount'))['paid_amount__sum'] or 0
