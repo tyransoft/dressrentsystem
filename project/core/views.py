@@ -13,8 +13,19 @@ from datetime import datetime, timedelta,time
 from django.utils import timezone
 from django.urls import reverse
 from math import ceil
-
+import re
 from django.views.decorators.http import require_POST
+
+def normalize_arabic(text):
+    text = text.strip().lower()
+    text = re.sub(r'[أإآٱ]', 'ا', text)
+    text = re.sub(r'[ىئ]', 'ي', text)
+    text = text.replace('ؤ', 'و').replace('ة', 'ه')
+    text = re.sub(r'[\u064B-\u065F\u0670ـ]', '', text)
+    text = re.sub(r'\s+', ' ', text)
+    return text
+
+
 
 @login_required
 def home(request):
@@ -1560,13 +1571,22 @@ def invoice_list(request):
         except ValueError:
             date_to = ''
     
-    search_query = request.GET.get('search', '')
+    search_query = request.GET.get('search', '').strip()
+   
+
     if search_query:
-        invoices = invoices.filter(
-            Q(invoice_number__icontains=search_query) |
-            Q(customer__full_name__icontains=search_query) 
-        )
-    
+      normalized_query = normalize_arabic(search_query)
+
+      matching_customer_ids = [
+        c.id for c in Customer.objects.only('id', 'full_name').iterator()
+        if normalized_query in normalize_arabic(c.full_name)
+      ]
+
+      invoices = invoices.filter(
+        Q(invoice_number__icontains=search_query) |
+        Q(customer_id__in=matching_customer_ids)
+      )
+      
     total_invoices = invoices.count()
     total_amount = invoices.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
     total_paid = invoices.aggregate(Sum('paid_amount'))['paid_amount__sum'] or 0
