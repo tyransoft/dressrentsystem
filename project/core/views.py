@@ -976,13 +976,7 @@ def customer_payment_create(request, pk):
                 pk=invoice_id,
                 customer=customer,
                 remaining_amount__gt=0,
-                status__in=[
-                    InvoiceStatus.PENDING,
-                    InvoiceStatus.PAID,
-                    InvoiceStatus.PARTIAL,
-                    InvoiceStatus.DELIVERED,
-                    InvoiceStatus.OVERDUE,
-                ]
+              
             )
 
             if amount > invoice.remaining_amount:
