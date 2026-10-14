@@ -1094,7 +1094,7 @@ def confirm_return(request, invoice_id):
         confirm = request.POST.get('confirm_return') == 'true'
         
         if confirm:
-            if invoice.remaining_amount > 0:
+            if invoice.remaining_amount >= 0:
                 remaining = invoice.remaining_amount
                 invoice.paid_amount += remaining
                 invoice.remaining_amount = 0
@@ -1114,7 +1114,9 @@ def confirm_return(request, invoice_id):
             invoice.status = InvoiceStatus.RECIEVED
             invoice.identity_verified_return=True
             invoice.save()
-            
+            customer = Customer.objects.get(id=invoice.customer.id)
+            customer.debt_balance = max(Decimal('0.00'), customer.debt_balance - invoice.remaining_amount)
+
             messages.success(request, 'تم تأكيد استلام جميع المنتجات بنجاح')
             return redirect('invoice_list')
     
