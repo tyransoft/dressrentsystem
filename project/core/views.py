@@ -1133,7 +1133,7 @@ def confirm_return(request, invoice_id):
         confirm = request.POST.get('confirm_return') == 'true'
         
         if confirm:
-            if invoice.remaining_amount >= 0:
+            if invoice.remaining_amount > 0:
                 remaining = invoice.remaining_amount
                 invoice.paid_amount += remaining
                 invoice.remaining_amount = 0
