@@ -1372,7 +1372,11 @@ def create_invoice(request):
             invoice.created_by=request.user 
             customer_id = data.get('customer_id')
             is_cash_customer = data.get('is_cash_customer', '0') == '1'
-            
+            date =data.get('created_date')
+            if date:
+                invoice.created_at = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
+            else:
+                invoice.created_at = timezone.now()    
             if is_cash_customer:
                 invoice.customer = None
             elif customer_id:

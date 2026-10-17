@@ -695,6 +695,7 @@ border: 1px solid #fcd34d;
 <input type="hidden" name="discount" id="form_discount" value="0">
 <input type="hidden" name="extra_amount" id="form_extra_amount" value="0">
 <input type="hidden" name="payment_method" id="form_payment_method" value="">
+<input type="hidden" name="created_date" id="form_created_date">
 <input type="hidden" name="notes" id="form_notes" value="">
 <div id="form-products-container"></div>
 
@@ -860,7 +861,16 @@ data-search="{{ product.name|lower }} {{ product.barcode|default:'' }}">
 <input type="checkbox" id="modal-identity-verified" checked> تأكيد استلام بطاقة الهوية
 </label>
 </div>
-
+<div class="form-group">
+    <label class="form-label">تاريخ الإضافة <span style="color:red;">*</span></label>
+    <input
+        type="date"
+        class="form-control"
+        id="modal-created-date"
+        value="{% now 'Y-m-d' %}"
+        required
+    >
+</div>
 <div class="form-group">
     <label class="form-label">ملاحظات <span style="color:red;">*</span></label>
     <textarea class="form-control" id="modal-notes" rows="2" required></textarea>
@@ -1553,7 +1563,12 @@ document.getElementById('form_extra_amount').value = document.getElementById('mo
 document.getElementById('form_payment_method').value = document.getElementById('modal-payment-method').value || '';
 document.getElementById('form_notes').value = document.getElementById('modal-notes').value || '';
 document.getElementById('form_sale_price').value = document.getElementById('sale_price_display').value || '0';
+var createdDate = document.getElementById('modal-created-date').value;
 
+if (!createdDate) {
+    showToast('الرجاء تحديد تاريخ الإضافة', 'error');
+    return;
+}
 var container = document.getElementById('form-products-container');
 container.innerHTML = '';
 Object.values(cart).forEach(function(p) {
