@@ -533,21 +533,36 @@ tbody td {
     </a>
 </div>
 {% endif %}
-    <div class="filters-bar">
-        <div class="filter-group">
-            <label>بحث</label>
-            <input type="text" id="searchInput" class="search-input" placeholder="رقم الفاتورة، العميل، المنتج..." oninput="filterTable()">
-        </div>
-        <div class="filter-group">
-            <label>تاريخ البداية</label>
-            <input type="date" id="startDateFilter" onchange="filterTable()">
-        </div>
-        <div class="filter-group">
-            <label>تاريخ النهاية</label>
-            <input type="date" id="endDateFilter" onchange="filterTable()">
-        </div>
-        <button class="btn-outline-gold" onclick="resetFilters()" style="padding:6px 14px;font-size:12px;">اعادة تعيين</button>
+   <form method="GET" class="filters-bar">
+    <div class="filter-group">
+        <label for="startDateFilter">تاريخ البداية</label>
+        <input
+            type="date"
+            id="startDateFilter"
+            name="start_date"
+            value="{{ start_date }}"
+        >
     </div>
+
+    <div class="filter-group">
+        <label for="endDateFilter">تاريخ النهاية</label>
+        <input
+            type="date"
+            id="endDateFilter"
+            name="end_date"
+            value="{{ end_date }}"
+        >
+    </div>
+
+    <button type="submit" class="btn-outline-gold">
+        تطبيق الفلتر
+    </button>
+
+    <a href="{% url 'reservations_list' %}"
+       class="btn-outline-gold">
+        إعادة تعيين
+    </a>
+</form>
 
     <div class="table-responsive">
         <table>

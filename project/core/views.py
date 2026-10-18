@@ -546,37 +546,74 @@ def payment_method_toggle_status(request, pk):
     messages.success(request, f'تم {status} طريقة الدفع "{payment_method.name}"')
     return redirect('payment_methods_list')
 
+
 @login_required
 def reservations_list(request):
-    today = timezone.now().date()
-    
-    reservations = Invoice.objects.filter(
-        status=InvoiceStatus.PENDING,
-        invoice_type=InvoiceType.RENT
-    ).select_related('customer', 'payment_method').prefetch_related('items__product')
+    today = timezone.localdate()
 
-    if request.GET.get('start_date') :
-        reservations = reservations.filter(rent_start_date=today)
-    
+    # استقبال التواريخ من الرابط GET
+    start_date = request.GET.get('start_date', '').strip()
+    end_date = request.GET.get('end_date', '').strip()
 
+    reservations = (
+        Invoice.objects.filter(
+            invoice_type=InvoiceType.RENT
+        )
+        .select_related('customer', 'payment_method')
+        .prefetch_related('items__product')
+    )
+
+    # التحقق من صحة تاريخ البداية
+    if start_date:
+        try:
+            start_date = datetime.strptime(
+                start_date, '%Y-%m-%d'
+            ).date()
+
+            reservations = reservations.filter(
+                rent_start_date__gte=start_date
+            )
+        except ValueError:
+            start_date = ''
+
+    # التحقق من صحة تاريخ النهاية
+    if end_date:
+        try:
+            end_date = datetime.strptime(
+                end_date, '%Y-%m-%d'
+            ).date()
+
+            reservations = reservations.filter(
+                rent_start_date__lte=end_date
+            )
+        except ValueError:
+            end_date = ''
+
+    # الحجوزات المعلقة (إحصائيات مستقلة عن الفلتر)
     total_pending = Invoice.objects.filter(
         status=InvoiceStatus.PENDING,
         invoice_type=InvoiceType.RENT
     ).count()
-    
+
+    # حجوزات اليوم
     today_reservations = Invoice.objects.filter(
         status=InvoiceStatus.PENDING,
         invoice_type=InvoiceType.RENT,
         rent_start_date=today
     ).count()
-    
+
     context = {
         'reservations': reservations,
         'total_pending': total_pending,
         'today_reservations': today_reservations,
         'today': today.strftime('%Y-%m-%d'),
-        'is_today_filter': request.GET.get('today') == '1', 
+        'start_date': start_date.strftime('%Y-%m-%d')
+            if start_date else '',
+        'end_date': end_date.strftime('%Y-%m-%d')
+            if end_date else '',
+        'is_today_filter': request.GET.get('today') == '1',
     }
+
     return render(request, 'reservations_list.html', context)
 @login_required
 def reservation_detail(request, invoice_id):
