@@ -129,8 +129,8 @@
             <tr>
               <td><a href="{% url 'customers_detail' customer.pk %}" class="fw-600 text-primary">{{ customer.full_name }}</a></td>
               <td class="money">
-                {% if customer.calculate_debt() > 0 %}
-                <span class="badge badge-danger">{{ customer.calculate_debt() }} د.ل</span>
+                {% if customer.calculate_debt > 0 %}
+                <span class="badge badge-danger">{{ customer.calculate_debt }} د.ل</span>
                 {% else %}
                 <span class="badge badge-success">لا دين</span>
                 {% endif %}
@@ -144,7 +144,7 @@
                   <a href="{% url 'customers_edit' customer.pk %}" class="btn btn-outline btn-icon btn-sm" title="تعديل">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3l4 4-7 7H10v-4l7-7z"></path><path d="M4 20h16"></path></svg>
                   </a>
-                  {% if customer.calculate_debt() > 0 %}
+                  {% if customer.calculate_debt > 0 %}
                   <a href="{% url 'customer_payment_create' customer.pk %}" class="btn btn-success btn-icon btn-sm" title="تسديد دين">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
                   </a>
@@ -180,8 +180,8 @@
         <div class="mobile-customer-row">
           <span class="mobile-customer-label">الدين</span>
           <span class="mobile-customer-value">
-            {% if customer.calculate_debt() > 0 %}
-            <span class="badge badge-danger">{{ customer.calculate_debt() }} د.ل</span>
+            {% if customer.calculate_debt > 0 %}
+            <span class="badge badge-danger">{{ customer.calculate_debt}} د.ل</span>
             {% else %}
             <span class="badge badge-success">لا دين</span>
             {% endif %}
@@ -194,7 +194,7 @@
         <div class="mobile-customer-actions">
           <a href="{% url 'customers_detail' customer.pk %}" class="btn btn-outline btn-sm">تفاصيل</a>
           <a href="{% url 'customers_edit' customer.pk %}" class="btn btn-outline btn-sm">تعديل</a>
-          {% if customer.calculate_debt() > 0 %}
+          {% if customer.calculate_debt > 0 %}
           <a href="{% url 'customer_payment_create' customer.pk %}" class="btn btn-success btn-sm">تسديد</a>
           {% endif %}
           <a href="{% url 'customer_payments_history' customer.pk %}" class="btn btn-outline btn-sm">سجل</a>
