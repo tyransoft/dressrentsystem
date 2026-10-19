@@ -454,7 +454,8 @@ class Customer(models.Model):
     @property
     def total_debt(self):
         return self.debt_balance
-    
+    from django.db.models.functions import Coalesce
+
     def calculate_debt(self):
         return Invoice.objects.filter(
             customer=self
