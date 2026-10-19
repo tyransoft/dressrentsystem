@@ -455,7 +455,17 @@ class Customer(models.Model):
     def total_debt(self):
         return self.debt_balance
     
-
+    def calculate_debt(self):
+        return Invoice.objects.filter(
+            customer=self
+        ).exclude(
+            status=InvoiceStatus.CANCELLED
+        ).aggregate(
+            total=Coalesce(
+                Sum('remaining_amount'),
+                Decimal('0.00')
+            )
+        )['total'] or Decimal('0.00')
 
 
 class CustomerPayment(models.Model):

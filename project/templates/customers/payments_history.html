@@ -98,7 +98,7 @@
 
 <div class="action-bar">
   <a href="{% url 'customers_detail' customer.pk %}" class="btn btn-outline btn-sm">رجوع للعميل</a>
-  {% if customer.debt_balance > 0 %}
+  {% if customer.calculate_debt() > 0 %}
   <a href="{% url 'customer_payment_create' customer.pk %}" class="btn btn-success btn-sm">تسديد جديد</a>
   {% endif %}
 </div>
@@ -117,7 +117,7 @@
       </div>
       <div class="stat-box" style="background:#fee2e2;">
         <div class="text-muted">المتبقي الحالي</div>
-        <div class="stat-value" style="color:#dc2626;">{{ customer.debt_balance|floatformat:0|intcomma }} د.ل</div>
+        <div class="stat-value" style="color:#dc2626;">{{ customer.calculate_debt() }} د.ل</div>
       </div>
     </div>
     
@@ -184,7 +184,7 @@
                 <div class="empty-state">
                   <h5>لا توجد تسديدات مسجلة</h5>
                   <p class="text-muted">لم يقم هذا العميل بأي تسديدات حتى الآن</p>
-                  {% if customer.debt_balance > 0 %}
+                  {% if customer.calculate_debt() > 0 %}
                   <a href="{% url 'customer_payment_create' customer.pk %}" class="btn btn-primary btn-sm">تسديد جديد</a>
                   {% endif %}
                 </div>
@@ -253,7 +253,7 @@
       <div class="empty-state">
         <h5>لا توجد تسديدات مسجلة</h5>
         <p class="text-muted">لم يقم هذا العميل بأي تسديدات حتى الآن</p>
-        {% if customer.debt_balance > 0 %}
+        {% if customer.calculate_debt() > 0 %}
         <a href="{% url 'customer_payment_create' customer.pk %}" class="btn btn-primary btn-sm">تسديد جديد</a>
         {% endif %}
       </div>

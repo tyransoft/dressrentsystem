@@ -1041,7 +1041,7 @@ var customers = [
 id: {{ customer.id }},
 full_name: "{{ customer.full_name|escapejs }}",
 phone: "{{ customer.phone|default:''|escapejs }}",
-debt_balance: {{ customer.debt_balance|default:0 }}
+debt_balance: {{ customer.calculate_debt()|default:0 }}
 }{% if not forloop.last %},{% endif %}
 {% endfor %}
 ];

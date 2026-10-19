@@ -92,7 +92,7 @@
     <div class="card">
       <div class="card-body">
         <div class="text-muted" style="font-size:12px;">رصيد الدين</div>
-        <div style="font-size:22px;font-weight:800;color:#dc2626;">{{ customer.debt_balance|floatformat:2|intcomma }} د.ل</div>
+        <div style="font-size:22px;font-weight:800;color:#dc2626;">{{ customer.calculate_debt() }} د.ل</div>
       </div>
     </div>
 
