@@ -431,7 +431,7 @@ class RepairAndClean(models.Model):
 from django.db.models.functions import Coalesce
 
 class Customer(models.Model):
-    full_name = models.CharField(max_length=20, verbose_name='الاسم الكامل')
+    full_name = models.CharField(max_length=40, verbose_name='الاسم الكامل')
     phone = models.CharField(max_length=20, unique=True, verbose_name='رقم الهاتف')
 
     debt_balance = models.DecimalField(
@@ -849,7 +849,7 @@ class MonthlySalaryPayment(models.Model):
     amount = models.DecimalField(max_digits=15, decimal_places=0, verbose_name='المبلغ المدفوع')
     payment_date = models.DateField(verbose_name='تاريخ الدفع')
     payment_method = models.CharField(max_length=20, choices=METHOD_CHOICES, default='cash', verbose_name='طريقة الدفع')
-    receipt_number = models.CharField(max_length=50, unique=True, verbose_name='رقم الإيصال')
+    receipt_number = models.CharField(max_length=200, unique=True, verbose_name='رقم الإيصال')
     notes = models.TextField(blank=True, null=True, verbose_name='ملاحظات')
     created_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='تم بواسطة')
     created_at = models.DateTimeField(auto_now_add=True)

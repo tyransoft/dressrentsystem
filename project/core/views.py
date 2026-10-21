@@ -551,7 +551,6 @@ def payment_method_toggle_status(request, pk):
 def reservations_list(request):
     today = timezone.localdate()
 
-    # استقبال التواريخ من الرابط GET
     start_date = request.GET.get('start_date', '').strip()
     end_date = request.GET.get('end_date', '').strip()
 
@@ -563,7 +562,6 @@ def reservations_list(request):
         .prefetch_related('items__product')
     )
 
-    # التحقق من صحة تاريخ البداية
     if start_date:
         try:
             start_date = datetime.strptime(
@@ -576,7 +574,6 @@ def reservations_list(request):
         except ValueError:
             start_date = ''
 
-    # التحقق من صحة تاريخ النهاية
     if end_date:
         try:
             end_date = datetime.strptime(
@@ -589,13 +586,11 @@ def reservations_list(request):
         except ValueError:
             end_date = ''
 
-    # الحجوزات المعلقة (إحصائيات مستقلة عن الفلتر)
     total_pending = Invoice.objects.filter(
         status=InvoiceStatus.PENDING,
         invoice_type=InvoiceType.RENT
     ).count()
 
-    # حجوزات اليوم
     today_reservations = Invoice.objects.filter(
         status=InvoiceStatus.PENDING,
         invoice_type=InvoiceType.RENT,
