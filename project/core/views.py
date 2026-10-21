@@ -133,7 +133,7 @@ def product_list(request):
     category_id = request.GET.get('category', '')
     status = request.GET.get('status', '')
 
-    products = Product.objects.select_related('category').filter(is_active=True)
+    products = Product.objects.filter(is_active=True)
     if query:
       normalized_query = normalize_arabic(query)
 
@@ -148,7 +148,7 @@ def product_list(request):
         Q(barcode__icontains=query)
       )
     if category_id:
-        products = products.filter(category_id=category_id)
+        products = products.filter(category=category_id)
     if status:
         products = products.filter(status=status)
 
