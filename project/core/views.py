@@ -596,9 +596,9 @@ def reservations_list(request):
         'total_pending': total_pending,
         'today_reservations': today_reservations,
         'today': today.strftime('%Y-%m-%d'),
-        'start_date': start_date.strftime('%Y-%m-%d')
+        'start_date': start_date
             if start_date else '',
-        'end_date': end_date.strftime('%Y-%m-%d')
+        'end_date': end_date
             if end_date else '',
         'is_today_filter': request.GET.get('today') == '1',
     }
