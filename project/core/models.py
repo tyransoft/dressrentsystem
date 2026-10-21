@@ -866,22 +866,26 @@ class MonthlySalaryPayment(models.Model):
     def save(self, *args, **kwargs):
         from core.models import ExpenseCategory, Expense
       
-        
         if not self.receipt_number:
-            last_payment = MonthlySalaryPayment.objects.order_by('-id').first()
-            if last_payment and last_payment.receipt_number:
-                try:
-                    last_num = int(last_payment.receipt_number)
-                    new_num = last_num + 1
-                except:
-                    new_num = 1
-            else:
-                new_num = 1
-            date_str = date.today().strftime('%Y%m%d')
-            self.receipt_number = f"{date_str}{new_num:04d}"
-        
-        
-        
+          date_str = date.today().strftime('%Y%m%d')
+
+          last_payment = (
+            MonthlySalaryPayment.objects
+            .filter(receipt_number__startswith=date_str)
+            .order_by('-id')
+            .first()
+           )
+
+          if last_payment and last_payment.receipt_number:
+            try:
+              last_num = int(last_payment.receipt_number[-4:])
+              new_num = last_num + 1
+            except (ValueError, TypeError):
+              new_num = 1
+          else:
+            new_num = 1
+
+          self.receipt_number = f"{date_str}{new_num:04d}"
         category = ExpenseCategory.objects.first()
         
         if category:

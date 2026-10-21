@@ -555,33 +555,27 @@ def reservations_list(request):
     end_date = request.GET.get('end_date', '').strip()
 
     reservations = (
-        Invoice.objects.filter(
-            invoice_type=InvoiceType.RENT
-        )
+        Invoice.objects.all( )
         .select_related('customer', 'payment_method')
         .prefetch_related('items__product')
     )
 
     if start_date:
         try:
-            start_date = datetime.strptime(
-                start_date, '%Y-%m-%d'
-            ).date()
+           
 
             reservations = reservations.filter(
-                rent_start_date__gte=start_date
+                rent_start_date=start_date
             )
         except ValueError:
             start_date = ''
 
     if end_date:
         try:
-            end_date = datetime.strptime(
-                end_date, '%Y-%m-%d'
-            ).date()
+       
 
             reservations = reservations.filter(
-                rent_start_date__lte=end_date
+                rent_start_date=end_date
             )
         except ValueError:
             end_date = ''
@@ -1384,8 +1378,12 @@ def create_invoice(request):
                         if product.status == Dstatus.SOLD:
                             messages.error(request, f'المنتج {product.name} تم بيعه ولا يمكن تأجيره')
                             return redirect('invoice_list')
-                        
-                       
+                        if product.category.name == 'خدمة':
+                            messages.error(request, f'المنتج {product.name}  لا يمكن تأجيره')
+
+                            return redirect('invoice_list')
+  
+                          
                         is_available, message = Invoice.check_product_availability(
                             product, rent_start_date, rent_end_date
                         )
@@ -1503,8 +1501,10 @@ def create_invoice(request):
                         invoice.delete()
                         messages.error(request, f'المنتج {product.name} مؤجر حالياً ولا يمكن بيعه')
                         return redirect('invoice_list')
-                    
-                    product.status = Dstatus.SOLD
+
+                    if product.category.name != 'خدمة':
+
+                       product.status = Dstatus.SOLD
                     product.save()
                     
                     invoice_item = InvoiceItem.objects.create(
