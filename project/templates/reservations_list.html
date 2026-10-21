@@ -557,6 +557,13 @@ tbody td {
     <button type="submit" class="btn-outline-gold">
         تطبيق الفلتر
     </button>
+    {% if start_date %}
+<a href="{% url 'print_invoices_by_start_date' %}?start_date={{ start_date }}" 
+   target="_blank" 
+   class="btn-outline-gold">
+    طباعة كشف  {{ start_date }}
+</a>
+{% endif %}
 
     <a href="{% url 'reservations_list' %}"
        class="btn-outline-gold">

@@ -1,0 +1,230 @@
+{% load humanize %}
+{% load static %}
+
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>تقرير فواتير إيجار يوم {{ start_date|date:"Y-m-d" }}</title>
+    <style>
+        @page {
+            size: A4 landscape; /* اتجاه أفقي ليستوعب كافة الأعمدة */
+            margin: 1cm;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #fff;
+            color: #1f2937;
+            font-size: 12px;
+            direction: rtl;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #111827;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .title-section h2 {
+            margin: 0;
+            font-size: 18px;
+            color: #111827;
+        }
+
+        .title-section p {
+            margin: 3px 0 0 0;
+            font-size: 13px;
+            color: #4b5563;
+        }
+
+        .print-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .print-table th,
+        .print-table td {
+            border: 1px solid #d1d5db;
+            padding: 6px 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .print-table th {
+            background-color: #f3f4f6;
+            color: #111827;
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        .customer-cell {
+            text-align: right !important;
+        }
+
+        .customer-name {
+            font-weight: bold;
+            font-size: 12px;
+            color: #111827;
+        }
+
+        .customer-phone {
+            font-size: 10px;
+            color: #6b7280;
+            margin-top: 1px;
+            direction: ltr;
+            text-align: right;
+        }
+
+        .product-names {
+            font-size: 11px;
+            color: #374151;
+            text-align: right;
+        }
+
+        .notes-cell {
+            text-align: right;
+            font-size: 9.5px; /* خط صغير للملاحظات والطويلة منها */
+            line-height: 1.2;
+            max-width: 220px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            color: #4b5563;
+        }
+
+        .amount-badge {
+            font-weight: bold;
+        }
+
+        .text-danger { color: #dc2626; }
+        .text-success { color: #16a34a; }
+
+        .no-data {
+            text-align: center;
+            padding: 20px;
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        /* أدوات الطباعة */
+        .no-print-bar {
+            background-color: #f9fafb;
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #e5e7eb;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            padding: 6px 18px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            font-size: 12px;
+            margin: 0 4px;
+        }
+
+        .btn-primary { background-color: #2563eb; color: white; }
+        .btn-secondary { background-color: #6b7280; color: white; }
+
+        @media print {
+            .no-print-bar { display: none !important; }
+            body { margin: 0; padding: 0; }
+            .print-table { page-break-inside: auto; }
+            .print-table tr { page-break-inside: avoid; page-break-after: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print-bar">
+        <button onclick="window.print()" class="btn btn-primary">طباعة الجدول</button>
+        <button onclick="window.history.back()" class="btn btn-secondary">رجوع</button>
+    </div>
+
+    <div style="padding: 0 10px;">
+        <div class="header-container">
+            <div class="title-section">
+                <h2>جدول فواتير الإيجار</h2>
+                <p>تاريخ بداية الإيجار: <strong>{{ start_date|date:"Y-m-d" }}</strong></p>
+            </div>
+            <div>
+                <span style="font-size: 11px; color: #6b7280;">عدد الفواتير: {{ invoices.count }}</span>
+            </div>
+        </div>
+
+        <table class="print-table">
+            <thead>
+                <tr>
+                    <th style="width: 30px;">#</th>
+                    <th style="width: 85px;">ت. البداية</th>
+                    <th style="width: 85px;">ت. النهاية</th>
+                    <th style="width: 170px;">العميل</th>
+                    <th>اسم المنتج</th>
+                    <th style="width: 85px;">المدفوع</th>
+                    <th style="width: 85px;">المتبقي</th>
+                    <th style="width: 220px;">الملاحظات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for invoice in invoices %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+
+                    <td>{{ invoice.rent_start_date|date:"Y-m-d"|default:"-" }}</td>
+
+                    <td>{{ invoice.rent_end_date|date:"Y-m-d"|default:"-" }}</td>
+
+                    <td class="customer-cell">
+                        {% if invoice.customer %}
+                            <div class="customer-name">{{ invoice.customer.full_name }}</div>
+                            <div class="customer-phone">{{ invoice.customer.phone }}</div>
+                        {% else %}
+                            <span style="color: #9ca3af;">بدون عميل</span>
+                        {% endif %}
+                    </td>
+
+                    <td class="product-names">
+                        {% for item in invoice.items.all %}
+                            <div>• {{ item.product.name }}</div>
+                        {% empty %}
+                            <span style="color: #9ca3af;">-</span>
+                        {% endfor %}
+                    </td>
+
+                    <td class="amount-badge text-success">
+                        {{ invoice.paid_amount|floatformat:2 }}
+                    </td>
+
+                    <td class="amount-badge {% if invoice.remaining_amount > 0 %}text-danger{% else %}text-success{% endif %}">
+                        {{ invoice.remaining_amount|floatformat:2 }}
+                    </td>
+
+                    <td class="notes-cell">
+                        {{ invoice.notes|default:"-" }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="no-data">
+                        لا توجد فواتير إيجار تبدأ في هذا التاريخ ({{ start_date|date:"Y-m-d" }}).
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>

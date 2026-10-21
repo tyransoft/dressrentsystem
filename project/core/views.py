@@ -15,6 +15,7 @@ from django.urls import reverse
 from math import ceil
 import re
 from django.views.decorators.http import require_POST
+from django.utils.dateparse import parse_date
 
 def normalize_arabic(text):
     text = text.strip().lower()
@@ -3706,3 +3707,24 @@ def penalty_delete(request, pk):
 
     messages.success(request, 'تم حذف الغرامة وخصم مبلغها من الدفعة.')
     return redirect('customers_detail', pk=customer.pk) if customer else redirect('customers_list')
+
+
+def print_invoices_by_start_date(request):
+    start_date = request.GET.get('start_date')
+    date_obj = parse_date(start_date) if start_date else None
+    
+    if date_obj:
+        invoices = Invoice.objects.filter(rent_start_date=date_obj).select_related(
+            'customer'
+        ).prefetch_related(
+            'items__product'
+        ).order_by('id')
+    else:
+        invoices = Invoice.objects.none()
+
+    context = {
+        'invoices': invoices,
+        'start_date': date_obj or start_date,
+    }
+    
+    return render(request, 'invoices_by_start_date_print.html', context)

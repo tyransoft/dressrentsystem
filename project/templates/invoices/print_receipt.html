@@ -8,349 +8,477 @@
   <title>فاتورة - {{ invoice.invoice_number }}</title>
   <style>
     @page {
-      size: A4;
-      margin: 1.5cm;
+      size: A4 portrait;
+      margin: 1cm; /* تقليل الهوامش لضمان الاحتواء في صفحة واحدة */
     }
+    
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
       padding: 0;
       background: white;
-      color: #333;
-      font-size: 13px;
+      color: #1f2937;
+      font-size: 11px; /* تصغير طفيف للخطوط لضمان ملائمة الصفحة */
+      line-height: 1.3;
     }
+
     .invoice-container {
-      max-width: 100%;
+      width: 100%;
       margin: 0 auto;
     }
+
+    /* الهيدر */
     .company-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       border-bottom: 2px solid #111;
-      padding-bottom: 12px;
-      margin-bottom: 15px;
-      min-height: 80px;
+      padding-bottom: 6px;
+      margin-bottom: 10px;
     }
+    
     .company-logo-wrapper {
-      width: 80px;
-      display: flex;
-      justify-content: flex-end;
-    }
-    .company-logo {
       width: 70px;
-      height: 70px;
+    }
+
+    .company-logo {
+      width: 60px;
+      height: 60px;
       object-fit: contain;
     }
+
     .company-center {
       flex: 1;
       text-align: center;
     }
+
     .company-name {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 800;
       color: #111827;
-      margin-bottom: 4px;
+      line-height: 1;
     }
+
     .company-slogan {
-      font-size: 12px;
+      font-size: 11px;
       color: #6b7280;
       font-weight: 600;
-      margin-bottom: 4px;
+      text-transform: uppercase;
+      margin-top: 2px;
     }
+
     .branch-name {
-      font-size: 12px;
+      font-size: 11px;
       color: #374151;
+      margin-top: 3px;
+      font-weight: 600;
     }
+
+    .contract-badge {
+      display: inline-block;
+      background-color: #7c2d12;
+      color: #fff;
+      padding: 2px 12px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: bold;
+      margin-top: 4px;
+    }
+
     .invoice-title {
       text-align: center;
-      font-size: 16px;
+      font-size: 13px;
       font-weight: bold;
-      margin: 12px 0;
+      margin: 8px 0;
       background: #f3f4f6;
-      padding: 8px;
+      padding: 5px;
+      border-radius: 4px;
     }
+
+    /* كروت المعلومات */
     .info-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 8px;
-      margin-bottom: 15px;
+      margin-bottom: 8px;
     }
+
     .info-card {
       background: #f9fafb;
-      border-radius: 6px;
-      padding: 6px 10px;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      padding: 4px 8px;
       text-align: center;
     }
+
     .info-label {
-      font-size: 10px;
-      color: #666;
-    }
-    .info-value {
-      font-weight: bold;
-      font-size: 13px;
-    }
-    .subtitle {
-      color: #666;
       font-size: 9px;
+      color: #6b7280;
     }
-    .products-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 10px 0;
-      font-size: 12px;
-    }
-    .products-table th,
-    .products-table td {
-      border: 1px solid #ddd;
-      padding: 6px 8px;
-      text-align: center;
-    }
-    .products-table th {
-      background: #f3f4f6;
+
+    .info-value {
       font-weight: bold;
       font-size: 11px;
     }
-    .products-table thead {
-      display: table-header-group;
+
+    /* جدول المنتجات */
+    .products-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 6px 0;
+      font-size: 11px;
     }
-    .products-table tfoot {
-      display: table-footer-group;
+
+    .products-table th,
+    .products-table td {
+      border: 1px solid #d1d5db;
+      padding: 4px 6px;
+      text-align: center;
     }
+
+    .products-table th {
+      background: #f3f4f6;
+      font-weight: bold;
+      font-size: 10px;
+    }
+
+    /* شبكة التفاصيل والإجماليات */
     .bottom-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 15px;
-      margin-top: 15px;
+      gap: 10px;
+      margin-top: 8px;
     }
+
     .bottom-box {
-      background: #f8fafc;
-      border-radius: 6px;
-      padding: 10px 14px;
+      background: #f9fafb;
+      border-radius: 4px;
+      padding: 6px 10px;
       border: 1px solid #e5e7eb;
     }
+
     .bottom-box-title {
       font-weight: bold;
-      font-size: 12px;
+      font-size: 11px;
       color: #374151;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
       border-bottom: 1px solid #e5e7eb;
-      padding-bottom: 4px;
+      padding-bottom: 2px;
     }
+
     .bottom-row {
       display: flex;
       justify-content: space-between;
-      padding: 3px 0;
-      font-size: 12px;
+      padding: 2px 0;
+      font-size: 10px;
     }
+
     .bottom-row.total {
       font-weight: bold;
-      font-size: 14px;
-      border-top: 2px solid #111;
-      margin-top: 4px;
-      padding-top: 6px;
-    }
-    .text-danger { color: #0a0a0a; }
-    .text-success { color: #0a0a0a; }
-    .text-warning { color: #0e0d0d; }
-    .penalty-row { background: #fef3c7; }
-    .penalty-row td { color: #99918d; }
-    .notes-box {
-      background: #fef3c7;
-      border-radius: 6px;
-      padding: 6px 12px;
-      margin-top: 10px;
       font-size: 12px;
+      border-top: 1.5px solid #111;
+      margin-top: 3px;
+      padding-top: 4px;
     }
-    .footer {
+
+    /* بنود العقد والإقرار */
+    .terms-section {
+      margin-top: 10px;
+      border-top: 1.5px dashed #9ca3af;
+      padding-top: 8px;
+    }
+
+    .terms-header {
       text-align: center;
-      margin-top: 25px;
-      padding-top: 12px;
-      border-top: 1px solid #ddd;
+      background-color: #9a3412;
+      color: #ffffff;
+      font-weight: bold;
+      padding: 3px 12px;
+      border-radius: 10px;
+      width: fit-content;
+      margin: 0 auto 6px auto;
+      font-size: 11px;
+    }
+
+    .terms-list {
+      margin: 0;
+      padding-right: 15px;
+      font-size: 9.5px;
+      color: #374151;
+    }
+
+    .terms-list li {
+      margin-bottom: 2px;
+      text-align: justify;
+    }
+
+    .declaration-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 8px;
+      font-size: 9.5px;
+    }
+
+    .declaration-box {
+      background-color: #fffaf0;
+      border: 1px solid #fed7aa;
+      border-radius: 4px;
+      padding: 6px 8px;
+    }
+
+    .declaration-title {
+      text-align: center;
+      background-color: #c2410c;
+      color: #fff;
+      font-weight: bold;
+      padding: 2px;
+      border-radius: 8px;
       font-size: 10px;
-      color: #666;
+      margin-bottom: 4px;
     }
+
+    .declaration-text {
+      margin-bottom: 6px;
+      font-weight: 600;
+      text-align: justify;
+    }
+
+    .field-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 3px;
+    }
+
+    .dots-line {
+      border-bottom: 1px dotted #6b7280;
+      flex-grow: 1;
+      margin-right: 4px;
+    }
+
+    .agreement-footer {
+      text-align: center;
+      font-weight: bold;
+      font-size: 10px;
+      margin-top: 6px;
+      color: #111827;
+    }
+
+    /* الطباعة */
     @media print {
-      .no-print { display: none; }
-      body { margin: 0; padding: 0; }
-      .products-table thead { display: table-header-group; }
-      .products-table tfoot { display: table-footer-group; }
-      .bottom-grid { break-inside: avoid; }
-    }
-    @media (max-width: 600px) {
-      .info-grid { grid-template-columns: repeat(2, 1fr); }
-      .bottom-grid { grid-template-columns: 1fr; }
+      .no-print { display: none !important; }
+      body { margin: 0; padding: 0; background: white; }
+      .invoice-container { width: 100%; }
+      .terms-section { page-break-inside: avoid; }
     }
   </style>
 </head>
 <body>
+
 <div class="invoice-container">
   
-<div class="company-header">
-  <div class="company-logo-wrapper">
-    <img src="{% static 'img/image.png' %}" class="company-logo">
+  <!-- الهيدر -->
+  <div class="company-header">
+    <div class="company-logo-wrapper">
+      <img src="{% static 'img/image.png' %}" class="company-logo" alt="Logo">
+    </div>
+    <div class="company-center">
+      <div class="company-name">ZEEZEE</div>
+      <div class="company-slogan">FASHION HOUSE</div>
+      <div class="branch-name">مصراتة - شارع المطبات - 0911330708 - 0919911449</div>
+      <div><span class="contract-badge">عقد إيجار فستان</span></div>
+    </div>
+    <div style="width:70px;"></div>
   </div>
-  <div class="company-center">
-    <div class="company-name">Zee Zee botiq</div>
-    <div class="company-slogan">fashion house</div>
-    <div class="branch-name">مصراتة-شارع المطبات -0911330708 -0919911449</div>
-  </div>
-  <div style="width:80px;"></div>
-</div>
 
-<div class="invoice-title">
-  {% if invoice.invoice_type == 'rent' %}
-  فاتورة إيجار رقم: {{ invoice.invoice_number }}
-  {% else %}
-  فاتورة بيع رقم: {{ invoice.invoice_number }}
-  {% endif %}
-</div>  
+  <!-- عنوان الفاتورة -->
+  <div class="invoice-title">
+    {% if invoice.invoice_type == 'rent' %}
+      فاتورة إيجار رقم: {{ invoice.invoice_number }}
+    {% else %}
+      فاتورة بيع رقم: {{ invoice.invoice_number }}
+    {% endif %}
+  </div>  
   
-<div class="info-grid">
+  <!-- بيانات العميل والتاريخ -->
+  <div class="info-grid">
     {% if invoice.customer %}
-  <div class="info-card">
-    <div class="info-label">العميل</div>
-    <div class="info-value">{{ invoice.customer.full_name }}</div>
-    <div class="subtitle">{{ invoice.customer.phone }}</div>
+    <div class="info-card">
+      <div class="info-label">اسم العميل</div>
+      <div class="info-value">{{ invoice.customer.full_name }}</div>
+      <div class="info-label" style="margin-top:2px;">{{ invoice.customer.phone }}</div>
+    </div>
+    {% endif %}   
+    <div class="info-card">
+      <div class="info-label">تاريخ الفاتورة</div>
+      <div class="info-value">{{ invoice.created_at|date:"Y-m-d" }}</div>
+      {% if invoice.rent_end_date %}
+        <div class="info-label" style="margin-top:2px;">تاريخ الإرجاع: <strong>{{ invoice.rent_end_date|date:"Y-m-d" }}</strong></div>
+      {% endif %}
+    </div>
   </div>
-  {% endif %}  
-  <div class="info-card">
-    <div class="info-label">التاريخ</div>
-    <div class="info-value">{{ invoice.created_at|date:"Y-m-d" }}</div>
+
+  <!-- جدول المنتجات -->
+  <table class="products-table">
+    <thead>
+      <tr>
+        <th style="width:25px;">#</th>
+        <th style="text-align:right;">الفستان / الصنف</th>
+        <th style="width:50px;">الأيام</th>
+        <th style="width:75px;">سعر الوحدة</th>
+        <th style="width:80px;">الإجمالي</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in invoice.items.all %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td style="text-align:right;">{{ item.product.name }}</td>
+        <td>{{ item.days|default:1 }}</td>
+        <td>{{ item.unit_price|floatformat:2 }}</td>
+        <td>{{ item.total_price|floatformat:2 }}</td>
+      </tr>
+      {% endfor %}
+      {% if penalties %}
+      {% for penalty in penalties %}
+      <tr style="background-color: #fef3c7;">
+        <td colspan="3" style="text-align:right; font-weight:bold;">غرامة: {{ penalty.reason }}</td>
+        <td>-</td>
+        <td>{{ penalty.amount|floatformat:2 }}</td>
+      </tr>
+      {% endfor %}
+      {% endif %}
+    </tbody>
+  </table>
+
+  <!-- قسم الإجماليات والتفاصيل -->
+  <div class="bottom-grid">
+    <div class="bottom-box">
+      <div class="bottom-box-title">معلومات إضافية</div>
+      <div class="bottom-row">
+        <span>نوع الفاتورة:</span>
+        <strong>{{ invoice.get_invoice_type_display }}</strong>
+      </div>
+      <div class="bottom-row">
+        <span>الحالة:</span>
+        <strong>{{ invoice.get_status_display }}</strong>
+      </div>
+      {% if invoice.payment_method %}
+      <div class="bottom-row">
+        <span>طريقة الدفع:</span>
+        <strong>{{ invoice.payment_method.name }}</strong>
+      </div>
+      {% endif %}
+      <div class="bottom-row">
+        <span>بطاقة الهوية:</span>
+        <strong>{% if invoice.identity_verified %}تم الاستلام{% else %}لم تستلم{% endif %}</strong>
+      </div>
+      {% if invoice.notes %}
+      <div style="font-size:9px; margin-top:4px; background:#fff; padding:3px; border-radius:3px;">
+        <strong>ملاحظات:</strong> {{ invoice.notes }}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="bottom-box">
+      <div class="bottom-box-title">إجمالي الفاتورة</div>
+      <div class="bottom-row">
+        <span>المجموع الفرعي:</span>
+        <span>{{ invoice.total_amount|floatformat:2 }} د.ل</span>
+      </div>
+      {% if invoice.discount > 0 %}
+      <div class="bottom-row">
+        <span>الخصم:</span>
+        <span style="color:#dc2626;">- {{ invoice.discount|floatformat:2 }} د.ل</span>
+      </div>
+      {% endif %}
+      {% if invoice.extra_amount > 0 %}
+      <div class="bottom-row">
+        <span>رسوم إضافية:</span>
+        <span>+ {{ invoice.extra_amount|floatformat:2 }} د.ل</span>
+      </div>
+      {% endif %}
+      <div class="bottom-row total">
+        <span>الإجمالي النهائي:</span>
+        <span style="font-size:14px; color:#111827;">{{ invoice.total_amount|floatformat:2 }} د.ل</span>
+      </div>
+      <div class="bottom-row">
+        <span>المدفوع (العربون):</span>
+        <span style="color:#16a34a; font-weight:bold;">{{ invoice.paid_amount|floatformat:2 }} د.ل</span>
+      </div>
+      <div class="bottom-row">
+        <span>المتبقي:</span>
+        <span style="font-weight:bold; {% if invoice.remaining_amount > 0 %}color:#dc2626;{% else %}color:#16a34a;{% endif %}">
+          {{ invoice.remaining_amount|floatformat:2 }} د.ل
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="terms-section">
+    <div class="terms-header">بنود العقد</div>
+    <ol class="terms-list">
+      <li>يتم تأكيد الحجز بعد دفع عربون يعادل 50% من قيمة الإيجار.</li>
+      <li>العربون المدفوع غير قابل للاسترجاع في حالة الإلغاء أو عدم الحضور.</li>
+      <li>لا يتم استبدال الفستان بفستان آخر تحت أي ظرف.</li>
+      <li>يتم استلام الفستان في الوقت المحدد من قبل البوتيك وسيكون في نفس اليوم بعد الساعة 12 ظهراً، ويوم الجمعة بعد الساعة 4 مساءً.</li>
+      <li>يجب إرجاع الفستان في اليوم الثاني قبل الساعة 10:00 صباحاً ويوم الجمعة قبل الساعة 4:00 عصراً وفي حالة التأخر يحسب يوم إضافي وفق سياسة البوتيك التي لا يتم أجار 24 ساعة.</li>
+      <li>في حال تأخير المستأجر عن موعد الإرجاع يلتزم المستأجر بدفع غرامة مالية بنفس قيمة إيجار الفستان.</li>
+      <li>يلتزم المستأجر بالمحافظة على الفستان وإعادته بالحالة التي تم استلامه بها والتأكد من سلامة الفستان قبل المعادة به ويتحمل كامل المسؤولية عن أي تلف أو تمزق أو فقدان أو بقع أو أضرار تلحق بالفستان خلال فترة الإيجار.</li>
+      <li>يحق للبوتيك المطالبة بقيمة الإصلاح أو التعويض المناسب عن أي ضرر يلحق بالفستان نتيجة سوء الاستخدام علماً بأن غرامة عدم إرجاع العلاقة 5 دينار، وغرامة الغلاف 20 دينار.</li>
+      <li>يلتزم المستأجر إحضار جواز السفر عند استلام الفستان.</li>
+    </ol>
+
+    <div class="declaration-grid">
+      <div class="declaration-box">
+        <div class="declaration-title">إقرار المستأجر</div>
+        <div class="declaration-text">أقر بأنني اطلعت على جميع الشروط والأحكام المذكورة أعلاه وأوافق على الالتزام بها كاملة.</div>
+        <div class="field-row">
+          <span>اسم المستأجر:</span>
+          <span class="dots-line">{% if invoice.customer %}{{ invoice.customer.full_name }}{% endif %}</span>
+        </div>
+        <div class="field-row">
+          <span>رقم الهاتف:</span>
+          <span class="dots-line">{% if invoice.customer %}{{ invoice.customer.phone }}{% endif %}</span>
+        </div>
+        <div class="field-row">
+          <span>التوقيع:</span>
+          <span class="dots-line"></span>
+        </div>
+        <div class="field-row">
+          <span>التاريخ:</span>
+          <span class="dots-line">{{ invoice.created_at|date:"Y-m-d" }}</span>
+        </div>
+      </div>
+
+      <div class="declaration-box">
+        <div class="declaration-title">إقرار البوتيك</div>
+        <div class="declaration-text">أقر بأني أستلم الفستان بصورة جيدة والمحافظة على جواز السفر طول فترة الإيجار.</div>
+        <div class="field-row" style="margin-top:20px;">
+          <span>توقيع مسؤولة المنظومة:</span>
+          <span class="dots-line"></span>
+        </div>
+        <div class="field-row" style="margin-top:8px;">
+          <span>رقم المحل:</span>
+          <strong>0911330708</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="agreement-footer">و على هذا تم الاتفاق</div>
   </div>
 
 </div>
 
-<table class="products-table">
-  <thead>
-    <tr>
-      <th style="width:30px;">#</th>
-      <th style="text-align:right;">الفستان</th>
-      <th style="width:70px;">الأيام</th>
-      <th style="width:80px;">سعر الوحدة</th>
-      <th style="width:90px;">الإجمالي</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for item in invoice.items.all %}
-    <tr>
-      <td>{{ forloop.counter }}</td>
-      <td style="text-align:right;">{{ item.product.name }}</td>
-      <td>{{ item.days|default:1 }}</td>
-      <td>{{ item.unit_price|floatformat:2 }}</td>
-      <td>{{ item.total_price|floatformat:2 }}</td>
-    </tr>
-    {% endfor %}
-    {% if penalties %}
-    <tr class="penalty-row">
-      <td colspan="4" style="text-align:left;font-weight:bold;">الغرامات</td>
-      <td></td>
-    </tr>
-    {% for penalty in penalties %}
-    <tr class="penalty-row">
-      <td colspan="3" style="text-align:right;">{{ penalty.reason }}</td>
-      <td></td>
-      <td>{{ penalty.amount|floatformat:2 }}</td>
-    </tr>
-    {% endfor %}
-    {% endif %}
-  </tbody>
-</table>
-
-<div class="bottom-grid">
-  <div class="bottom-box">
-    <div class="bottom-box-title">معلومات إضافية</div>
-  <div class="bottom-row">
-    <span>نوع الفاتورة</span>
-    <div class="text-success">{{ invoice.get_invoice_type_display }}</div>
-  </div>
-  <div class="bottom-row">
-    <span>الحالة</span>
-    <div class="text-success">{{ invoice.get_status_display }}</div>
-  </div>
-
-  {% if invoice.rent_end_date %}
-  <div class="bottom-row">
-    <span>تاريخ الانتهاء</span>
-    <div class="text-success">{{ invoice.rent_end_date|date:"Y-m-d" }}</div>
-  </div>
-  {% endif %}
-  {% if invoice.payment_method %}
-  <div class="bottom-row">
-  <span>طريقة الدفع</span>
-    <div class="text-success">{{ invoice.payment_method.name }}</div>
-    {% if invoice.payment_method.increase_percentage > 0 %}
-    <div class="subtitle">رسوم: {{ invoice.payment_method.increase_percentage }}%</div>
-    {% endif %}
-  </div>
-  {% endif %}
-    <div class="bottom-row">
-      <span>بطاقة الهوية</span>
-      <span class="text-success">{% if invoice.identity_verified %}تم الاستلام{% else %}لم يستلم{% endif %}</span>
-    </div>
-    {% if invoice.identity_verified_return %}
-    <div class="bottom-row">
-      <span>إرجاع بطاقة الهوية</span>
-      <span class="text-success">تم الإرجاع</span>
-    </div>
-    {% endif %}
-    {% if invoice.notes %}
-    <div class="notes-box" style="margin-top:6px;">
-      <strong>ملاحظات:</strong> {{ invoice.notes }}
-    </div>
-    {% endif %}
-  </div>
-
-  <div class="bottom-box">
-    <div class="bottom-box-title">إجمالي الفاتورة</div>
-    <div class="bottom-row">
-      <span>المجموع الفرعي</span>
-      <span>{{ invoice.total_amount|floatformat:2 }} د.ل</span>
-    </div>
-    {% if invoice.discount > 0 %}
-    <div class="bottom-row">
-      <span>الخصم</span>
-      <span class="text-danger">- {{ invoice.discount|floatformat:2 }} د.ل</span>
-    </div>
-    {% endif %}
-    {% if invoice.commission > 0 %}
-    <div class="bottom-row">
-      <span>العمولة</span>
-      <span class="text-warning">+ {{ invoice.commission|floatformat:2 }} د.ل</span>
-    </div>
-    {% endif %}
-
-       {% if invoice.extra_amount > 0 %}
-    <div class="bottom-row">
-      <span>الرسوم الإضافية</span>
-      <span class="text-warning">+ {{ invoice.extra_amount|floatformat:2 }} د.ل</span>
-    </div>
-    {% endif %}
-    <div class="bottom-row total">
-      <span>الإجمالي</span>
-      <span style="font-size:18px;">{{ invoice.total_amount|floatformat:2 }} د.ل</span>
-    </div>
-    <div class="bottom-row">
-      <span>المدفوع</span>
-      <span class="text-success">{{ invoice.paid_amount|floatformat:2 }} د.ل</span>
-    </div>
-    <div class="bottom-row">
-      <span>المتبقي</span>
-      <span class="{% if invoice.remaining_amount > 0 %}text-danger{% else %}text-success{% endif %}">
-        {{ invoice.remaining_amount|floatformat:2 }} د.ل
-      </span>
-    </div>
-  </div>
+<!-- أزرار الطباعة والتحكم -->
+<div class="no-print" style="text-align:center; margin-top:15px; margin-bottom: 20px;">
+  <button onclick="window.print();" style="padding: 8px 20px; background-color: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">طباعة</button>
+  <button onclick="window.location.href='{% url 'reservations_list' %}'" style="padding: 8px 20px; background-color: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">رجوع</button>
 </div>
 
-<div class="footer">
-  <div>شكراً لتعاملكم معنا</div>
-</div>
-</div>
-
-<div class="no-print" style="text-align:center;margin-top:20px;">
-  <button onclick="window.print();" class="btn btn-primary">طباعة</button>
-<button onclick="window.location.href='{% url 'reservations_list' %}'" class="btn btn-outline">رجوع</button>
-</div>
 </body>
 </html>
