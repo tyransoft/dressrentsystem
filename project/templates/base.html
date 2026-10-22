@@ -7,8 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>{% block title %}ZEE ZEE BOTIQ{% endblock %}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<link rel="manifest" href="/static/pwa/manifest.json">
-<meta name="theme-color" content="#2563EB">    
+<link rel="manifest" href="/static/pwd/manifest.json">
+<meta name="theme-color" content="#3f4042">    
   <style>
 :root {
     --primary: #D4AF37;
@@ -1267,68 +1267,29 @@ input[type="date"] {
     direction: rtl;
 }
 </style>
-
-<button id="installApp" type="button">
-    📲 تثبيت المنظومة
+<button id="installApp" hidden>
+    تثبيت المنظومة على الهاتف
 </button>
 
-<div id="installHelp">
-    <button id="closeInstallHelp" type="button">إغلاق ✕</button>
-    <h3>إضافة المنظومة إلى الشاشة الرئيسية</h3>
-    <p id="installInstructions"></p>
-</div>
-
 <script>
-(() => {
-    let installPrompt = null;
+let installPrompt;
+const installButton = document.getElementById("installApp");
 
-    const button = document.getElementById("installApp");
-    const help = document.getElementById("installHelp");
-    const instructions = document.getElementById("installInstructions");
+window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    installPrompt = event;
+    installButton.hidden = false;
+});
 
-    const isStandalone =
-        window.matchMedia("(display-mode: standalone)").matches ||
-        window.navigator.standalone === true;
+installButton.addEventListener("click", async () => {
+    if (!installPrompt) return;
 
-    if (isStandalone) {
-        button.style.display = "none";
-        return;
-    }
+    installPrompt.prompt();
+    await installPrompt.userChoice;
 
-    window.addEventListener("beforeinstallprompt", (event) => {
-        event.preventDefault();
-        installPrompt = event;
-    });
-
-    button.addEventListener("click", async () => {
-        if (installPrompt) {
-            installPrompt.prompt();
-            await installPrompt.userChoice;
-            installPrompt = null;
-            return;
-        }
-
-        const ua = navigator.userAgent;
-
-        if (/android/i.test(ua)) {
-            instructions.textContent =
-                "افتح قائمة Chrome (⋮)، وابحث عن «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية». إذا لم يظهر الخيار، تأكد من إعدادات تثبيت الموقع.";
-        } else if (/iphone|ipad|ipod/i.test(ua)) {
-            instructions.textContent =
-                "افتح الرابط في Safari، واضغط زر المشاركة، ثم اختر «إضافة إلى الشاشة الرئيسية».";
-        } else {
-            instructions.textContent =
-                "افتح قائمة المتصفح وابحث عن خيار تثبيت التطبيق أو إضافة الموقع إلى الشاشة الرئيسية.";
-        }
-
-        help.style.display = "block";
-    });
-
-    document.getElementById("closeInstallHelp")
-        .addEventListener("click", () => {
-            help.style.display = "none";
-        });
-})();
+    installPrompt = null;
+    installButton.hidden = true;
+});
 </script>
 
 {% block extra_js %}{% endblock %}
