@@ -1267,31 +1267,53 @@ input[type="date"] {
     direction: rtl;
 }
 </style>
-<button id="installApp" hidden>
-    تثبيت المنظومة على الهاتف
+<button id="installApp" style="display: none;">
+   تثبيت  
 </button>
 
 <script>
-let installPrompt;
+let installPrompt = null;
 const installButton = document.getElementById("installApp");
 
 window.addEventListener("beforeinstallprompt", (event) => {
-    event.preventDefault();
-    installPrompt = event;
-    installButton.hidden = false;
+  event.preventDefault();
+  
+  installPrompt = event;
+  
+  installButton.style.display = "block";
 });
 
 installButton.addEventListener("click", async () => {
-    if (!installPrompt) return;
+  if (!installPrompt) return;
 
-    installPrompt.prompt();
-    await installPrompt.userChoice;
+  installPrompt.prompt();
 
-    installPrompt = null;
-    installButton.hidden = true;
+  const { outcome } = await installPrompt.userChoice;
+  
+  if (outcome === 'accepted') {
+    console.log('قام المستخدم بتثبيت التطبيق');
+  }
+
+  installPrompt = null;
+  installButton.style.display = "none";
 });
-</script>
 
+window.addEventListener("appinstalled", () => {
+  installButton.style.display = "none";
+  installPrompt = null;
+  console.log("تم تثبيت الـ PWA بنجاح");
+});
+
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+
+if (isIOS && !isStandalone) {
+  installButton.style.display = "block";
+  installButton.addEventListener("click", () => {
+    alert("للتثبيت على الآيفون:\n1. اضغط على زر المشاركة (Share) أسفل الشاشة.\n2. اختر 'إضافة إلى الشاشة الرئيسية' (Add to Home Screen).");
+  });
+}
+</script>
 {% block extra_js %}{% endblock %}
 </body>
 </html>

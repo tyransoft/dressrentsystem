@@ -1,6 +1,7 @@
 {
   "name": "zee zee ",
   "short_name": "الفساتين",
+  "id": "/dashboard/",
   "start_url": "/dashboard/",
   "scope": "/",
   "display": "standalone",
