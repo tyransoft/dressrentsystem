@@ -7,6 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>{% block title %}ZEE ZEE BOTIQ{% endblock %}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="manifest" href="/static/pwa/manifest.json">
+<meta name="theme-color" content="#2563EB">    
   <style>
 :root {
     --primary: #D4AF37;
@@ -1235,7 +1237,30 @@ input[type="date"] {
 
 })();
 </script>
+<button id="installApp" hidden>
+    تثبيت المنظومة على الهاتف
+</button>
 
+<script>
+let installPrompt;
+const installButton = document.getElementById("installApp");
+
+window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    installPrompt = event;
+    installButton.hidden = false;
+});
+
+installButton.addEventListener("click", async () => {
+    if (!installPrompt) return;
+
+    installPrompt.prompt();
+    await installPrompt.userChoice;
+
+    installPrompt = null;
+    installButton.hidden = true;
+});
+</script>
 {% block extra_js %}{% endblock %}
 </body>
 </html>
