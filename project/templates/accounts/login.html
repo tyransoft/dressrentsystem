@@ -25,6 +25,19 @@
     .c2 { width: 200px; height: 200px; bottom: -60px; left: -60px; }
     .c3 { width: 150px; height: 150px; bottom: 100px; right: 10%; background: rgba(255,255,255,0.03); }
   </style>
+  <link rel="manifest" href="/static/pwa/manifest.json">
+<meta name="theme-color" content="#3f4042">    
+ <script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    try {
+      await navigator.serviceWorker.register('/sew.js');
+    } catch (error) {
+      console.error('Service Worker registration failed:', error);
+    }
+  });
+}
+</script>
 </head>
 <body>
 <div class="decor-circles">
