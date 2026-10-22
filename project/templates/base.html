@@ -1237,30 +1237,100 @@ input[type="date"] {
 
 })();
 </script>
-<button id="installApp" hidden>
-    تثبيت المنظومة على الهاتف
+
+<style>
+#installApp {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 99999;
+    padding: 12px 18px;
+    border: 0;
+    border-radius: 12px;
+    background: #2563eb;
+    color: white;
+    font-size: 15px;
+    cursor: pointer;
+}
+#installHelp {
+    display: none;
+    position: fixed;
+    bottom: 80px;
+    right: 16px;
+    left: 16px;
+    z-index: 99999;
+    background: white;
+    color: #222;
+    padding: 18px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px #0003;
+    direction: rtl;
+}
+</style>
+
+<button id="installApp" type="button">
+    📲 تثبيت المنظومة
 </button>
 
+<div id="installHelp">
+    <button id="closeInstallHelp" type="button">إغلاق ✕</button>
+    <h3>إضافة المنظومة إلى الشاشة الرئيسية</h3>
+    <p id="installInstructions"></p>
+</div>
+
 <script>
-let installPrompt;
-const installButton = document.getElementById("installApp");
+(() => {
+    let installPrompt = null;
 
-window.addEventListener("beforeinstallprompt", (event) => {
-    event.preventDefault();
-    installPrompt = event;
-    installButton.hidden = false;
-});
+    const button = document.getElementById("installApp");
+    const help = document.getElementById("installHelp");
+    const instructions = document.getElementById("installInstructions");
 
-installButton.addEventListener("click", async () => {
-    if (!installPrompt) return;
+    const isStandalone =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone === true;
 
-    installPrompt.prompt();
-    await installPrompt.userChoice;
+    if (isStandalone) {
+        button.style.display = "none";
+        return;
+    }
 
-    installPrompt = null;
-    installButton.hidden = true;
-});
+    window.addEventListener("beforeinstallprompt", (event) => {
+        event.preventDefault();
+        installPrompt = event;
+    });
+
+    button.addEventListener("click", async () => {
+        if (installPrompt) {
+            installPrompt.prompt();
+            await installPrompt.userChoice;
+            installPrompt = null;
+            return;
+        }
+
+        const ua = navigator.userAgent;
+
+        if (/android/i.test(ua)) {
+            instructions.textContent =
+                "افتح قائمة Chrome (⋮)، وابحث عن «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية». إذا لم يظهر الخيار، تأكد من إعدادات تثبيت الموقع.";
+        } else if (/iphone|ipad|ipod/i.test(ua)) {
+            instructions.textContent =
+                "افتح الرابط في Safari، واضغط زر المشاركة، ثم اختر «إضافة إلى الشاشة الرئيسية».";
+        } else {
+            instructions.textContent =
+                "افتح قائمة المتصفح وابحث عن خيار تثبيت التطبيق أو إضافة الموقع إلى الشاشة الرئيسية.";
+        }
+
+        help.style.display = "block";
+    });
+
+    document.getElementById("closeInstallHelp")
+        .addEventListener("click", () => {
+            help.style.display = "none";
+        });
+})();
 </script>
+
 {% block extra_js %}{% endblock %}
 </body>
 </html>
