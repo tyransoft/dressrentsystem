@@ -9,6 +9,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <link rel="manifest" href="/static/pwa/manifest.json">
 <meta name="theme-color" content="#3f4042">    
+ <script>
+        if('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('/static/pwa/sw.js');
+        };
+      </script>
   <style>
 :root {
     --primary: #D4AF37;
@@ -1238,95 +1243,6 @@ input[type="date"] {
 })();
 </script>
 
-<style>
-#installApp {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 99999;
-    padding: 12px 18px;
-    border: 0;
-    border-radius: 12px;
-    background: #2563eb;
-    color: white;
-    font-size: 15px;
-    cursor: pointer;
-}
-#installHelp {
-    display: none;
-    position: fixed;
-    bottom: 80px;
-    right: 16px;
-    left: 16px;
-    z-index: 99999;
-    background: white;
-    color: #222;
-    padding: 18px;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px #0003;
-    direction: rtl;
-}
-</style>
-<button id="installApp" style="display: none;">
-   تثبيت  
-</button>
-
-<script>
-let installPrompt = null;
-const installButton = document.getElementById("installApp");
-
-window.addEventListener("beforeinstallprompt", (event) => {
-  event.preventDefault();
-  
-  installPrompt = event;
-  
-  installButton.style.display = "block";
-});
-
-installButton.addEventListener("click", async () => {
-  if (!installPrompt) return;
-
-  installPrompt.prompt();
-
-  const { outcome } = await installPrompt.userChoice;
-  
-  if (outcome === 'accepted') {
-    console.log('قام المستخدم بتثبيت التطبيق');
-  }
-
-  installPrompt = null;
-  installButton.style.display = "none";
-});
-
-window.addEventListener("appinstalled", () => {
-  installButton.style.display = "none";
-  installPrompt = null;
-  console.log("تم تثبيت الـ PWA بنجاح");
-});
-
-const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-
-if (isIOS && !isStandalone) {
-  installButton.style.display = "block";
-  installButton.addEventListener("click", () => {
-    alert("للتثبيت على الآيفون:\n1. اضغط على زر المشاركة (Share) أسفل الشاشة.\n2. اختر 'إضافة إلى الشاشة الرئيسية' (Add to Home Screen).");
-  });
-}
-</script>
-<script>
-if ("serviceWorker" in navigator) {
-    window.addEventListener("load", function () {
-        navigator.serviceWorker.register("/static/pwa/service-worker.js")
-            .then(function (registration) {
-                console.log("Service Worker registered:", registration.scope);
-            })
-            .catch(function (error) {
-                console.error("Service Worker registration failed:", error);
-            });
-    });
-}
-</script>
 {% block extra_js %}{% endblock %}
 </body>
 </html>
