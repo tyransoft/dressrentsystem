@@ -10,10 +10,15 @@
 <link rel="manifest" href="/static/pwa/manifest.json">
 <meta name="theme-color" content="#3f4042">    
  <script>
-        if('serviceWorker' in navigator) {
-          navigator.serviceWorker.register('/static/pwa/sew.js');
-        };
-      </script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    try {
+      await navigator.serviceWorker.register('/sew.js');
+    } catch (error) {
+      console.error('Service Worker registration failed:', error);
+    }
+  });
+}
   <style>
 :root {
     --primary: #D4AF37;
