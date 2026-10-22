@@ -1314,6 +1314,19 @@ if (isIOS && !isStandalone) {
   });
 }
 </script>
+<script>
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+        navigator.serviceWorker.register("/static/pwa/service-worker.js")
+            .then(function (registration) {
+                console.log("Service Worker registered:", registration.scope);
+            })
+            .catch(function (error) {
+                console.error("Service Worker registration failed:", error);
+            });
+    });
+}
+</script>
 {% block extra_js %}{% endblock %}
 </body>
 </html>
