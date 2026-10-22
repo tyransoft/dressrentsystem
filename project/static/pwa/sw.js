@@ -1,9 +1,16 @@
 self.addEventListener('install', function(event) {
   event.waitUntil(
     caches.open('sw-cache').then(function(cache) {
-      return cache.add('base.html');
+      return cache.addAll([
+        '/dashboard/',
+      ]).catch(err => console.log('Cache add error:', err));
     })
   );
+  self.skipWaiting();
+});
+
+self.addEventListener('activated', function(event) {
+  event.waitUntil(self.clients.claim());
 });
 
 self.addEventListener('fetch', function(event) {
