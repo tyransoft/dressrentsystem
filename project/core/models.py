@@ -581,25 +581,43 @@ class Invoice(models.Model):
         return self.invoice_number
 
     @staticmethod
-    def generate_invoice_number():
-        today = timezone.now()
-        year = today.strftime('%Y')
-        month = today.strftime('%m')
-        day = today.strftime('%d')
-        last_invoice = Invoice.objects.filter(
-            created_at__year=today.year,
-            created_at__month=today.month,
-            created_at__day=today.day
-        ).order_by('-created_at').first()
-        
-        if last_invoice:
-            last_number = int(last_invoice.invoice_number.split('-')[-1])
-            new_number = last_number + 1
-        else:
-            new_number = 1
-        
-        return f"{year}-{month}-{day}-{new_number:03d}"
+    def generate_invoice_number(created_at=None):
+        from django.utils import timezone
+        from datetime import datetime
 
+        if created_at is None:
+                created_at = timezone.now()
+
+        if isinstance(created_at, str):
+                created_at = datetime.strptime(created_at, '%Y-%m-%d')
+
+        date_prefix = created_at.strftime('%Y-%m-%d')
+
+        invoices = Invoice.objects.filter(
+                created_at__date=date_prefix,
+                invoice_number__startswith=f'{date_prefix}-'
+        ).values_list('invoice_number', flat=True)
+
+        last_number = 0
+
+        for number in invoices:
+                try:
+                        sequence = int(number.rsplit('-', 1)[1])
+                        last_number = max(last_number, sequence)
+                except (ValueError, IndexError):
+                        continue
+
+        new_number = last_number + 1
+
+        while True:
+                invoice_number = f'{date_prefix}-{new_number:03d}'
+
+                if not Invoice.objects.filter(
+                        invoice_number=invoice_number
+                ).exists():
+                        return invoice_number
+
+                new_number += 1
     @staticmethod
     def check_product_availability(product, start_date, end_date, exclude_invoice=None):
 
@@ -630,7 +648,7 @@ class Invoice(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.invoice_number:
-            self.invoice_number = self.generate_invoice_number()
+            self.invoice_number = self.generate_invoice_number(self.created_at)
         
         
        
