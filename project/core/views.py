@@ -1379,7 +1379,7 @@ def create_invoice(request):
                         if product.status == Dstatus.SOLD:
                             messages.error(request, f'المنتج {product.name} تم بيعه ولا يمكن تأجيره')
                             return redirect('invoice_list')
-                        if product.category.name == 'خدمة':
+                        if product.category and product.category.name == 'خدمة':
                             messages.error(request, f'المنتج {product.name}  لا يمكن تأجيره')
 
                             return redirect('invoice_list')
@@ -1511,7 +1511,7 @@ def create_invoice(request):
                         messages.error(request, f'المنتج {product.name} مؤجر حالياً ولا يمكن بيعه')
                         return redirect('invoice_list')
 
-                    if product.category.name != 'خدمة':
+                    if product.category and product.category.name != 'خدمة':
 
                        product.status = Dstatus.SOLD
                     product.save()
