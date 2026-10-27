@@ -1568,6 +1568,10 @@ if (!createdDate) {
     showToast('الرجاء تحديد تاريخ الإضافة', 'error');
     return;
 }
+
+document.getElementById('form_created_date').value = createdDate;
+
+
 var container = document.getElementById('form-products-container');
 container.innerHTML = '';
 Object.values(cart).forEach(function(p) {
