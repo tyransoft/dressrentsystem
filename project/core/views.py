@@ -1537,6 +1537,12 @@ def create_invoice(request):
             if invoice.customer and invoice.remaining_amount > Decimal('0'):
                 invoice.customer.debt_balance += invoice.remaining_amount
                 invoice.customer.save()
+            if invoice.paid_amount > invoice.total_amount:
+                invoice.delete()
+                
+                messages.error(request, f'لايمكن ان يكون المبلغ المدفوع اعلي من الاجمالي')
+                return redirect('invoice_list')
+
             
             invoice.save()
             
