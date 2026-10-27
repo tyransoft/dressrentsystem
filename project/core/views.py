@@ -1405,9 +1405,17 @@ def create_invoice(request):
             is_cash_customer = data.get('is_cash_customer', '0') == '1'
             date =data.get('created_date')
             if date:
-                invoice.created_at = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
-            else:
-                invoice.created_at = timezone.now()    
+              try:
+                 selected_date = datetime.strptime(date, '%Y-%m-%d').date()
+
+                 invoice.created_at = timezone.make_aware(
+                  datetime.combine(selected_date, datetime.min.time()),
+                  timezone.get_current_timezone()
+                )
+
+              except ValueError:
+                  messages.error(request, 'صيغة تاريخ الإضافة غير صحيحة')
+                  return redirect('invoice_list')  
             if is_cash_customer:
                 invoice.customer = None
             elif customer_id:
