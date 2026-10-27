@@ -1685,17 +1685,16 @@ def cancel_invoice(request, invoice_id):
     
    
     if request.method == 'POST':
-        try:
-            
+        try:  
             invoice.delete()
             
             messages.success(request, f'تم إلغاء الفاتورة  بنجاح')
             return redirect('invoice_list')
-            
-        except Exception as e:
-            messages.error(request, f'حدث خطأ: {str(e)}')
-            return redirect('reservation_detail', invoice_id=invoice.id)
-    
+        except:   
+                
+            messages.error(request, f'لم يتم الالغاء')
+            return redirect('invoice_list')
+
     context = {
         'invoice': invoice,
     }
