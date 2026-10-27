@@ -10,7 +10,23 @@
     <form method="post">
       {% csrf_token %}
       <div class="form-group"><label class="form-label">{{ form.full_name.label }} <span style="color:red;">*</span></label>{{ form.full_name }}</div>
-      <div class="form-group"><label class="form-label">{{ form.phone.label }} <span style="color:red;">*</span></label>{{ form.phone }}</div>
+<div class="form-group">
+    <label class="form-label">
+        {{ form.phone.label }} <span style="color:red;">*</span>
+    </label>
+
+    {{ form.phone }}
+
+    <small id="phone-error" style="color:red; display:none; margin-top:5px;">
+        رقم الهاتف يجب أن يبدأ بـ 09 ويتكون من 10 أرقام، مثال: 0912345678
+    </small>
+
+    {% for error in form.phone.errors %}
+        <small style="color:red; display:block; margin-top:5px;">
+            {{ error }}
+        </small>
+    {% endfor %}
+</div>
       <div class="form-check" style="margin-bottom:16px;">{{ form.is_active }} <label class="form-label" style="display:inline;">{{ form.is_active.label }}</label></div>
       <div style="display:flex;gap:10px;">
         <button type="submit" class="btn btn-primary">حفظ</button>
@@ -20,4 +36,46 @@
   </div>
 </div>
 
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const phone = document.getElementById('{{ form.phone.id_for_label }}');
+    const error = document.getElementById('phone-error');
+    const form = phone.closest('form');
+
+    function validatePhone() {
+        const value = phone.value.trim();
+        const valid = /^09[0-9]{8}$/.test(value);
+
+        if (value === '') {
+            error.style.display = 'none';
+            phone.setCustomValidity('');
+            return false;
+        }
+
+        if (!valid) {
+            error.style.display = 'block';
+            phone.setCustomValidity(
+                'يجب أن يبدأ الرقم بـ 09 ويتكون من 10 أرقام'
+            );
+            return false;
+        }
+
+        error.style.display = 'none';
+        phone.setCustomValidity('');
+        return true;
+    }
+
+    phone.addEventListener('input', validatePhone);
+
+    form.addEventListener('submit', function (event) {
+        if (!validatePhone()) {
+            event.preventDefault();
+            phone.reportValidity();
+        }
+    });
+});
+</script>
+{% endblock %}
 {% endblock %}

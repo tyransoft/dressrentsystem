@@ -281,14 +281,27 @@ class RepairAndCleanForm(forms.ModelForm):
             raise forms.ValidationError('التكلفة لا يمكن أن تكون سالبة')
         return total_cost
 
+
 class CustomerForm(forms.ModelForm):
     class Meta:
         model = Customer
         fields = ['full_name', 'phone', 'is_active']
         widgets = {
-            'full_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'phone': forms.TextInput(attrs={'class': 'form-control'}),
-            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'full_name': forms.TextInput(attrs={
+                'class': 'form-control',
+            }),
+            'phone': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '0912345678',
+                'maxlength': '10',
+                'minlength': '10',
+                'pattern': r'09[0-9]{8}',
+                'title': 'يجب أن يبدأ الرقم بـ 09 ويتكون من 10 أرقام',
+                'inputmode': 'numeric',
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+            }),
         }
         labels = {
             'full_name': 'الاسم الكامل',
@@ -296,6 +309,17 @@ class CustomerForm(forms.ModelForm):
             'is_active': 'نشط',
         }
 
+    def clean_phone(self):
+        phone = self.cleaned_data.get('phone', '').strip()
+
+        
+        if len(phone) != 10 or not phone.startswith('09'):
+            raise forms.ValidationError(
+                'رقم الهاتف غير صحيح. يجب أن يبدأ بـ 09 ويتكون من 10 أرقام، '
+                'مثال: 0912345678'
+            )
+
+        return phone
 
 
 

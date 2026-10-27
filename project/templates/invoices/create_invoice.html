@@ -923,7 +923,6 @@ document.addEventListener('DOMContentLoaded', function() {
     var today = new Date().toISOString().split('T')[0];
     
     document.getElementById('rent_start_date_input').value = today;
-    document.getElementById('rent_start_date_input').min = today;
     document.getElementById('rent_end_date_input').min = today;
  updateRentDates();
 checkAvailability();   
