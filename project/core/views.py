@@ -2994,19 +2994,21 @@ def provider_list(request):
     elif filter_type != 'today':
         end_date = None
 
-    providers_qs = repairandcleanprovider.objects.all().prefetch_related('services', 'payments')
+    providers_qs = repairandcleanprovider.objects.all().prefetch_related(
+        'services', 'payments'
+    )
 
     # فلترة المزودين: من لديه خدمة أو دفعة ضمن الفترة
     if start_date and end_date:
         provider_ids = []
         for provider in providers_qs:
             services = provider.services.filter(
-                created_at__date__gte=start_date,
-                created_at__date__lte=end_date
+                created_at__gte=start_date,
+                created_at__lte=end_date
             )
             payments = provider.payments.filter(
-                payment_date__date__gte=start_date,
-                payment_date__date__lte=end_date
+                payment_date__gte=start_date,
+                payment_date__lte=end_date
             )
             if services.exists() or payments.exists():
                 provider_ids.append(provider.id)
@@ -3014,7 +3016,6 @@ def provider_list(request):
 
     providers = list(providers_qs)
 
-    # ===== حساب الإحصائيات لكل مزود حسب الفلتر =====
     total_services = 0
     total_paid = 0
     total_pending = 0
@@ -3026,21 +3027,33 @@ def provider_list(request):
 
         if start_date and end_date:
             services = services.filter(
-                created_at__date__gte=start_date,
-                created_at__date__lte=end_date
+                created_at__gte=start_date,
+                created_at__lte=end_date
             )
             payments = payments.filter(
-                payment_date__date__gte=start_date,
-                payment_date__date__lte=end_date
+                payment_date__gte=start_date,
+                payment_date__lte=end_date
             )
 
-        provider.filtered_services_count = services.count()
-        provider.filtered_services_cost = sum(s.total_cost or 0 for s in services)
-        provider.filtered_paid = sum(p.amount for p in payments if p.status == 'paid')
-        provider.filtered_pending = sum(p.amount for p in payments if p.status == 'pending')
-        provider.filtered_remaining = sum(
-            (s.get_remaining_amount() or 0) for s in services
+        services_cost = sum(s.total_cost or 0 for s in services)
+        services_paid = sum(s.paid_amount or 0 for s in services)
+
+        general_paid = sum(
+            p.amount for p in payments
+            if p.status == 'paid' and p.service_id is None
         )
+        general_pending = sum(
+            p.amount for p in payments
+            if p.status == 'pending' and p.service_id is None
+        )
+
+        provider.filtered_services_count = services.count()
+        provider.filtered_services_cost = services_cost
+        provider.filtered_paid = services_paid + general_paid
+        provider.filtered_pending = general_pending
+
+        remaining = services_cost - services_paid - general_paid
+        provider.filtered_remaining = remaining if remaining > 0 else 0
 
         total_services += provider.filtered_services_count
         total_paid += provider.filtered_paid
@@ -3059,7 +3072,6 @@ def provider_list(request):
         'today': today,
     }
     return render(request, 'providers/provider_list.html', context)
-
 
 @login_required
 def provider_detail(request, pk):
