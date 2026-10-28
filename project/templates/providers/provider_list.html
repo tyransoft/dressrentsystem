@@ -404,10 +404,10 @@ tbody td {
                     <td>{{ forloop.counter }}</td>
                     <td class="fw-semibold">{{ provider.name }}</td>
                     <td>{{ provider.phone|default:'-' }}</td>
-                    <td>{{ provider.get_total_services }}</td>
-                    <td>{{ provider.get_total_services_cost|floatformat:0 }} د.ل</td>
-                    <td class="amount-paid">{{ provider.get_total_paid|floatformat:0 }} د.ل</td>
-                    <td class="amount-remaining">{{ provider.get_total_remaining|floatformat:0 }} د.ل</td>
+<td>{{ provider.filtered_services_count }}</td>
+<td>{{ provider.filtered_services_cost|floatformat:0 }} د.ل</td>
+<td class="amount-paid">{{ provider.filtered_paid|floatformat:0 }} د.ل</td>
+<td class="amount-remaining">{{ provider.filtered_remaining|floatformat:0 }} د.ل</td>
                     <td>
                         <div class="actions-cell">
                             <a href="{% url 'provider_detail' provider.pk %}" class="btn-action btn-view">عرض</a>
@@ -439,19 +439,23 @@ tbody td {
                 </div>
                 <div class="card-item">
                     <span class="label">الخدمات</span>
-                    <span class="value">{{ provider.get_total_services }}</span>
+<span class="value">{{ provider.filtered_services_count }}</span>
+
                 </div>
                 <div class="card-item">
                     <span class="label">إجمالي التكلفة</span>
-                    <span class="value">{{ provider.get_total_services_cost|floatformat:0 }} د.ل</span>
+                    <span class="value">{{ provider.filtered_services_cost|floatformat:0 }} د.ل</span>
+
                 </div>
                 <div class="card-item">
                     <span class="label">المدفوع</span>
-                    <span class="value paid">{{ provider.get_total_paid|floatformat:0 }} د.ل</span>
+                    <span class="value paid">{{ provider.filtered_paid|floatformat:0 }} د.ل</span>
+
                 </div>
                 <div class="card-item">
                     <span class="label">المتبقي</span>
-                    <span class="value remaining">{{ provider.get_total_remaining|floatformat:0 }} د.ل</span>
+                    <span class="value remaining">{{ provider.filtered_remaining|floatformat:0 }} د.ل</span>
+
                 </div>
             </div>
             <div class="card-footer">

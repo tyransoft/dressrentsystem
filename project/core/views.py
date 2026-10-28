@@ -2967,60 +2967,89 @@ def admin_daily_report_print(request):
     }
     return render(request, 'admin_daily_report_print.html', context)
 
+
 @login_required
 def provider_list(request):
     today = timezone.now().date()
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
     filter_type = request.GET.get('filter_type')
-    
+
     if filter_type == 'today':
         start_date = today
         end_date = today
     elif start_date:
-        start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        try:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        except ValueError:
+            start_date = None
     else:
         start_date = None
-    
+
     if end_date:
-        end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-    elif not filter_type == 'today':
+        try:
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+        except ValueError:
+            end_date = None
+    elif filter_type != 'today':
         end_date = None
-    
-    providers = repairandcleanprovider.objects.all().prefetch_related('services', 'payments')
-    
+
+    providers_qs = repairandcleanprovider.objects.all().prefetch_related('services', 'payments')
+
+    # فلترة المزودين: من لديه خدمة أو دفعة ضمن الفترة
     if start_date and end_date:
         provider_ids = []
-        for provider in providers:
-            services = provider.services.filter(created_at__gte=start_date, created_at__lte=end_date)
-            payments = provider.payments.filter(payment_date__gte=start_date, payment_date__lte=end_date)
+        for provider in providers_qs:
+            services = provider.services.filter(
+                created_at__date__gte=start_date,
+                created_at__date__lte=end_date
+            )
+            payments = provider.payments.filter(
+                payment_date__date__gte=start_date,
+                payment_date__date__lte=end_date
+            )
             if services.exists() or payments.exists():
                 provider_ids.append(provider.id)
-        providers = providers.filter(id__in=provider_ids)
-    
-    total_providers = providers.count()
-    
+        providers_qs = providers_qs.filter(id__in=provider_ids)
+
+    providers = list(providers_qs)
+
+    # ===== حساب الإحصائيات لكل مزود حسب الفلتر =====
     total_services = 0
     total_paid = 0
     total_pending = 0
     total_remaining = 0
-    
+
     for provider in providers:
         services = provider.services.all()
-        if start_date and end_date:
-            services = services.filter(created_at__gte=start_date, created_at__lte=end_date)
         payments = provider.payments.all()
+
         if start_date and end_date:
-            payments = payments.filter(payment_date__gte=start_date, payment_date__lte=end_date)
-        
-        total_services += services.count()
-        total_paid += sum(p.amount for p in payments.filter(status='paid'))
-        total_pending += sum(p.amount for p in payments.filter(status='pending'))
-        total_remaining += sum(service.get_remaining_amount() for service in services)
-    
+            services = services.filter(
+                created_at__date__gte=start_date,
+                created_at__date__lte=end_date
+            )
+            payments = payments.filter(
+                payment_date__date__gte=start_date,
+                payment_date__date__lte=end_date
+            )
+
+        provider.filtered_services_count = services.count()
+        provider.filtered_services_cost = sum(s.total_cost or 0 for s in services)
+        provider.filtered_paid = sum(p.amount for p in payments if p.status == 'paid')
+        provider.filtered_pending = sum(p.amount for p in payments if p.status == 'pending')
+        provider.filtered_remaining = sum(
+            (s.get_remaining_amount() or 0) for s in services
+        )
+
+        total_services += provider.filtered_services_count
+        total_paid += provider.filtered_paid
+        total_pending += provider.filtered_pending
+        total_remaining += provider.filtered_remaining
+
     context = {
         'providers': providers,
-        'total_providers': total_providers,
+        'total_providers': len(providers),
         'total_services': total_services,
         'total_paid': total_paid,
         'total_pending': total_pending,
