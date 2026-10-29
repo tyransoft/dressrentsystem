@@ -553,24 +553,79 @@ tbody td {
             value="{{ end_date }}"
         >
     </div>
-
     <button type="submit" class="btn-outline-gold">
         تطبيق الفلتر
     </button>
-    {% if start_date %}
-<a href="{% url 'print_invoices_by_start_date' %}?start_date={{ start_date }}" 
-   target="_blank" 
-   class="btn-outline-gold">
-    طباعة كشف  {{ start_date }}
-</a>
-{% endif %}
+<button type="button" class="btn-outline-gold" onclick="openPrintModal()">
+    <i class="fa-solid fa-print"></i> طباعة كشف
+</button>
 
     <a href="{% url 'reservations_list' %}"
        class="btn-outline-gold">
         إعادة تعيين
     </a>
 </form>
+<!-- ===== Modal الطباعة ===== -->
+<div id="printModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;align-items:center;justify-content:center;padding:15px;">
+    <div style="background:#fff;border-radius:14px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;">
+        <div style="padding:16px 20px;border-bottom:2px solid #f1f3f5;display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="margin:0;font-size:16px;font-weight:700;color:#1e293b;">
+                <i class="fa-solid fa-print" style="color:#D4AF37;margin-left:6px;"></i>
+                طباعة كشف
+            </h3>
+            <button type="button" onclick="closePrintModal()" style="background:none;border:none;font-size:24px;color:#6b7280;cursor:pointer;line-height:1;">×</button>
+        </div>
 
+        <div style="padding:20px;">
+            <!-- اختيار النوع -->
+            <div style="display:flex;gap:10px;margin-bottom:16px;">
+                <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 14px;border:2px solid #e5e7eb;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s;"
+                       id="modeDailyLabel">
+                    <input type="radio" name="print_mode" value="daily" checked onchange="onPrintModeChange()">
+                    <span>يومي</span>
+                </label>
+                <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 14px;border:2px solid #e5e7eb;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s;"
+                       id="modeMonthlyLabel">
+                    <input type="radio" name="print_mode" value="monthly" onchange="onPrintModeChange()">
+                    <span>شهري</span>
+                </label>
+            </div>
+
+            <!-- حقل يومي -->
+            <div id="dailyField">
+                <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">
+                    تاريخ بداية الإيجار
+                </label>
+                <input type="date" id="printDailyDate"
+                       style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;box-sizing:border-box;"
+                       value="{{ start_date|default:'' }}">
+                
+            </div>
+
+            <!-- حقل شهري -->
+            <div id="monthlyField" style="display:none;">
+                <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">
+                    الشهر
+                </label>
+                <input type="month" id="printMonthlyMonth"
+                       style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;box-sizing:border-box;"
+                       value="">
+                
+            </div>
+
+            <div style="display:flex;gap:10px;margin-top:20px;">
+                <button type="button" onclick="closePrintModal()"
+                        style="flex:1;padding:10px 0;background:#e5e7eb;color:#374151;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;">
+                    إلغاء
+                </button>
+                <button type="button" onclick="submitPrint()"
+                        style="flex:1;padding:10px 0;background:#D4AF37;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;">
+                    <i class="fa-solid fa-print"></i> طباعة
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
     <div class="table-responsive">
         <table>
             <thead>
@@ -971,5 +1026,66 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+
+function openPrintModal() {
+    document.getElementById('printModal').style.display = 'flex';
+    onPrintModeChange();
+}
+
+function closePrintModal() {
+    document.getElementById('printModal').style.display = 'none';
+}
+
+function onPrintModeChange() {
+    var mode = document.querySelector('input[name="print_mode"]:checked').value;
+    var dailyField = document.getElementById('dailyField');
+    var monthlyField = document.getElementById('monthlyField');
+    var dailyLabel = document.getElementById('modeDailyLabel');
+    var monthlyLabel = document.getElementById('modeMonthlyLabel');
+
+    if (mode === 'daily') {
+        dailyField.style.display = 'block';
+        monthlyField.style.display = 'none';
+        dailyLabel.style.borderColor = '#D4AF37';
+        dailyLabel.style.background = '#fef9e7';
+        monthlyLabel.style.borderColor = '#e5e7eb';
+        monthlyLabel.style.background = '#fff';
+    } else {
+        dailyField.style.display = 'none';
+        monthlyField.style.display = 'block';
+        monthlyLabel.style.borderColor = '#D4AF37';
+        monthlyLabel.style.background = '#fef9e7';
+        dailyLabel.style.borderColor = '#e5e7eb';
+        dailyLabel.style.background = '#fff';
+    }
+}
+
+function submitPrint() {
+    var mode = document.querySelector('input[name="print_mode"]:checked').value;
+    var value = '';
+
+    if (mode === 'daily') {
+        value = document.getElementById('printDailyDate').value;
+        if (!value) {
+            showToast('الرجاء تحديد التاريخ', 'error', 'خطأ');
+            return;
+        }
+    } else {
+        value = document.getElementById('printMonthlyMonth').value;
+        if (!value) {
+            showToast('الرجاء تحديد الشهر', 'error', 'خطأ');
+            return;
+        }
+    }
+
+    var url = "{% url 'print_invoices_by_start_date' %}?mode=" + encodeURIComponent(mode) + "&value=" + encodeURIComponent(value);
+    window.open(url, '_blank');
+    closePrintModal();
+}
+
+// إغلاق عند الضغط على الخلفية
+document.getElementById('printModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closePrintModal();
+});
 </script>
 {% endblock %}

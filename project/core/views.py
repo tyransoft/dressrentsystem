@@ -3761,22 +3761,44 @@ def penalty_delete(request, pk):
     return redirect('customers_detail', pk=customer.pk) if customer else redirect('customers_list')
 
 
+@login_required
 def print_invoices_by_start_date(request):
-    start_date = request.GET.get('start_date')
-    date_obj = parse_date(start_date) if start_date else None
     
-    if date_obj:
-        invoices = Invoice.objects.filter(rent_start_date=date_obj).select_related(
-            'customer'
-        ).prefetch_related(
-            'items__product'
-        ).order_by('id')
-    else:
-        invoices = Invoice.objects.none()
+    mode = request.GET.get('mode', 'daily').strip()
+    value = request.GET.get('value', '').strip()
+
+    invoices = Invoice.objects.none()
+    display_value = value
+
+    if mode == 'daily' and value:
+        date_obj = parse_date(value)
+        if date_obj:
+            invoices = Invoice.objects.filter(
+                rent_start_date=date_obj
+            ).select_related('customer').prefetch_related('items__product').order_by('id')
+            display_value = date_obj
+        else:
+            mode = 'daily'
+
+    elif mode == 'monthly' and value:
+        try:
+            year, month = value.split('-')
+            year = int(year); month = int(month)
+            if 1 <= month <= 12:
+                invoices = Invoice.objects.filter(
+                    rent_start_date__year=year,
+                    rent_start_date__month=month,
+                ).select_related('customer').prefetch_related('items__product').order_by('rent_start_date', 'id')
+                display_value = f'{year}-{month:02d}'
+            else:
+                mode = 'daily'
+        except (ValueError, AttributeError):
+            mode = 'daily'
 
     context = {
         'invoices': invoices,
-        'start_date': date_obj or start_date,
+        'mode': mode,
+        'value': display_value,
+        'start_date': display_value if mode == 'daily' else None,
     }
-    
     return render(request, 'invoices_by_start_date_print.html', context)

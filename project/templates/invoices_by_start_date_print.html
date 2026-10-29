@@ -5,7 +5,11 @@
 <html dir="rtl" lang="ar">
 <head>
     <meta charset="UTF-8">
-    <title>تقرير فواتير إيجار يوم {{ start_date|date:"Y-m-d" }}</title>
+    <title>{% if mode == 'monthly' %}
+    كشف فواتير شهر {{ value }}
+{% else %}
+    كشف فواتير تاريخ {{ value }}
+{% endif %}</title>
     <style>
         @page {
             size: A4 landscape; /* اتجاه أفقي ليستوعب كافة الأعمدة */
@@ -157,7 +161,11 @@
         <div class="header-container">
             <div class="title-section">
                 <h2>جدول فواتير الإيجار</h2>
-                <p>تاريخ بداية الإيجار: <strong>{{ start_date|date:"Y-m-d" }}</strong></p>
+                      {% if mode == 'monthly' %}
+                        كشف فواتير شهر {{ value }}
+{% else %}
+    كشف فواتير تاريخ {{ value }}
+{% endif %}
             </div>
             <div>
                 <span style="font-size: 11px; color: #6b7280;">عدد الفواتير: {{ invoices.count }}</span>
