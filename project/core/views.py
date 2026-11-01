@@ -1980,11 +1980,10 @@ def statistics(request):
     )
 
     total_net_profit = (
-        total_gross_revenue
-        
+       total_payments        
         - total_operating_expenses
     )
-
+    
     total_gross_profit = total_gross_revenue 
 
     profit_margin = 0
