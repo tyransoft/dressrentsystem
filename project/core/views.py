@@ -2917,7 +2917,7 @@ def admin_daily_report_print(request):
     repair_count = repairs.filter(kind='repair').count()
     clean_count = repairs.filter(kind='clean').count()
     
-    total_operating_expenses = total_expenses + total_salaries_paid + total_repair_cost
+    total_operating_expenses = total_expenses + total_repair_cost
     total_net_profit = total_gross_revenue - sale_product_cost - total_operating_expenses
     
     profit_margin = 0
