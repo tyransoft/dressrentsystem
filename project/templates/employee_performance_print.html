@@ -189,7 +189,7 @@
         <p>
             التاريخ: {{ today|date:"Y-m-d" }}
             {% if selected_employee %}
-            | الموظف: {{ selected_employee.get_full_name }}
+            | الموظف: {{ selected_employee.username }}
             {% else %}
             | جميع الموظفين
             {% endif %}
