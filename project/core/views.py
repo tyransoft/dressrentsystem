@@ -1976,7 +1976,7 @@ def statistics(request):
     )
 
     total_operating_expenses = (
-        total_expenses + total_salaries_paid + total_repair_cost
+        total_expenses + total_repair_cost
     )
 
     total_net_profit = (
