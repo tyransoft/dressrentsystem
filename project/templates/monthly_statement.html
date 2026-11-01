@@ -468,7 +468,37 @@ tbody td {
                 </div>
             </div>
         </div>
-
+<div class="card">
+    <div class="card-header">سجل المكافآت</div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>التاريخ</th>
+                        <th>المبلغ</th>
+                        <th>السبب</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bonus in bonuses %}
+                    <tr>
+                        <td dir="ltr">{{ bonus.bonus_date|date:"Y-m-d" }}</td>
+                        <td>{{ bonus.amount|floatformat:0 }} د.ل</td>
+                        <td>{{ bonus.reason }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="text-center text-muted py-4">
+                            لا توجد مكافآت
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
         <div class="card">
             <div class="card-header">سجل المدفوعات</div>
             <div class="card-body">
@@ -540,6 +570,18 @@ tbody td {
                     <div class="label">اجمالي الخصومات</div>
                     <div class="value danger">{{ total_deductions|floatformat:0 }} د.ل</div>
                 </div>
+                <div class="item">
+    <div class="label">إجمالي المكافآت</div>
+    <div class="value success">
+        {{ total_bonuses|floatformat:0 }} د.ل
+    </div>
+</div>
+<div class="item">
+    <div class="label">إجمالي المدفوع</div>
+    <div class="value success">
+        {{ total_paid|floatformat:0 }} د.ل
+    </div>
+</div>
                 <div class="item bg-success-light">
                     <div class="label">صافي المرتب</div>
                     <div class="value success">{{ net_salary|floatformat:0 }} د.ل</div>

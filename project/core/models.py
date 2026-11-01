@@ -826,21 +826,47 @@ class Employee(models.Model):
     
     @property
     def total_absence_deductions(self):
-        return AbsenceRecord.objects.filter(employee=self).aggregate(total=models.Sum('deduction_amount'))['total'] or 0
-    
+     today = timezone.localdate()
+
+     return AbsenceRecord.objects.filter(
+        employee=self,
+        absence_date__year=today.year,
+        absence_date__month=today.month
+     ).aggregate(
+        total=models.Sum('deduction_amount')
+     )['total'] or 0
+
+
     @property
     def total_monthly_paid(self):
         return MonthlySalaryPayment.objects.filter(employee=self).aggregate(total=models.Sum('amount'))['total'] or 0
     
+
+
+    @property
+    def total_monthly_bonuses(self):
+     today = timezone.localdate()
+
+     return self.bonuses.filter(
+        bonus_date__year=today.year,
+        bonus_date__month=today.month
+     ).aggregate(
+        total=models.Sum('amount')
+     )['total'] or 0
+
+
     @property
     def net_monthly_salary(self):
-        return self.monthly_salary - self.total_absence_deductions
-    
+      return (
+        self.monthly_salary
+        - self.total_absence_deductions
+        + self.total_monthly_bonuses
+      )
+
+
     @property
     def monthly_remaining(self):
-        return self.net_monthly_salary - self.total_monthly_paid
-    
- 
+     return self.net_monthly_salary - self.total_monthly_paid
 
 
 class AbsenceRecord(models.Model):
@@ -886,40 +912,50 @@ class MonthlySalaryPayment(models.Model):
     
 
     def save(self, *args, **kwargs):
-        from core.models import ExpenseCategory, Expense
-      
-        if not self.receipt_number:
-          date_str = date.today().strftime('%Y%m%d')
+      from core.models import ExpenseCategory, Expense
+      from django.utils import timezone
 
-          last_payment = (
+      is_new = self.pk is None
+
+      if not self.receipt_number:
+        date_str = self.payment_date.strftime('%Y%m%d')
+
+        last_payment = (
             MonthlySalaryPayment.objects
             .filter(receipt_number__startswith=date_str)
             .order_by('-id')
             .first()
-           )
+        )
 
-          if last_payment and last_payment.receipt_number:
+        if last_payment and last_payment.receipt_number:
             try:
-              last_num = int(last_payment.receipt_number[-4:])
-              new_num = last_num + 1
+                last_num = int(last_payment.receipt_number[-4:])
+                new_num = last_num + 1
             except (ValueError, TypeError):
-              new_num = 1
-          else:
+                new_num = 1
+        else:
             new_num = 1
 
-          self.receipt_number = f"{date_str}{new_num:04d}"
+        self.receipt_number = f"{date_str}{new_num:04d}"
+
+      super().save(*args, **kwargs)
+
+      if is_new:
         category = ExpenseCategory.objects.first()
-        
+
         if category:
             Expense.objects.create(
                 title=f'صرف راتب شهري - {self.employee.full_name}',
                 amount=self.amount,
                 expense_date=self.payment_date,
                 category=category,
-                description=f'تسديد راتب للموظف {self.employee.full_name} - إيصال رقم {self.receipt_number}',
+                description=(
+                    f'تسديد راتب للموظف {self.employee.full_name}'
+                    f' - إيصال رقم {self.receipt_number}'
+                ),
                 created_by=self.created_by
-            )
-        super().save(*args, **kwargs)    
+            ) 
+
     def get_method_display_ar(self):
         return dict(self.METHOD_CHOICES).get(self.payment_method, self.payment_method)
 
@@ -943,3 +979,40 @@ class ProductOldRevenue(models.Model):
 
     def __str__(self):
         return f"{self.product.name} - {self.amount} - {self.date}"
+
+
+
+
+class EmployeeBonus(models.Model):
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name='bonuses',
+        verbose_name='الموظف'
+    )
+    amount = models.DecimalField(
+        max_digits=15,
+        decimal_places=0,
+        verbose_name='قيمة المكافأة'
+    )
+    bonus_date = models.DateField(verbose_name='تاريخ المكافأة')
+    reason = models.CharField(
+        max_length=255,
+        verbose_name='سبب المكافأة'
+    )
+    notes = models.TextField(blank=True, null=True)
+    created_by = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'مكافأة موظف'
+        verbose_name_plural = 'مكافآت الموظفين'
+        ordering = ['-bonus_date']
+
+    def __str__(self):
+        return f"{self.employee.full_name} - {self.amount}"            

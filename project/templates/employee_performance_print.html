@@ -211,7 +211,7 @@
             <div class="stat-label">الربح الإجمالي</div>
         </div>
         <div class="stat-card">
-            <div class="stat-number">{{ total_paid|floatformat:0|intcomma }} د.ل</div>
+            <div class="stat-number">{{ total_payments|floatformat:0|intcomma }} د.ل</div>
             <div class="stat-label">المدفوع</div>
         </div>
         <div class="stat-card">
@@ -259,7 +259,58 @@
         <p>لا توجد فواتير مسجلة لهذا اليوم</p>
     </div>
     {% endif %}
+<h3 style="margin-top: 25px; margin-bottom: 10px;">
+    تسديدات ديون العملاء اليوم
+</h3>
 
+<div class="stat-card">
+    <div class="stat-number">
+        {{ total_payments|floatformat:2|intcomma }} د.ل
+    </div>
+    <div class="stat-label">إجمالي التسديدات اليوم</div>
+</div>
+
+{% if customer_payments %}
+<table>
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>رقم الإيصال</th>
+            <th>العميل</th>
+            <th>الفاتورة المرتبطة</th>
+            <th>المبلغ المسدد</th>
+            <th>الموظف</th>
+            <th>التاريخ</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for payment in customer_payments %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ payment.receipt_number|default:'-' }}</td>
+            <td>{{ payment.customer.full_name|default:'-' }}</td>
+            <td>
+                {% if payment.invoice %}
+                    #{{ payment.invoice.id }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+            <td class="amount amount-revenue">
+                {{ payment.amount|floatformat:2 }} د.ل
+            </td>
+            <td>{{ payment.created_by.username|default:'-' }}</td>
+            <td>{{ payment.payment_date|date:"Y-m-d H:i" }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="empty-state">
+    <p>لا توجد تسديدات عملاء اليوم</p>
+</div>
+{% endif %}
     <div class="footer">
         <p>هذا التقرير صادر عن نظام إدارة المحل</p>
     </div>

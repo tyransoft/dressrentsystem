@@ -113,6 +113,10 @@ urlpatterns = [
     path('reports/employee-performance/', employee_performance_print, name='employee_performance_print'),
     path('reports/admin-daily/', admin_daily_report_print, name='admin_daily_report_print'),
     path('invoices/print/', print_invoices_by_start_date, name='print_invoices_by_start_date'),
+
+    path('bonuses/', bonus_list, name='bonus_list'),
+    path('bonuses/create/', bonus_create, name='bonus_create'),
+    path('bonuses/<int:pk>/delete/', bonus_delete, name='bonus_delete'),
 ]
 
 

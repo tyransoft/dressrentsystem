@@ -267,6 +267,12 @@
                     <span class="value danger">{{ employee.total_absence_deductions|floatformat:0 }} د.ل</span>
                 </div>
                 <div class="info-row">
+                  <span class="label">إجمالي المكافآت</span>
+    <span class="value success">
+        {{ employee.total_monthly_bonuses|floatformat:0 }} د.ل
+    </span>
+</div>
+                <div class="info-row">
                     <span class="label">صافي المستحق</span>
                     <span class="value success">{{ employee.net_monthly_salary|floatformat:0 }} د.ل</span>
                 </div>

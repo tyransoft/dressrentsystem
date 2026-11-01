@@ -2786,6 +2786,7 @@ def employees_performance(request):
     }
     return render(request, 'employees_performance.html', context)
 
+
 @login_required
 def employee_performance_print(request):
     today = timezone.now().date()
@@ -2827,11 +2828,20 @@ def employee_performance_print(request):
     total_penalties = Penalty.objects.filter(
         invoice__in=invoices
     ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-    
     customer_payments = CustomerPayment.objects.filter(
-        payment_date__date=today
+         payment_date__date=today
+         ).select_related(
+          'customer', 'invoice', 'created_by'
     )
-    total_payments = customer_payments.aggregate(total=Sum('amount'))['total'] or Decimal('0')
+
+    if employee_id:
+      customer_payments = customer_payments.filter(
+        created_by_id=employee_id
+      )
+
+    total_payments = customer_payments.aggregate(
+        total=Sum('amount')
+    )['total'] or Decimal('0')
     
     context = {
         'today': today,
@@ -2848,6 +2858,8 @@ def employee_performance_print(request):
         'total_sale_revenue': total_sale_revenue,
         'total_items': total_items,
         'total_rent_days': total_rent_days,
+        'customer_payments': customer_payments,
+
         'sale_product_cost': sale_product_cost,
         'total_gross_profit': total_gross_profit,
         'total_penalties': total_penalties,
@@ -3854,3 +3866,53 @@ def print_provider_services(request, provider_id):
         'total_remaining': total_remaining,
     }
     return render(request, 'provider_services_print.html', context)
+
+
+
+
+@login_required
+def bonus_create(request):
+    if request.method == 'POST':
+        employee_id = request.POST.get('employee')
+        amount = request.POST.get('amount')
+        bonus_date = request.POST.get('bonus_date')
+        reason = request.POST.get('reason')
+        notes = request.POST.get('notes', '')
+
+        employee = get_object_or_404(Employee, pk=employee_id)
+
+        EmployeeBonus.objects.create(
+            employee=employee,
+            amount=amount,
+            bonus_date=bonus_date,
+            reason=reason,
+            notes=notes,
+            created_by=request.user
+        )
+        messages.success(
+            request,
+            f'تم تسجيل مكافأة {employee.full_name} بتاريخ {bonus_date}'
+        )
+        return redirect('bonus_list')
+
+    employees = Employee.objects.filter(status='active')
+    return render(request, 'bonus_form.html', {
+        'employees': employees,
+        'title': 'تسجيل مكافأة'
+    })
+
+
+@login_required
+def bonus_list(request):
+    bonuses = EmployeeBonus.objects.all().select_related('employee', 'created_by')
+    return render(request, 'bonus_list.html', {'bonuses': bonuses})
+
+
+@login_required
+def bonus_delete(request, pk):
+    bonus = get_object_or_404(EmployeeBonus, pk=pk)
+    if request.method == 'POST':
+        bonus.delete()
+        messages.success(request, 'تم حذف تسجيل المكافأة')
+        return redirect('bonus_list')
+    return render(request, 'bonus_confirm_delete.html', {'bonus': bonus})
