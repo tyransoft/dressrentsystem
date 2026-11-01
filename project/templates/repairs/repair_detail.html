@@ -137,7 +137,7 @@
   
   <div class="card-footer">
     <div class="detail-actions" style="display:flex;gap:10px;flex-wrap:wrap;">
-      {% if user.is_main_admin %}
+      {% if user.is_main_admin or user.is_product_manager %}
         <a href="{% url 'repair_edit' repair.pk %}" class="btn btn-primary">تعديل</a>
         {% if repair.status == 'inwork' %}
         <form method="post" action="{% url 'repair_finish' repair.pk %}" style="margin:0;">

@@ -7,7 +7,7 @@
 <div class="card">
   <div class="card-header">
     <span class="card-title">الفئات</span>
-    {% if user.is_main_admin %}
+    {% if user.is_main_admin or user.is_product_manager %}
     <a href="{% url 'category_create' %}" class="btn btn-primary btn-sm">+ إضافة فئة</a>
     {% endif %}
   </div>

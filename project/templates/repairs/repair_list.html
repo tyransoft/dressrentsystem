@@ -177,7 +177,7 @@
             <td>
               <div style="display:flex;gap:5px;flex-wrap:wrap;">
                 <a href="{% url 'repair_detail' repair.pk %}" class="btn btn-outline btn-icon btn-sm">عرض</a>
-                {% if user.is_main_admin %}
+                {% if user.is_main_admin or user.is_product_manager %}
                 <a href="{% url 'repair_edit' repair.pk %}" class="btn btn-outline btn-icon btn-sm">تعديل</a>
                 <a href="{% url 'repair_payment' repair.pk %}" class="btn btn-outline btn-icon btn-sm" style="color:#f59e0b;border-color:#f59e0b;">دفع</a>
                 {% endif %}
@@ -212,7 +212,7 @@
         <div class="rc-row"><span class="rc-label">تاريخ الانتهاء</span><span>{{ repair.finish_at|date:"Y-m-d" }}</span></div>
         <div class="rc-actions">
           <a href="{% url 'repair_detail' repair.pk %}" class="btn btn-outline btn-sm">عرض</a>
-          {% if user.is_main_admin %}
+          {% if user.is_main_admin or user.is_product_manager %}
           <a href="{% url 'repair_edit' repair.pk %}" class="btn btn-outline btn-sm">تعديل</a>
           <a href="{% url 'repair_payment' repair.pk %}" class="btn btn-outline btn-sm" style="color:#f59e0b;border-color:#f59e0b;">دفع</a>
           {% endif %}

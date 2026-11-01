@@ -32,7 +32,7 @@
   <div class="card-header">
     <span class="card-title">قائمة الفساتين</span>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      {% if user.is_main_admin%}
+      {% if user.is_main_admin or user.is_product_manager %}
       <a href="{% url 'products_create' %}" class="btn btn-primary btn-sm">+ إضافة فستان</a>
       <a href="{% url 'products_bulk_price_update' %}" class="btn btn-primary btn-sm">تعديل الاسعار</a>
       {% endif %}
@@ -82,7 +82,7 @@
                 <a href="{% url 'products_detail' product.pk %}" class="btn btn-outline btn-icon btn-sm">عرض</a>
                 <a href="{% url 'invoice_list' %}?product_id={{ product.pk }}"
                 class="btn btn-primary btn-sm">الفواتير</a>                
-                {% if user.is_main_admin %}
+                {% if user.is_main_admin or user.is_product_manager %}
                 <a href="{% url 'products_edit' product.pk %}" class="btn btn-outline btn-icon btn-sm">تعديل</a>
                 <a href="{% url 'products_delete' product.pk %}" class="btn btn-outline btn-sm">حذف</a>
 
@@ -110,7 +110,7 @@
           <a href="{% url 'products_detail' product.pk %}" class="btn btn-outline btn-sm">عرض</a>
           <a href="{% url 'invoice_list' %}?product_id={{ product.pk }}"
           class="btn btn-primary btn-sm">الفواتير</a>
-          {% if user.is_mian_admin%}
+          {% if user.is_main_admin or user.is_product_manager %}
           
           <a href="{% url 'products_edit' product.pk %}" class="btn btn-outline btn-sm">تعديل</a>
           <a href="{% url 'products_delete' product.pk %}" class="btn btn-outline btn-sm">حذف</a>
