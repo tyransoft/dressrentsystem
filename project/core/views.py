@@ -2596,9 +2596,7 @@ def expense_list(request):
     if date_to:
         qs = qs.filter(expense_date__lte=date_to)
     
-    paginator = Paginator(qs, 20)
-    page_number = request.GET.get('page')
-    expenses = paginator.get_page(page_number)
+    expenses = qs
     
     total = qs.aggregate(t=Sum('amount'))['t'] or 0
     
