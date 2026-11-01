@@ -918,8 +918,15 @@ class MonthlySalaryPayment(models.Model):
       is_new = self.pk is None
 
       if not self.receipt_number:
-        date_str = self.payment_date.strftime('%Y%m%d')
+        from datetime import datetime, date
 
+        payment_date = self.payment_date
+
+        if isinstance(payment_date, str):
+           payment_date = datetime.strptime(payment_date, '%Y-%m-%d').date()
+
+        date_str = payment_date.strftime('%Y%m%d')
+        
         last_payment = (
             MonthlySalaryPayment.objects
             .filter(receipt_number__startswith=date_str)
