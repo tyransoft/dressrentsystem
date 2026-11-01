@@ -1,0 +1,206 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>
+        كشف خدمات {{ provider.name }}
+        {% if mode == 'monthly' %} - {{ value }}{% endif %}
+    </title>
+    <style>
+        @page { size: A4 landscape; margin: 1cm; }
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0; padding: 0; background: #fff;
+            color: #1f2937; font-size: 12px; direction: rtl;
+        }
+
+        .header-container {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 2px solid #111827; padding-bottom: 10px; margin-bottom: 15px;
+        }
+        .title-section h2 { margin: 0; font-size: 18px; color: #111827; }
+        .title-section p  { margin: 3px 0 0 0; font-size: 13px; color: #4b5563; }
+
+        .provider-box {
+            background: #f9fafb; border: 1px solid #e5e7eb;
+            border-radius: 6px; padding: 10px 14px; margin-bottom: 12px;
+            display: flex; gap: 30px; font-size: 12px;
+        }
+        .provider-box strong { color: #111827; }
+
+        .print-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .print-table th, .print-table td {
+            border: 1px solid #d1d5db; padding: 6px 8px;
+            text-align: center; vertical-align: middle;
+        }
+        .print-table th {
+            background-color: #f3f4f6; color: #111827;
+            font-weight: bold; font-size: 11px;
+        }
+
+        .text-right  { text-align: right !important; }
+        .product-cell { text-align: right; font-size: 11px; color: #374151; }
+        .notes-cell {
+            text-align: right; font-size: 9.5px; line-height: 1.2;
+            max-width: 200px; word-wrap: break-word; white-space: pre-wrap;
+            color: #4b5563;
+        }
+
+        .amount-badge { font-weight: bold; }
+        .text-danger  { color: #dc2626; }
+        .text-success { color: #16a34a; }
+
+        .badge {
+            display: inline-block; padding: 2px 6px; border-radius: 4px;
+            font-size: 10px; font-weight: bold;
+        }
+        .badge-paid    { background: #dcfce7; color: #166534; }
+        .badge-partial { background: #fef9c3; color: #854d0e; }
+        .badge-unpaid  { background: #fee2e2; color: #991b1b; }
+        .badge-repair  { background: #dbeafe; color: #1e40af; }
+        .badge-clean   { background: #ede9fe; color: #5b21b6; }
+        .badge-inwork  { background: #fef3c7; color: #92400e; }
+        .badge-finish  { background: #d1fae5; color: #065f46; }
+
+        .no-data { text-align: center; padding: 20px; font-size: 14px; color: #6b7280; }
+
+        .totals-row td {
+            background-color: #f9fafb; font-weight: bold;
+            border-top: 2px solid #111827;
+        }
+
+        .no-print-bar {
+            background-color: #f9fafb; padding: 10px; text-align: center;
+            border-bottom: 1px solid #e5e7eb; margin-bottom: 15px;
+        }
+        .btn {
+            padding: 6px 18px; border-radius: 4px; font-weight: bold;
+            cursor: pointer; border: none; font-size: 12px; margin: 0 4px;
+        }
+        .btn-primary   { background-color: #2563eb; color: white; }
+        .btn-secondary { background-color: #6b7280; color: white; }
+
+        @media print {
+            .no-print-bar { display: none !important; }
+            body { margin: 0; padding: 0; }
+            .print-table tr { page-break-inside: avoid; page-break-after: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print-bar">
+        <button onclick="window.print()" class="btn btn-primary">طباعة</button>
+        <button onclick="window.history.back()" class="btn btn-secondary">رجوع</button>
+    </div>
+
+    <div style="padding: 0 10px;">
+
+        <!-- رأس التقرير -->
+        <div class="header-container">
+            <div class="title-section">
+                <h2>كشف خدمات مزود الصيانة والتنظيف</h2>
+                <p>
+                    {% if mode == 'monthly' %}
+                        شهر {{ value }}
+                    {% else %}
+                        كل الخدمات
+                    {% endif %}
+                </p>
+            </div>
+            <div>
+                <span style="font-size: 11px; color: #6b7280;">
+                    عدد الخدمات: {{ total_services }}
+                </span>
+            </div>
+        </div>
+
+        <!-- بيانات المزود -->
+        <div class="provider-box">
+            <div><strong>المزود:</strong> {{ provider.name }}</div>
+            <div><strong>الهاتف:</strong> {{ provider.phone|default:"-" }}</div>
+            <div><strong>إجمالي الخدمات (كل الفترات):</strong> {{ provider.get_total_services }}</div>
+        </div>
+
+        <!-- الجدول -->
+        <table class="print-table">
+            <thead>
+                <tr>
+                    <th style="width: 30px;">#</th>
+                    <th style="width: 160px;">الفستان</th>
+                    <th style="width: 80px;">النوع</th>
+                    <th style="width: 80px;">الحالة</th>
+                    <th style="width: 90px;">ت. البداية</th>
+                    <th style="width: 90px;">ت. النهاية</th>
+                    <th style="width: 90px;">التكلفة</th>
+                    <th style="width: 90px;">المدفوع</th>
+                    <th style="width: 90px;">المتبقي</th>
+                    <th style="width: 90px;">حالة الدفع</th>
+                    <th style="width: 180px;">ملاحظات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in services %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td class="product-cell">{{ s.product.name }}</td>
+                    <td>
+                        <span class="badge {% if s.kind == 'clean' %}badge-clean{% else %}badge-repair{% endif %}">
+                            {{ s.get_kind_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge {% if s.status == 'finished' %}badge-finish{% else %}badge-inwork{% endif %}">
+                            {{ s.get_status_display }}
+                        </span>
+                    </td>
+                    <td>{{ s.start_date|date:"Y-m-d"|default:"-" }}</td>
+                    <td>{{ s.finish_at|date:"Y-m-d"|default:"-" }}</td>
+                    <td class="amount-badge">{{ s.total_cost|floatformat:2|intcomma }}</td>
+                    <td class="amount-badge text-success">{{ s.paid_amount|floatformat:2|intcomma }}</td>
+                    <td class="amount-badge {% if s.get_remaining_amount > 0 %}text-danger{% else %}text-success{% endif %}">
+                        {{ s.get_remaining_amount|floatformat:2|intcomma }}
+                    </td>
+                    <td>
+                        {% if s.payment_status == 'paid' %}
+                            <span class="badge badge-paid">مدفوعة</span>
+                        {% elif s.payment_status == 'partial' %}
+                            <span class="badge badge-partial">جزئية</span>
+                        {% else %}
+                            <span class="badge badge-unpaid">غير مدفوعة</span>
+                        {% endif %}
+                    </td>
+                    <td class="notes-cell">{{ s.notes|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="11" class="no-data">
+                        لا توجد خدمات
+                        {% if mode == 'monthly' %}في شهر {{ value }}{% endif %}
+                        لهذا المزود.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+            {% if services %}
+            <tfoot>
+                <tr class="totals-row">
+                    <td colspan="6">الإجمالي</td>
+                    <td>{{ total_cost|floatformat:2|intcomma }}</td>
+                    <td class="text-success">{{ total_paid|floatformat:2|intcomma }}</td>
+                    <td class="{% if total_remaining > 0 %}text-danger{% else %}text-success{% endif %}">
+                        {{ total_remaining|floatformat:2|intcomma }}
+                    </td>
+                    <td colspan="2"></td>
+                </tr>
+            </tfoot>
+            {% endif %}
+        </table>
+    </div>
+
+</body>
+</html>

@@ -3806,3 +3806,51 @@ def print_invoices_by_start_date(request):
         'start_date': display_value if mode == 'daily' else None,
     }
     return render(request, 'invoices_by_start_date_print.html', context)
+
+
+@login_required
+def print_provider_services(request, provider_id):
+  
+    provider = get_object_or_404(repairandcleanprovider, pk=provider_id)
+
+    mode = request.GET.get('mode', 'daily').strip()
+    value = request.GET.get('value', '').strip()
+
+    services = provider.services.select_related('product').order_by('-start_date', '-id')
+    display_value = value
+    year = month = None
+
+    if mode == 'monthly' and value:
+        try:
+            year, month = value.split('-')
+            year = int(year)
+            month = int(month)
+            if 1 <= month <= 12:
+                services = services.filter(
+                    start_date__year=year,
+                    start_date__month=month,
+                )
+                display_value = f'{year}-{month:02d}'
+            else:
+                mode = 'daily'
+        except (ValueError, AttributeError):
+            mode = 'daily'
+
+    total_services = services.count()
+    total_cost = sum(s.total_cost for s in services)
+    total_paid = sum(s.paid_amount for s in services)
+    total_remaining = total_cost - total_paid
+
+    context = {
+        'provider': provider,
+        'services': services,
+        'mode': mode,
+        'value': display_value,
+        'year': year,
+        'month': month,
+        'total_services': total_services,
+        'total_cost': total_cost,
+        'total_paid': total_paid,
+        'total_remaining': total_remaining,
+    }
+    return render(request, 'provider_services_print.html', context)

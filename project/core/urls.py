@@ -98,7 +98,7 @@ urlpatterns = [
     path('providers/<int:pk>/edit/', provider_edit, name='provider_edit'),
     path('providers/<int:pk>/', provider_detail, name='provider_detail'),
     path('providers/<int:pk>/delete/', provider_delete, name='provider_delete'),
-    
+    path('provider/<int:provider_id>/print-services/', print_provider_services,name='print_provider_services'),
     path('providers/<int:provider_pk>/payment/create/', provider_payment_create, name='provider_payment_create'),
     path('providers/payments/', provider_payment_list, name='provider_payment_list'),
     path('providers/payment/<int:pk>/delete/', provider_payment_delete, name='provider_payment_delete'),

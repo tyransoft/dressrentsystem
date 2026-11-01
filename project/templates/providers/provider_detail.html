@@ -58,6 +58,22 @@
     background: #B8960F;
     color: #fff;
 }
+.btn-print-custom {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: inline-block;
+}
+.btn-print-custom:hover {
+    background: #1d4ed8;
+    color: #fff;
+}
 
 .provider-info {
     background: #fff;
@@ -103,7 +119,6 @@
     color: #9ca3af;
     margin-top: 4px;
 }
-
 .stat-card .stat-number.balance-positive {
     color: #16a34a;
 }
@@ -151,16 +166,9 @@ tbody td {
     padding: 10px 15px;
     vertical-align: middle;
 }
-.text-muted {
-    color: #9ca3af;
-}
-.text-center {
-    text-align: center;
-}
-.py-4 {
-    padding-top: 30px;
-    padding-bottom: 30px;
-}
+.text-muted { color: #9ca3af; }
+.text-center { text-align: center; }
+.py-4 { padding-top: 30px; padding-bottom: 30px; }
 .badge-status {
     padding: 3px 12px;
     border-radius: 12px;
@@ -168,22 +176,10 @@ tbody td {
     font-weight: 600;
     display: inline-block;
 }
-.badge-paid {
-    background: #dcfce7;
-    color: #166534;
-}
-.badge-pending {
-    background: #fef3c7;
-    color: #92400e;
-}
-.badge-unpaid {
-    background: #fef2f2;
-    color: #991b1b;
-}
-.badge-partial {
-    background: #fef3c7;
-    color: #92400e;
-}
+.badge-paid { background: #dcfce7; color: #166534; }
+.badge-pending { background: #fef3c7; color: #92400e; }
+.badge-unpaid { background: #fef2f2; color: #991b1b; }
+.badge-partial { background: #fef3c7; color: #92400e; }
 .btn-action {
     padding: 4px 10px;
     border-radius: 6px;
@@ -195,9 +191,7 @@ tbody td {
     text-decoration: none;
     display: inline-block;
 }
-.btn-action:hover {
-    transform: translateY(-1px);
-}
+.btn-action:hover { transform: translateY(-1px); }
 .btn-delete {
     background: transparent;
     color: #dc2626;
@@ -207,56 +201,122 @@ tbody td {
     background: #dc2626;
     color: #fff;
 }
-.amount-paid {
-    color: #16a34a;
-    font-weight: 600;
+.amount-paid { color: #16a34a; font-weight: 600; }
+.amount-remaining { color: #dc2626; font-weight: 600; }
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
 }
-.amount-remaining {
-    color: #dc2626;
-    font-weight: 600;
+.modal-overlay.active { display: flex; }
+.modal-box {
+    background: #fff;
+    border-radius: 12px;
+    width: 440px;
+    max-width: 100%;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+    overflow: hidden;
+    animation: popIn .18s ease-out;
+}
+@keyframes popIn {
+    from { transform: scale(.95); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+}
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e5e7eb;
+}
+.modal-header h3 {
+    margin: 0;
+    font-size: 15px;
+    color: #1e293b;
+    font-weight: 700;
+}
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 0;
+}
+.modal-close:hover { color: #dc2626; }
+.modal-body { padding: 18px; }
+.print-option {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    flex-wrap: wrap;
+}
+.option-text { display: flex; flex-direction: column; gap: 3px; }
+.option-text strong { font-size: 14px; color: #1e293b; }
+.option-text small { font-size: 11px; color: #6b7280; }
+.month-input {
+    padding: 7px 12px;
+    border: 1.5px solid #eaecf0;
+    border-radius: 8px;
+    font-size: 13px;
+    min-width: 150px;
+    font-family: inherit;
+}
+.modal-body hr {
+    border: none;
+    border-top: 1px dashed #e5e7eb;
+    margin: 10px 0;
 }
 
 @media (max-width: 480px) {
-    .page-container {
-        padding: 5px 8px 20px 8px;
-    }
-    .provider-info {
-        grid-template-columns: 1fr;
-        padding: 15px;
-    }
-    .stats-grid {
-        grid-template-columns: 1fr 1fr;
-    }
+    .page-container { padding: 5px 8px 20px 8px; }
+    .provider-info { grid-template-columns: 1fr; padding: 15px; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .page-header { flex-direction: column; align-items: stretch; }
+    .page-header > div { display: flex; gap: 8px; flex-wrap: wrap; }
 }
 </style>
 
 <div class="page-container">
     <div class="page-header">
         <h5>تفاصيل مزود الخدمة</h5>
-        <div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button type="button" class="btn-print-custom" onclick="openPrintModal()"> طباعة الخدمات</button>
             <a href="{% url 'provider_edit' provider.pk %}" class="btn-primary-custom">تعديل</a>
             <a href="{% url 'provider_list' %}" class="btn-back">رجوع</a>
         </div>
     </div>
-<div class="filter-section" style="background:#fff;border:1px solid #eaecf0;border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;gap:15px;flex-wrap:wrap;align-items:flex-end;">
-    <form method="get" style="display:flex;gap:15px;flex-wrap:wrap;width:100%;align-items:flex-end;">
-        <div class="form-group">
-            <label>من تاريخ</label>
-            <input type="date" name="start_date" class="form-control" value="{{ start_date|date:'Y-m-d' }}" style="padding:8px 14px;border:1.5px solid #eaecf0;border-radius:8px;font-size:14px;min-width:150px;">
-        </div>
-        <div class="form-group">
-            <label>إلى تاريخ</label>
-            <input type="date" name="end_date" class="form-control" value="{{ end_date|date:'Y-m-d' }}" style="padding:8px 14px;border:1.5px solid #eaecf0;border-radius:8px;font-size:14px;min-width:150px;">
-        </div>
-        <button type="submit" class="btn" style="padding:8px 24px;background:#D4AF37;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">تطبيق</button>
-        <a href="{% url 'provider_detail' provider.pk %}?start_date={{ today|date:'Y-m-d' }}&end_date={{ today|date:'Y-m-d' }}" 
-           class="btn" 
-           style="padding:8px 24px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-weight:600;text-decoration:none;display:inline-block;text-align:center;">
-           اليوم
-        </a>
-        <a href="{% url 'provider_detail' provider.pk %}" class="btn" style="padding:8px 24px;background:transparent;border:1.5px solid #eaecf0;color:#374151;border-radius:8px;font-weight:600;text-decoration:none;">إعادة تعيين</a>
-    </form>
-</div>
+
+    <div class="filter-section" style="background:#fff;border:1px solid #eaecf0;border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;gap:15px;flex-wrap:wrap;align-items:flex-end;">
+        <form method="get" style="display:flex;gap:15px;flex-wrap:wrap;width:100%;align-items:flex-end;">
+            <div class="form-group">
+                <label>من تاريخ</label>
+                <input type="date" name="start_date" class="form-control" value="{{ start_date|date:'Y-m-d' }}" style="padding:8px 14px;border:1.5px solid #eaecf0;border-radius:8px;font-size:14px;min-width:150px;">
+            </div>
+            <div class="form-group">
+                <label>إلى تاريخ</label>
+                <input type="date" name="end_date" class="form-control" value="{{ end_date|date:'Y-m-d' }}" style="padding:8px 14px;border:1.5px solid #eaecf0;border-radius:8px;font-size:14px;min-width:150px;">
+            </div>
+            <button type="submit" class="btn" style="padding:8px 24px;background:#D4AF37;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">تطبيق</button>
+            <a href="{% url 'provider_detail' provider.pk %}?start_date={{ today|date:'Y-m-d' }}&end_date={{ today|date:'Y-m-d' }}"
+               class="btn"
+               style="padding:8px 24px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-weight:600;text-decoration:none;display:inline-block;text-align:center;">
+               اليوم
+            </a>
+            <a href="{% url 'provider_detail' provider.pk %}" class="btn" style="padding:8px 24px;background:transparent;border:1.5px solid #eaecf0;color:#374151;border-radius:8px;font-weight:600;text-decoration:none;">إعادة تعيين</a>
+        </form>
+    </div>
+
     <div class="provider-info">
         <div class="info-item">
             <div class="label">الاسم</div>
@@ -392,4 +452,54 @@ tbody td {
         </table>
     </div>
 </div>
+
+<div id="printModal" class="modal-overlay" onclick="if(event.target===this) closePrintModal()">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>خيارات الطباعة</h3>
+            <button type="button" class="modal-close" onclick="closePrintModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="print-option">
+                <div class="option-text">
+                    <strong>كل الخدمات</strong>
+                    <small>طباعة كشف بكل خدمات هذا المزود</small>
+                </div>
+                <a href="{% url 'print_provider_services' provider.id %}" target="_blank" class="btn-print-custom">طباعة الكل</a>
+            </div>
+            <hr>
+            <form method="get" action="{% url 'print_provider_services' provider.id %}" target="_blank" class="print-option">
+                <input type="hidden" name="mode" value="monthly">
+                <div class="option-text">
+                    <strong>شهر محدد</strong>
+                    <small>اختر الشهر ثم اضغط طباعة</small>
+                </div>
+                <div style="display:flex; gap:6px; align-items:center;">
+                    <input type="month" name="value" required class="month-input" id="printMonthInput">
+                    <button type="submit" class="btn-print-custom">طباعة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openPrintModal() {
+    document.getElementById('printModal').classList.add('active');
+}
+function closePrintModal() {
+    document.getElementById('printModal').classList.remove('active');
+}
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closePrintModal();
+});
+(function () {
+    var el = document.getElementById('printMonthInput');
+    if (el) {
+        var d = new Date();
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        el.value = d.getFullYear() + '-' + m;
+    }
+})();
+</script>
 {% endblock %}
