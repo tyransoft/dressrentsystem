@@ -951,7 +951,7 @@ input[type="date"] {
 </a>
         {% endif %}
     </div>
-
+{% if not user.is_product_manager %}
     <div class="section-page" id="section-reservations">
         <a href="{% url 'reservations_list' %}" class="section-btn">
             <i class="fa-solid fa-calendar-check nav-icon"></i> جميع الحجوزات
@@ -964,9 +964,9 @@ input[type="date"] {
             <i class="fa-solid fa-plus nav-icon"></i> حجز جديد
         </a>
     </div>
-
+{% endif %}
     <div class="section-page" id="section-dresses">
-        {% if user.can_see_all_data %}
+        {% if user.can_see_all_data or user.is_product_manager %}
         <a href="{% url 'categories' %}" class="section-btn">
             <i class="fa-solid fa-layer-group nav-icon"></i> الفئات
         </a>
@@ -990,7 +990,7 @@ input[type="date"] {
         </a>
         {% endif %}
     </div>
-
+{% if not user.is_product_manager %}
     <div class="section-page" id="section-sales">
         <a href="{% url 'create_invoice' %}" class="section-btn">
             <i class="fa-solid fa-plus nav-icon"></i> فاتورة جديدة
@@ -1018,7 +1018,7 @@ input[type="date"] {
             <i class="fa-solid fa-user-plus nav-icon"></i> إضافة عميل
         </a>
     </div>
-
+{% endif %}
     <div class="section-page" id="section-management">
         {% if user.can_see_all_data %}
         <a href="{% url 'users_list' %}" class="section-btn">

@@ -24,6 +24,7 @@ class Role(models.TextChoices):
     SUPER_ADMIN = 'super_admin', 'مدير النظام'
     EMPLOYEE = 'employee', 'موظف'
     ACCOUNTANT = 'accountant', 'محاسب'
+    PRODUCT_MANAGER = 'product_manager', 'مسؤول منتجات'
 
 
 class CustomUser(AbstractUser):
@@ -44,6 +45,9 @@ class CustomUser(AbstractUser):
 
     def is_accountant(self):
         return self.role == Role.ACCOUNTANT
+
+    def is_product_manager(self):
+        return self.role == Role.PRODUCT_MANAGER
 
     def can_see_all_data(self):
         return self.role in [Role.SUPER_ADMIN,  Role.ACCOUNTANT]

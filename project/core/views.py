@@ -28,14 +28,19 @@ def normalize_arabic(text):
 
 
 
+
 @login_required
 def home(request):
     user = request.user
     if not request.user.is_authenticated:
         return redirect('user_login')
     else:  
-        return redirect('statistics')
-      
+        if user.is_accountant() or user.can_see_all_data():
+            return redirect('statistics')
+        elif user.is_product_manager():
+            return redirect('products_list')
+        else:
+            return redirect('create_invoice')      
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -50,14 +55,15 @@ def login_view(request):
                 login(request, user)
                 if user.is_accountant() or user.can_see_all_data():
                   return redirect('statistics')
-  
-                return redirect('create_invoice')
+                elif user.is_product_manager():
+                  return redirect('products_list')
+                else:
+                  return redirect('create_invoice')
             else:
                 messages.error(request, 'اسم المستخدم أو كلمة المرور غير صحيحة')
     else:
         form = LoginForm()
     return render(request, 'accounts/login.html', {'form': form})
-
 
 @login_required
 def logout_view(request):
@@ -337,7 +343,7 @@ def category_list(request):
 
 @login_required
 def category_create(request):
-    if not request.user.is_main_admin():
+    if not request.user.is_main_admin() and not request.user.is_product_manager():
         messages.error(request, 'ليس لديك صلاحية لإضافة فئات')
         return redirect('categories')
     if request.method == 'POST':
@@ -354,7 +360,7 @@ def category_create(request):
 def category_edit(request, category_id):
     category = get_object_or_404(Category, id=category_id)
     
-    if not request.user.is_main_admin():
+    if not request.user.is_main_admin() and not request.user.is_product_manager():
         messages.error(request, 'ليس لديك صلاحية لتعديل الفئات')
         return redirect('categories')
     
@@ -405,7 +411,7 @@ def product_search_ajax(request):
 
 @login_required
 def products_bulk_price_update(request):
-    if not request.user.is_main_admin():
+    if not request.user.is_main_admin() and not request.user.is_product_manager():
         messages.error(request, 'غير مصرح لك بتعديل أسعار المنتجات')
         return redirect('products_list')
     
