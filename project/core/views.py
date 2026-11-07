@@ -936,10 +936,10 @@ def customer_detail(request, pk):
     payments = all_payments
 
     if payment_from:
-        payments = payments.filter(payment_date__date__gte=payment_from)
+        payments = payments.filter(payment_date__gte=payment_from)
 
     if payment_to:
-        payments = payments.filter(payment_date__date__lte=payment_to)
+        payments = payments.filter(payment_date__lte=payment_to)
 
     if payment_search:
         payments = payments.filter(
@@ -1801,8 +1801,8 @@ def statistics(request):
 
 
     customer_payments = CustomerPayment.objects.filter(
-      payment_date__date__gte=start_date,
-      payment_date__date__lte=end_date,
+      payment_date__gte=start_date,
+      payment_date__lte=end_date,
     )
 
     total_paid = (
@@ -2186,16 +2186,16 @@ def all_customer_payments(request):
     today = timezone.now().date()
 
     if date_from:
-        payments = payments.filter(payment_date__date__gte=date_from)
+        payments = payments.filter(payment_date__gte=date_from)
     else:
         date_from = today 
-        payments = payments.filter(payment_date__date__gte=date_from)
+        payments = payments.filter(payment_date__gte=date_from)
 
     if date_to:
-        payments = payments.filter(payment_date__date__lte=date_to)
+        payments = payments.filter(payment_date__lte=date_to)
     else:
         date_to = today
-        payments = payments.filter(payment_date__date__lte=date_to)
+        payments = payments.filter(payment_date__lte=date_to)
     # ترتيب المدفوعات من الأحدث إلى الأقدم
     payments = payments.order_by('-payment_date', '-pk')
 
