@@ -1308,7 +1308,8 @@ this.textContent = body.classList.contains('collapsed') ? '\u2303' : '\u2964';
 });
 function calcModalTotals() {
     var subtotal = cartTotal();
-    var discount = parseFloat(document.getElementById('modal-discount').value) || 0;
+var discountInput = document.getElementById('modal-discount');
+var discount = discountInput ? (parseFloat(discountInput.value) || 0) : 0;
     var extraAmount = parseFloat(document.getElementById('modal-extra-amount').value) || 0;
     var pmSel = document.getElementById('modal-payment-method');
     var pmOpt = pmSel.options[pmSel.selectedIndex];
@@ -1454,10 +1455,8 @@ var invoiceTypeValue = invoiceTypeRadio.value;
 if (isCash) {
     var subtotal = cartTotal();
 
-    var discount = parseFloat(
-        document.getElementById('modal-discount').value
-    ) || 0;
-
+var discountInput = document.getElementById('modal-discount');
+var discount = discountInput ? (parseFloat(discountInput.value) || 0) : 0;
     var extraAmount = parseFloat(
         document.getElementById('modal-extra-amount').value
     ) || 0;
@@ -1530,10 +1529,8 @@ if (invoiceTypeValue === 'sale') {
         document.getElementById('modal-paid-amount').value
     ) || 0;
 
-    const discount = parseFloat(
-        document.getElementById('modal-discount').value
-    ) || 0;
-
+const discountInput = document.getElementById('modal-discount');
+const discount = discountInput ? (parseFloat(discountInput.value) || 0) : 0;
     const extraAmount = parseFloat(
         document.getElementById('modal-extra-amount').value
     ) || 0;
@@ -1561,18 +1558,21 @@ document.getElementById('form_is_cash').value = isCash ? '1' : '0';
 document.getElementById('form_commission').value = '0';
 document.getElementById('form_identity_verified').value = document.getElementById('modal-identity-verified').checked ? 'true' : 'false';
 document.getElementById('form_paid_amount').value = document.getElementById('modal-paid-amount').value || '0';
-document.getElementById('form_discount').value = document.getElementById('modal-discount').value || '0';
+var discountInput = document.getElementById('modal-discount');
+document.getElementById('form_discount').value =
+    discountInput ? (discountInput.value || '0') : '0';
 document.getElementById('form_extra_amount').value = document.getElementById('modal-extra-amount').value || '0';
 document.getElementById('form_payment_method').value = document.getElementById('modal-payment-method').value || '';
 document.getElementById('form_notes').value = document.getElementById('modal-notes').value || '';
 document.getElementById('form_sale_price').value = document.getElementById('sale_price_display').value || '0';
-var createdDate = document.getElementById('modal-created-date').value;
 
-if (!createdDate) {
+var createdDateInput = document.getElementById('modal-created-date');
+var createdDate = createdDateInput ? createdDateInput.value : '';
+
+if (createdDateInput && !createdDate) {
     showToast('الرجاء تحديد تاريخ الإضافة', 'error');
     return;
 }
-
 document.getElementById('form_created_date').value = createdDate;
 
 
