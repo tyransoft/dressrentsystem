@@ -140,7 +140,7 @@
             {% for payment in payments %}
             <tr>
               <td class="fw-600">{{ payment.receipt_number }}</td>
-              <td>{{ payment.payment_date|date:"Y-m-d H:i" }}</td>
+              <td>{{ payment.payment_date|date:"Y-m-d" }}</td>
               <td class="money text-success fw-bold">{{ payment.amount|floatformat:2|intcomma }} د.ل</td>
               <td>
                 {% if payment.invoice %}
@@ -205,7 +205,7 @@
         </div>
         <div class="mobile-payment-row">
           <span class="mobile-payment-label">التاريخ</span>
-          <span class="mobile-payment-value">{{ payment.payment_date|date:"Y-m-d H:i" }}</span>
+          <span class="mobile-payment-value">{{ payment.payment_date|date:"Y-m-d" }}</span>
         </div>
         <div class="mobile-payment-row">
           <span class="mobile-payment-label">المبلغ المسدد</span>

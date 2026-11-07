@@ -244,7 +244,7 @@
               {% for payment in payments %}
               <tr>
                 <td>{{ payment.receipt_number|default:"—" }}</td>
-                <td>{{ payment.payment_date|date:"Y-m-d H:i" }}</td>
+                <td>{{ payment.payment_date|date:"Y-m-d" }}</td>
                 <td class="text-success">
                   {{ payment.amount|floatformat:2|intcomma }} د.ل
                 </td>

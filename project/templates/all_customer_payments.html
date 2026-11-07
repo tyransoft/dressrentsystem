@@ -174,7 +174,7 @@
             <tr>
               <td>{{ payment.receipt_number|default:"-" }}</td>
               <td class="customer-name">{{ payment.customer.full_name|default:"-" }}</td>
-              <td>{{ payment.payment_date|date:"Y-m-d H:i" }}</td>
+              <td>{{ payment.payment_date|date:"Y-m-d" }}</td>
               <td class="money">{{ payment.amount|floatformat:2|intcomma }} د.ل</td>
               <td>
                 {% if payment.invoice %}
@@ -247,7 +247,7 @@
 
         <div class="mobile-payment-row">
           <span class="mobile-payment-label">تاريخ التسديد</span>
-          <span class="mobile-payment-value">{{ payment.payment_date|date:"Y-m-d H:i" }}</span>
+          <span class="mobile-payment-value">{{ payment.payment_date|date:"Y-m-d" }}</span>
         </div>
 
         <div class="mobile-payment-row">
