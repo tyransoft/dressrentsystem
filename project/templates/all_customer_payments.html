@@ -83,6 +83,75 @@
 .erp-table{min-width:0;font-size:10px}
 .erp-table th,.erp-table td{padding:5px}
 }
+/* ✅ توزيع المدفوعات حسب طريقة الدفع */
+.section-subtitle{
+  font-size:15px;
+  font-weight:700;
+  color:#1a2236;
+  margin:20px 0 12px 0;
+  padding-bottom:8px;
+  border-bottom:2px solid #D4AF37;
+}
+
+.payment-methods-section{
+  margin-bottom:18px;
+}
+
+.methods-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:12px;
+}
+
+.method-card{
+  background:#f8fafc;
+  border:1px solid #eaecf0;
+  border-radius:10px;
+  padding:14px 12px;
+  text-align:center;
+  transition:all .2s;
+}
+
+.method-card:hover{
+  background:#f0f4ff;
+  border-color:#c7d2fe;
+  transform:translateY(-1px);
+}
+
+.method-name{
+  font-size:13px;
+  font-weight:600;
+  color:#374151;
+  margin-bottom:6px;
+  overflow-wrap:anywhere;
+}
+
+.method-total{
+  font-size:18px;
+  font-weight:700;
+  color:#16a34a;
+  direction:ltr;
+  overflow-wrap:anywhere;
+}
+
+.method-count{
+  font-size:11px;
+  color:#6b7280;
+  margin-top:4px;
+}
+
+@media(max-width:600px){
+  .methods-grid{grid-template-columns:1fr 1fr;}
+}
+
+@media(max-width:400px){
+  .methods-grid{grid-template-columns:1fr;}
+}
+
+@media print{
+  .methods-grid{grid-template-columns:repeat(3,1fr);}
+  .method-card{background:#fff;border:1px solid #d1d5db;}
+}
 </style>
 
 <div class="action-bar">
@@ -144,9 +213,7 @@
       </div>
       <div class="method-count">
         {{ row.count }} دفعة
-        {% if total_paid > 0 %}
-          — {{ row.total|floatformat:0 }}%
-        {% endif %}
+        
       </div>
     </div>
     {% endfor %}
