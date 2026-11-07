@@ -5,22 +5,16 @@
 <html dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>تقرير أداء الموظف - اليوم</title>
+    <title>تقرير أداء الموظفين - اليوم</title>
     <style>
-        @page {
-            size: A4;
-            margin: 1cm;
-        }
+        @page { size: A4; margin: 1cm; }
         @media print {
             .no-print { display: none !important; }
             body { background: #fff !important; margin: 0; padding: 0; }
             .print-container { padding: 10px; }
+            .employee-section { page-break-inside: avoid; }
         }
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f7fa;
@@ -40,16 +34,9 @@
             padding-bottom: 15px;
             margin-bottom: 20px;
         }
-        .header h2 {
-            margin: 0;
-            color: #1e293b;
-            font-size: 24px;
-        }
-        .header p {
-            margin: 5px 0 0;
-            color: #6b7280;
-            font-size: 14px;
-        }
+        .header h2 { margin: 0; color: #1e293b; font-size: 24px; }
+        .header p { margin: 5px 0 0; color: #6b7280; font-size: 14px; }
+
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -63,26 +50,11 @@
             border: 1px solid #eaecf0;
             text-align: center;
         }
-        .stat-card .stat-number {
-            font-size: 22px;
-            font-weight: 700;
-            color: #1e293b;
-        }
-        .stat-card .stat-label {
-            font-size: 12px;
-            color: #9ca3af;
-            margin-top: 4px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-            margin-top: 10px;
-        }
-        thead {
-            background: #f8fafc;
-            border-bottom: 2px solid #e5e7eb;
-        }
+        .stat-card .stat-number { font-size: 22px; font-weight: 700; color: #1e293b; }
+        .stat-card .stat-label { font-size: 12px; color: #9ca3af; margin-top: 4px; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+        thead { background: #f8fafc; border-bottom: 2px solid #e5e7eb; }
         thead th {
             padding: 10px 12px;
             text-align: right;
@@ -92,25 +64,13 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        tbody tr {
-            border-bottom: 1px solid #f1f3f5;
-        }
-        tbody tr:hover {
-            background: #fafafa;
-        }
-        tbody td {
-            padding: 8px 12px;
-            vertical-align: middle;
-        }
-        .amount {
-            font-weight: 600;
-        }
-        .amount-revenue {
-            color: #16a34a;
-        }
-        .amount-remaining {
-            color: #dc2626;
-        }
+        tbody tr { border-bottom: 1px solid #f1f3f5; }
+        tbody tr:hover { background: #fafafa; }
+        tbody td { padding: 8px 12px; vertical-align: middle; }
+        .amount { font-weight: 600; }
+        .amount-revenue { color: #16a34a; }
+        .amount-remaining { color: #dc2626; }
+
         .footer {
             text-align: center;
             margin-top: 30px;
@@ -120,83 +80,73 @@
             font-size: 12px;
         }
         .btn-print {
-            background: #D4AF37;
-            color: #fff;
-            border: none;
-            padding: 10px 30px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-            margin: 10px;
-            transition: all 0.3s;
+            background: #D4AF37; color: #fff; border: none;
+            padding: 10px 30px; border-radius: 8px;
+            font-weight: 600; font-size: 14px; cursor: pointer;
+            margin: 10px; transition: all 0.3s;
         }
-        .btn-print:hover {
-            background: #B8960F;
-        }
+        .btn-print:hover { background: #B8960F; }
         .btn-back {
-            background: #f3f4f6;
-            color: #4b5563;
-            border: none;
-            padding: 10px 30px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            margin: 10px;
+            background: #f3f4f6; color: #4b5563; border: none;
+            padding: 10px 30px; border-radius: 8px;
+            font-weight: 600; font-size: 14px; cursor: pointer;
+            text-decoration: none; display: inline-block; margin: 10px;
         }
-        .btn-back:hover {
-            background: #e5e7eb;
+        .btn-back:hover { background: #e5e7eb; }
+        .actions { text-align: center; margin-bottom: 20px; }
+        .empty-state { text-align: center; padding: 40px; color: #9ca3af; }
+        .empty-state h3 { color: #4b5563; margin-bottom: 8px; font-size: 18px; }
+
+        /* ✅ تنسيق أقسام كل موظف */
+        .employee-section {
+            margin-bottom: 30px;
+            padding: 16px;
+            border: 1px solid #eaecf0;
+            border-radius: 10px;
+            background: #fcfcfd;
         }
-        .actions {
-            text-align: center;
-            margin-bottom: 20px;
+        .employee-section .employee-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e293b;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #D4AF37;
         }
-        .empty-state {
-            text-align: center;
-            padding: 40px;
+        .employee-section .employee-title small {
+            font-weight: 400;
             color: #9ca3af;
+            font-size: 12px;
         }
-        .empty-state h3 {
-            color: #4b5563;
-            margin-bottom: 8px;
-            font-size: 18px;
-        }
+
         @media (max-width: 768px) {
-            .stats-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-            .print-container {
-                padding: 10px;
-            }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .print-container { padding: 10px; }
         }
         @media (max-width: 480px) {
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-            .header h2 {
-                font-size: 18px;
-            }
+            .stats-grid { grid-template-columns: 1fr; }
+            .header h2 { font-size: 18px; }
         }
     </style>
 </head>
 <body>
 <div class="print-container">
     <div class="header">
-        <h2>تقرير أداء الموظف - اليوم</h2>
+        <h2>تقرير أداء الموظفين - اليوم</h2>
         <p>
             التاريخ: {{ today|date:"Y-m-d" }}
             {% if selected_employee %}
-            | الموظف: {{ selected_employee.username }}
+                | الموظف: {{ selected_employee.username }}
+            {% elif is_admin %}
+                | جميع الموظفين
             {% else %}
-            | جميع الموظفين
+                | {{ request.user.username }}
             {% endif %}
         </p>
         <p style="font-size: 12px; color: #9ca3af;">وقت الطباعة: {% now "Y-m-d H:i:s" %}</p>
     </div>
 
+    <!-- ✅ الإجماليات العامة -->
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-number">{{ total_invoices }}</div>
@@ -224,100 +174,211 @@
         </div>
     </div>
 
-    {% if invoices %}
-    <table>
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>رقم الفاتورة</th>
-                <th>العميل</th>
-                <th>النوع</th>
-                <th>المبلغ</th>
-                <th>المدفوع</th>
-                <th>المتبقي</th>
-                <th>الخصم</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for invoice in invoices %}
-            <tr>
-                <td>{{ forloop.counter }}</td>
-                <td>#{{ invoice.id }}</td>
-                <td>{{ invoice.customer.full_name|default:'-' }}</td>
-                <td>{{ invoice.get_invoice_type_display }}</td>
-                <td class="amount amount-revenue">{{ invoice.total_amount|floatformat:2 }} د.ل</td>
-                <td>{{ invoice.paid_amount|floatformat:2 }} د.ل</td>
-                <td class="amount amount-remaining">{{ invoice.remaining_amount|floatformat:2 }} د.ل</td>
-                <td>{{ invoice.discount|floatformat:2 }} د.ل</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <div class="empty-state">
-        <h3>لا توجد فواتير اليوم</h3>
-        <p>لا توجد فواتير مسجلة لهذا اليوم</p>
-    </div>
-    {% endif %}
-<h3 style="margin-top: 25px; margin-bottom: 10px;">
-    تسديدات ديون العملاء اليوم
-</h3>
+    {% if is_admin %}
+        <!-- ✅ تقرير لكل موظف -->
+        {% for row in employees_report %}
+        <div class="employee-section">
+            <div class="employee-title">
+                {{ row.employee.get_full_name|default:row.employee.username }}
+                <small>({{ row.employee.username }})</small>
+            </div>
 
-<div class="stat-card">
-    <div class="stat-number">
-        {{ total_payments|floatformat:2|intcomma }} د.ل
-    </div>
-    <div class="stat-label">إجمالي التسديدات اليوم</div>
-</div>
+            <!-- بطاقات الموظف -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">{{ row.total_invoices }}</div>
+                    <div class="stat-label">عدد الفواتير</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ row.total_revenue|floatformat:0|intcomma }} د.ل</div>
+                    <div class="stat-label">إجمالي الإيرادات</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ row.total_gross_profit|floatformat:0|intcomma }} د.ل</div>
+                    <div class="stat-label">الربح الإجمالي</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ row.total_payments|floatformat:0|intcomma }} د.ل</div>
+                    <div class="stat-label">المدفوع</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ row.total_remaining|floatformat:0|intcomma }} د.ل</div>
+                    <div class="stat-label">المتبقي</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ row.total_items }}</div>
+                    <div class="stat-label">عدد المنتجات</div>
+                </div>
+            </div>
 
-{% if customer_payments %}
-<table>
-    <thead>
-        <tr>
-            <th>#</th>
-            <th>رقم الإيصال</th>
-            <th>العميل</th>
-            <th>الفاتورة المرتبطة</th>
-            <th>المبلغ المسدد</th>
-            <th>الموظف</th>
-            <th>التاريخ</th>
-        </tr>
-    </thead>
+            <!-- فواتير الموظف -->
+            {% if row.invoices %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>رقم الفاتورة</th>
+                        <th>العميل</th>
+                        <th>النوع</th>
+                        <th>المبلغ</th>
+                        <th>المدفوع</th>
+                        <th>المتبقي</th>
+                        <th>الخصم</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for invoice in row.invoices %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>#{{ invoice.invoice_number|default:invoice.id }}</td>
+                        <td>{{ invoice.customer.full_name|default:'-' }}</td>
+                        <td>{{ invoice.get_invoice_type_display }}</td>
+                        <td class="amount amount-revenue">{{ invoice.total_amount|floatformat:2 }} د.ل</td>
+                        <td>{{ invoice.paid_amount|floatformat:2 }} د.ل</td>
+                        <td class="amount amount-remaining">{{ invoice.remaining_amount|floatformat:2 }} د.ل</td>
+                        <td>{{ invoice.discount|floatformat:2 }} د.ل</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <p>لا توجد فواتير لهذا الموظف اليوم</p>
+            </div>
+            {% endif %}
 
-    <tbody>
-        {% for payment in customer_payments %}
-        <tr>
-            <td>{{ forloop.counter }}</td>
-            <td>{{ payment.receipt_number|default:'-' }}</td>
-            <td>{{ payment.customer.full_name|default:'-' }}</td>
-            <td>
-                {% if payment.invoice %}
-                    #{{ payment.invoice.id }}
-                {% else %}
-                    -
-                {% endif %}
-            </td>
-            <td class="amount amount-revenue">
-                {{ payment.amount|floatformat:2 }} د.ل
-            </td>
-            <td>{{ payment.created_by.username|default:'-' }}</td>
-            <td>{{ payment.payment_date|date:"Y-m-d H:i" }}</td>
-        </tr>
+            <!-- دفعات الموظف -->
+            {% if row.payments %}
+            <h3 style="margin-top: 15px; margin-bottom: 8px; font-size: 14px;">
+                تسديدات هذا الموظف اليوم ({{ row.total_payments|floatformat:2|intcomma }} د.ل)
+            </h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>رقم الإيصال</th>
+                        <th>العميل</th>
+                        <th>الفاتورة المرتبطة</th>
+                        <th>المبلغ المسدد</th>
+                        <th>التاريخ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in row.payments %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ payment.receipt_number|default:'-' }}</td>
+                        <td>{{ payment.customer.full_name|default:'-' }}</td>
+                        <td>
+                            {% if payment.invoice %}
+                                #{{ payment.invoice.invoice_number|default:payment.invoice.id }}
+                            {% else %}-{% endif %}
+                        </td>
+                        <td class="amount amount-revenue">{{ payment.amount|floatformat:2 }} د.ل</td>
+                        <td>{{ payment.payment_date|date:"Y-m-d" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <h3>لا يوجد موظفون</h3>
+        </div>
         {% endfor %}
-    </tbody>
-</table>
-{% else %}
-<div class="empty-state">
-    <p>لا توجد تسديدات عملاء اليوم</p>
-</div>
-{% endif %}
+
+    {% else %}
+        <!-- ✅ موظف عادي: يعرض بياناته فقط (نفس الهيكل السابق) -->
+        {% with row=employees_report.0 %}
+        <h3 style="margin-bottom: 10px;">فواتير اليوم</h3>
+        {% if row.invoices %}
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>رقم الفاتورة</th>
+                    <th>العميل</th>
+                    <th>النوع</th>
+                    <th>المبلغ</th>
+                    <th>المدفوع</th>
+                    <th>المتبقي</th>
+                    <th>الخصم</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for invoice in row.invoices %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>#{{ invoice.invoice_number|default:invoice.id }}</td>
+                    <td>{{ invoice.customer.full_name|default:'-' }}</td>
+                    <td>{{ invoice.get_invoice_type_display }}</td>
+                    <td class="amount amount-revenue">{{ invoice.total_amount|floatformat:2 }} د.ل</td>
+                    <td>{{ invoice.paid_amount|floatformat:2 }} د.ل</td>
+                    <td class="amount amount-remaining">{{ invoice.remaining_amount|floatformat:2 }} د.ل</td>
+                    <td>{{ invoice.discount|floatformat:2 }} د.ل</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <h3>لا توجد فواتير اليوم</h3>
+        </div>
+        {% endif %}
+
+        <h3 style="margin-top: 25px; margin-bottom: 10px;">تسديدات ديون العملاء اليوم</h3>
+        <div class="stat-card">
+            <div class="stat-number">{{ row.total_payments|floatformat:2|intcomma }} د.ل</div>
+            <div class="stat-label">إجمالي التسديدات اليوم</div>
+        </div>
+
+        {% if row.payments %}
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>رقم الإيصال</th>
+                    <th>العميل</th>
+                    <th>الفاتورة المرتبطة</th>
+                    <th>المبلغ المسدد</th>
+                    <th>التاريخ</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in row.payments %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ payment.receipt_number|default:'-' }}</td>
+                    <td>{{ payment.customer.full_name|default:'-' }}</td>
+                    <td>
+                        {% if payment.invoice %}
+                            #{{ payment.invoice.invoice_number|default:payment.invoice.id }}
+                        {% else %}-{% endif %}
+                    </td>
+                    <td class="amount amount-revenue">{{ payment.amount|floatformat:2 }} د.ل</td>
+                    <td>{{ payment.payment_date|date:"Y-m-d" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <p>لا توجد تسديدات عملاء اليوم</p>
+        </div>
+        {% endif %}
+        {% endwith %}
+    {% endif %}
+
     <div class="footer">
         <p>هذا التقرير صادر عن نظام إدارة المحل</p>
     </div>
 </div>
 
 <div class="actions no-print">
-    <button class="btn-print" onclick="window.print()"> طباعة</button>
+    <button class="btn-print" onclick="window.print()">طباعة</button>
+        <a href="javascript:history.back()" class="btn-back">رجوع</a>
+
 </div>
 
 <script>

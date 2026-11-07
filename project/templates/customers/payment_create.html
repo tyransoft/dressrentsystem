@@ -54,7 +54,19 @@
       </small>
     {% endif %}
   </div>
-
+<div class="form-group">
+  <label class="form-label">طريقة الدفع *</label>
+  <select name="payment_method" id="payment-method"
+          class="form-control" required>
+    <option value="">-- اختر طريقة الدفع --</option>
+    {% for pm in payment_methods %}
+      <option value="{{ pm.pk }}"
+              {% if default_method and pm.pk == default_method.pk %}selected{% endif %}>
+        {{ pm.name }}
+      </option>
+    {% endfor %}
+  </select>
+</div>
   <div class="form-group">
     <label class="form-label">المبلغ المراد تسديده *</label>
 

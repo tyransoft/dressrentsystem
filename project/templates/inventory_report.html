@@ -79,6 +79,11 @@
     <div class="stat-number">{{ inclean_count|add:inrepair_count }}</div>
     <div class="stat-label">صيانة/تنظيف</div>
   </div>
+  <div class="stat-card danger" style="grid-column:span 2;">
+  <div class="stat-number">{{ total_cost|floatformat:0|intcomma }}</div>
+  <div class="stat-label">إجمالي تكلفة المنتجات</div>
+  <div class="stat-sub">{{ total_cost|floatformat:2|intcomma }} د.ل</div>
+</div>
   <div class="stat-card success" style="grid-column:span 2;">
     <div class="stat-number">{{ total_rental_revenue|floatformat:0|intcomma }}</div>
     <div class="stat-label">إجمالي إيرادات الإيجار</div>

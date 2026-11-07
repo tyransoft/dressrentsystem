@@ -65,7 +65,7 @@
         <thead>
           <tr>
             <th>الاسم</th><th>الكود</th><th>الفئة</th><th>سعر التكلفة</th>
-            <th>سعر البيع</th><th>الحالة</th><th>الإجراءات</th>
+            <th>سعر البيع</th><th>ماليا</th><th>الحالة</th><th>الإجراءات</th>
           </tr>
         </thead>
         <tbody>
@@ -76,6 +76,14 @@
             <td>{{ product.category.name|default:"-" }}</td>
             <td>{{ product.cost_price|floatformat:2|intcomma }}</td>
             <td class="fw-bold text-primary">{{ product.selling_price|floatformat:2|intcomma }}</td>
+              
+    <td>
+      {% if product.is_cost_covered %}
+        <span class="badge badge-success">خالص</span>
+      {% else %}
+        <span class="badge badge-danger">غير خالص</span>
+      {% endif %}
+    </td>
             <td>{% if product.is_available %}<span class="badge badge-success">متاح</span>{% else %}<span class="badge badge-danger">{{ product.get_status_display }}</span>{% endif %}</td>
             <td>
               <div style="display:flex;gap:5px;">
@@ -105,6 +113,12 @@
         <div class="pc-row"><span class="pc-label">الفئة</span><span>{{ product.category.name|default:"-" }}</span></div>
         <div class="pc-row"><span class="pc-label">سعر التكلفة</span><span>{{ product.cost_price|floatformat:2|intcomma }}</span></div>
         <div class="pc-row"><span class="pc-label">سعر البيع</span><span class="fw-bold text-primary">{{ product.selling_price|floatformat:2|intcomma }}</span></div>
+        <div class="pc-row"><span class="pc-label">ماليا</span> {% if product.is_cost_covered %}
+        <span class="badge badge-success">خالص</span>
+      {% else %}
+        <span class="badge badge-danger">غير خالص</span>
+      {% endif %}</div>
+
         <div class="pc-row"><span class="pc-label">الحالة</span><span>{% if product.is_available %}<span class="badge badge-success">متاح</span>{% else %}<span class="badge badge-danger">{{product.get_status_display}}</span>{% endif %}</span></div>
         <div class="pc-actions">
           <a href="{% url 'products_detail' product.pk %}" class="btn btn-outline btn-sm">عرض</a>

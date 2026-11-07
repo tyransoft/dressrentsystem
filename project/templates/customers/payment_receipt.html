@@ -80,7 +80,13 @@
       <span>{{ payment.notes }}</span>
     </div>
     {% endif %}
-    
+    {% if payment.payment_method %}
+        <div class="info-row">
+
+  <span>طريقة الدفع</span>
+  <span>{{ payment.payment_method.name }}</span>
+        </div> 
+{% endif %}
     <div class="info-row">
       <span>تم بواسطة</span>
       <span>{{ payment.created_by.username|default:payment.created_by.username }}</span>

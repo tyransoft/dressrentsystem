@@ -329,11 +329,29 @@ def product_delete(request, pk):
         return redirect('products_list')
 
     product = get_object_or_404(Product, pk=pk)
-    product.delete()
 
+    blocking_items = InvoiceItem.objects.filter(
+        product=product
+    ).exclude(
+        invoice__status=InvoiceStatus.RECIEVED
+    )
+
+    if blocking_items.exists():
+        invoices_numbers = list(
+            blocking_items.values_list(
+                'invoice__invoice_number', flat=True
+            ).distinct()
+        )
+        messages.error(
+            request,
+            f'لا يمكن حذف المنتج «{product.name}» لأنه مرتبط بفواتير '
+            f'لم تُستلم وتُدفع بعد: {", ".join(invoices_numbers)}'
+        )
+        return redirect('products_list')
+
+    product.delete()
     messages.success(request, 'تم حذف المنتج بنجاح')
     return redirect('products_list')
-
 
 @login_required
 def category_list(request):
@@ -1016,6 +1034,19 @@ def customer_payment_create(request, pk):
 
     if request.method == 'POST':
         invoice_id = request.POST.get('invoice_id')
+        payment_method_id = request.POST.get('payment_method')
+
+        payment_method = None
+        if payment_method_id:
+            payment_method = PaymentMethod.objects.filter(
+                pk=payment_method_id, is_active=True
+            ).first()
+            if not payment_method:
+                messages.error(request, 'طريقة الدفع غير صحيحة أو غير مفعّلة.')
+                return redirect('customer_payment_create', pk=pk)
+        else:
+            messages.error(request, 'يجب اختيار طريقة الدفع.')
+            return redirect('customer_payment_create', pk=pk)
 
         try:
             amount = Decimal(request.POST.get('amount', '0'))
@@ -1032,21 +1063,20 @@ def customer_payment_create(request, pk):
         payment_date = timezone.localdate()
 
         if request.user.is_main_admin:
-           date_raw = request.POST.get('payment_date', '').strip()
-
+            date_raw = request.POST.get('payment_date', '').strip()
+      
         if date_raw:
-          try:
-            payment_date = datetime.strptime(
-                date_raw, '%Y-%m-%d'
-            ).date()
-          except ValueError:
-            messages.error(request, 'تاريخ الدفع غير صحيح.')
-            return redirect('customer_payment_create', pk=pk)
-
+            try:
+                payment_date = datetime.strptime(
+                    date_raw, '%Y-%m-%d'
+                ).date()
+            except ValueError:
+                messages.error(request, 'تاريخ الدفع غير صحيح.')
+                return redirect('customer_payment_create', pk=pk)
+ 
         with transaction.atomic():
             customer = get_object_or_404(
-                Customer.objects.select_for_update(),
-                pk=pk
+                Customer.objects.select_for_update(), pk=pk
             )
 
             invoice = get_object_or_404(
@@ -1054,7 +1084,6 @@ def customer_payment_create(request, pk):
                 pk=invoice_id,
                 customer=customer,
                 remaining_amount__gt=0,
-              
             )
 
             if amount > invoice.remaining_amount:
@@ -1070,9 +1099,10 @@ def customer_payment_create(request, pk):
                 customer=customer,
                 invoice=invoice,
                 amount=amount,
+                payment_method=payment_method,    
                 payment_date=payment_date,
                 notes=notes,
-                created_by=request.user
+                created_by=request.user,
             )
 
             invoice.paid_amount = (
@@ -1090,50 +1120,41 @@ def customer_payment_create(request, pk):
                 invoice.status = InvoiceStatus.PARTIAL
 
             invoice.save(update_fields=[
-                'paid_amount',
-                'remaining_amount',
-                'status',
-                'updated_at',
+                'paid_amount', 'remaining_amount',
+                'status', 'updated_at',
             ])
 
             customer.debt_balance = max(
                 Decimal('0.00'),
                 (customer.debt_balance or Decimal('0.00')) - amount
             )
-
-            customer.save(update_fields=[
-                'debt_balance',
-                'updated_at',
-            ])
+            customer.save(update_fields=['debt_balance', 'updated_at'])
 
         messages.success(
             request,
             f'تم تسديد {amount:,.2f} د.ل من الفاتورة '
             f'{invoice.invoice_number} للعميل {customer.full_name}'
         )
-
         return redirect('customer_payment_receipt', pk=payment.pk)
 
     invoices = Invoice.objects.filter(
         customer=customer,
         remaining_amount__gt=0,
-       
     ).order_by('created_at', 'pk')
+
+    payment_methods = PaymentMethod.objects.filter(is_active=True)
+    default_method = PaymentMethod.get_default_method()
 
     context = {
         'customer': customer,
         'debt_amount': customer.debt_balance,
         'invoices': invoices,
+        'payment_methods': payment_methods,
+        'default_method': default_method,
         'today': timezone.localdate(),
-
     }
 
-    return render(
-        request,
-        'customers/payment_create.html',
-        context
-    )
-
+    return render(request, 'customers/payment_create.html', context)
 
 @login_required
 def customer_payment_receipt(request, pk):
@@ -1174,6 +1195,8 @@ def confirm_return(request, invoice_id):
                 CustomerPayment.objects.create(
                     invoice=invoice,
                     customer=invoice.customer,
+                    payment_method=invoice.payment_method,    
+
                     amount=remaining,
                     created_by=request.user,
                     notes=f'تسوية  عند استلام الفاتورة {invoice.invoice_number}'
@@ -1570,6 +1593,8 @@ def create_invoice(request):
                              invoice=invoice,
                              customer=invoice.customer,
                              amount=invoice.paid_amount,
+                            payment_method=invoice.payment_method ,    
+
                              created_by=request.user,
                              payment_date=invoice.created_at,
                               notes=note
@@ -2178,7 +2203,19 @@ def all_customer_payments(request):
     total_paid = payments.aggregate(
         total=Sum('amount')
     )['total'] or Decimal('0.00')
-
+    payment_method_breakdown = (
+      payments
+      .values(
+        'payment_method__id',
+        'payment_method__name',
+        'payment_method__increase_percentage',
+      )
+      .annotate(
+        total=Sum('amount'),
+        count=Count('id'),
+      )
+      .order_by('-total')
+    )
     paginator = Paginator(payments, 25)
     page_number = request.GET.get('page')
     payments_page = paginator.get_page(page_number)
@@ -2189,47 +2226,94 @@ def all_customer_payments(request):
         'search': search,
         'date_from': date_from,
         'date_to': date_to,
+        'payment_method_breakdown': payment_method_breakdown, 
     })
-
-
 
 @login_required
 def inventory_report(request):
+    from django.db.models import Sum, Count, Q, F, DecimalField, Value
+    from django.db.models.functions import Coalesce
+
     products = Product.objects.filter(is_active=True).order_by('name')
-    
+
     total_products = products.count()
+
+    # ✅ إجمالي تكلفة كل المنتجات النشطة
+    total_cost = products.aggregate(
+        total=Coalesce(
+            Sum('cost_price'),
+            Value(0, output_field=DecimalField(max_digits=12, decimal_places=2)),
+        )
+    )['total']
+
+    # ✅ (اختياري) تكلفة المنتجات حسب الحالة
+    cost_by_status = products.aggregate(
+        cost_available=Coalesce(
+            Sum('cost_price', filter=Q(status=Dstatus.AVAILABLE)),
+            Value(0, output_field=DecimalField(max_digits=12, decimal_places=2)),
+        ),
+        cost_rented=Coalesce(
+            Sum('cost_price', filter=Q(status=Dstatus.RENTED)),
+            Value(0, output_field=DecimalField(max_digits=12, decimal_places=2)),
+        ),
+        cost_sold=Coalesce(
+            Sum('cost_price', filter=Q(status=Dstatus.SOLD)),
+            Value(0, output_field=DecimalField(max_digits=12, decimal_places=2)),
+        ),
+        cost_inclean=Coalesce(
+            Sum('cost_price', filter=Q(status=Dstatus.INCLEAN)),
+            Value(0, output_field=DecimalField(max_digits=12, decimal_places=2)),
+        ),
+        cost_inrepair=Coalesce(
+            Sum('cost_price', filter=Q(status=Dstatus.INREPAIR)),
+            Value(0, output_field=DecimalField(max_digits=12, decimal_places=2)),
+        ),
+    )
+
     total_rental_revenue = Decimal('0')
     total_profit = Decimal('0')
-    
+
     for product in products:
-        rental_count = InvoiceItem.objects.filter(
+        rental_qs = InvoiceItem.objects.filter(
             product=product,
-            invoice__invoice_type=InvoiceType.RENT
-        ).count()
-        
-        rental_revenue = InvoiceItem.objects.filter(
-            product=product,
-            invoice__invoice_type=InvoiceType.RENT
-        ).aggregate(total=Sum('total_price'))['total'] or Decimal('0')
-        
-        profit = rental_revenue - product.cost_price if rental_revenue > 0 else Decimal('0')
-        
+            invoice__invoice_type=InvoiceType.RENT,
+        )
+
+        rental_count = rental_qs.count()
+        rental_revenue = rental_qs.aggregate(
+            total=Sum('total_price')
+        )['total'] or Decimal('0')
+
+        profit = (
+            rental_revenue - product.cost_price
+            if rental_revenue > 0 else Decimal('0')
+        )
+
         product.rental_count = rental_count
         product.rental_revenue = rental_revenue
         product.profit = profit
-        
+
         total_rental_revenue += rental_revenue
         total_profit += profit
-    
+
     rented_count = Product.objects.filter(status=Dstatus.RENTED).count()
     available_count = Product.objects.filter(status=Dstatus.AVAILABLE).count()
     sold_count = Product.objects.filter(status=Dstatus.SOLD).count()
     inclean_count = Product.objects.filter(status=Dstatus.INCLEAN).count()
     inrepair_count = Product.objects.filter(status=Dstatus.INREPAIR).count()
-    
+
     context = {
         'products': products,
         'total_products': total_products,
+
+        # ✅ جديد: التكاليف
+        'total_cost': total_cost,
+        'cost_available': cost_by_status['cost_available'],
+        'cost_rented': cost_by_status['cost_rented'],
+        'cost_sold': cost_by_status['cost_sold'],
+        'cost_inclean': cost_by_status['cost_inclean'],
+        'cost_inrepair': cost_by_status['cost_inrepair'],
+
         'total_rental_revenue': total_rental_revenue,
         'total_profit': total_profit,
         'rented_count': rented_count,
@@ -2238,9 +2322,8 @@ def inventory_report(request):
         'inclean_count': inclean_count,
         'inrepair_count': inrepair_count,
     }
-    
-    return render(request, 'inventory_report.html', context)
 
+    return render(request, 'inventory_report.html', context)
 
 
 
@@ -2790,63 +2873,197 @@ def employees_performance(request):
 def employee_performance_print(request):
     today = timezone.now().date()
     employee_id = request.GET.get('employee_id')
-    
-    invoices = Invoice.objects.filter(
-        created_at__date=today
-    ).exclude(status=InvoiceStatus.CANCELLED)
-    
-    if employee_id:
-        invoices = invoices.filter(created_by_id=employee_id)
-    
+
     employees = CustomUser.objects.all()
     selected_employee = None
     if employee_id:
         selected_employee = get_object_or_404(CustomUser, pk=employee_id)
-    
-    total_invoices = invoices.count()
-    total_revenue = invoices.aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
-    total_paid = invoices.aggregate(total=Sum('paid_amount'))['total'] or Decimal('0')
-    total_remaining = invoices.aggregate(total=Sum('remaining_amount'))['total'] or Decimal('0')
-    total_discount = invoices.aggregate(total=Sum('discount'))['total'] or Decimal('0')
-    total_commission = invoices.aggregate(total=Sum('commission'))['total'] or Decimal('0')
-    
-    rent_invoices = invoices.filter(invoice_type=InvoiceType.RENT)
-    sale_invoices = invoices.filter(invoice_type=InvoiceType.SALE)
-    total_rent_revenue = rent_invoices.aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
-    total_sale_revenue = sale_invoices.aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
-    
-    invoice_items = InvoiceItem.objects.filter(invoice__in=invoices)
-    total_items = invoice_items.count()
-    total_rent_days = invoice_items.aggregate(total=Sum('days'))['total'] or 0
-    
-    sale_items = invoice_items.filter(invoice__invoice_type=InvoiceType.SALE)
-    sale_product_cost = sale_items.aggregate(total=Sum('product__cost_price'))['total'] or Decimal('0')
-    
-    total_gross_profit = total_revenue - sale_product_cost
-    
-    total_penalties = Penalty.objects.filter(
-        invoice__in=invoices
-    ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-    customer_payments = CustomerPayment.objects.filter(
-         payment_date__date=today
-         ).select_related(
-          'customer', 'invoice', 'created_by'
+
+    is_admin = request.user.is_main_admin() if callable(
+        getattr(request.user, 'is_main_admin', None)
+    ) else getattr(request.user, 'is_main_admin', False)
+
+    # ===== تحديد الموظفين المشمولين بالتقرير =====
+    if is_admin:
+        # الأدمن: كل الموظفين (أو موظف محدد إن اختار)
+        employees_to_report = (
+            [selected_employee] if selected_employee else employees
+        )
+    else:
+        # الموظف العادي: نفسه فقط
+        employees_to_report = [request.user]
+
+    # ===== بناء تقرير لكل موظف =====
+    employees_report = []
+
+    for emp in employees_to_report:
+        emp_invoices = Invoice.objects.filter(
+            created_at__date=today,
+            created_by=emp,
+        ).exclude(status=InvoiceStatus.CANCELLED)
+
+        totals = emp_invoices.aggregate(
+            revenue=Sum('total_amount'),
+            paid=Sum('paid_amount'),
+            remaining=Sum('remaining_amount'),
+            discount=Sum('discount'),
+            commission=Sum('commission'),
+        )
+
+        total_revenue = totals['revenue'] or Decimal('0')
+        total_paid = totals['paid'] or Decimal('0')
+        total_remaining = totals['remaining'] or Decimal('0')
+        total_discount = totals['discount'] or Decimal('0')
+        total_commission = totals['commission'] or Decimal('0')
+
+        # إيجار / بيع
+        rent_invoices = emp_invoices.filter(invoice_type=InvoiceType.RENT)
+        sale_invoices = emp_invoices.filter(invoice_type=InvoiceType.SALE)
+        total_rent_revenue = rent_invoices.aggregate(
+            total=Sum('total_amount')
+        )['total'] or Decimal('0')
+        total_sale_revenue = sale_invoices.aggregate(
+            total=Sum('total_amount')
+        )['total'] or Decimal('0')
+
+        # البنود
+        emp_items = InvoiceItem.objects.filter(invoice__in=emp_invoices)
+        total_items = emp_items.count()
+        total_rent_days = emp_items.aggregate(
+            total=Sum('days')
+        )['total'] or 0
+
+        sale_items = emp_items.filter(
+            invoice__invoice_type=InvoiceType.SALE
+        )
+        sale_product_cost = sale_items.aggregate(
+            total=Sum('product__cost_price')
+        )['total'] or Decimal('0')
+
+        total_gross_profit = total_revenue - sale_product_cost
+
+        # الغرامات
+        total_penalties = Penalty.objects.filter(
+            invoice__in=emp_invoices
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+
+        # الدفعات (payment_date الآن DateField)
+        emp_payments = CustomerPayment.objects.filter(
+            payment_date=today,
+            created_by=emp,
+        ).select_related('customer', 'invoice', 'created_by')
+
+        total_payments = emp_payments.aggregate(
+            total=Sum('amount')
+        )['total'] or Decimal('0')
+
+        employees_report.append({
+            'employee': emp,
+            'invoices': emp_invoices,
+            'payments': emp_payments,
+            'total_invoices': emp_invoices.count(),
+            'total_revenue': total_revenue,
+            'total_paid': total_paid,
+            'total_remaining': total_remaining,
+            'total_discount': total_discount,
+            'total_commission': total_commission,
+            'total_rent_revenue': total_rent_revenue,
+            'total_sale_revenue': total_sale_revenue,
+            'total_items': total_items,
+            'total_rent_days': total_rent_days,
+            'sale_product_cost': sale_product_cost,
+            'total_gross_profit': total_gross_profit,
+            'total_penalties': total_penalties,
+            'total_payments': total_payments,
+        })
+
+    # ===== الإجماليات العامة (للعرض في البطاقات العلوية) =====
+    if is_admin and not selected_employee:
+        # الأدمن بدون تحديد موظف: مجموع الجميع
+        overall_invoices = Invoice.objects.filter(
+            created_at__date=today
+        ).exclude(status=InvoiceStatus.CANCELLED)
+
+        overall_payments = CustomerPayment.objects.filter(
+            payment_date=today
+        )
+    else:
+        target_emp = selected_employee or request.user
+        overall_invoices = Invoice.objects.filter(
+            created_at__date=today,
+            created_by=target_emp,
+        ).exclude(status=InvoiceStatus.CANCELLED)
+
+        overall_payments = CustomerPayment.objects.filter(
+            payment_date=today,
+            created_by=target_emp,
+        )
+
+    # إجماليات الفواتير العامة
+    overall_totals = overall_invoices.aggregate(
+        revenue=Sum('total_amount'),
+        paid=Sum('paid_amount'),
+        remaining=Sum('remaining_amount'),
+        discount=Sum('discount'),
+        commission=Sum('commission'),
     )
 
-    if employee_id:
-      customer_payments = customer_payments.filter(
-        created_by_id=employee_id
-      )
+    total_invoices = overall_invoices.count()
+    total_revenue = overall_totals['revenue'] or Decimal('0')
+    total_paid = overall_totals['paid'] or Decimal('0')
+    total_remaining = overall_totals['remaining'] or Decimal('0')
+    total_discount = overall_totals['discount'] or Decimal('0')
+    total_commission = overall_totals['commission'] or Decimal('0')
 
+    # إيجار / بيع
+    overall_rent = overall_invoices.filter(invoice_type=InvoiceType.RENT)
+    overall_sale = overall_invoices.filter(invoice_type=InvoiceType.SALE)
+    total_rent_revenue = overall_rent.aggregate(
+        total=Sum('total_amount')
+    )['total'] or Decimal('0')
+    total_sale_revenue = overall_sale.aggregate(
+        total=Sum('total_amount')
+    )['total'] or Decimal('0')
+
+    # البنود
+    overall_items = InvoiceItem.objects.filter(invoice__in=overall_invoices)
+    total_items = overall_items.count()
+    total_rent_days = overall_items.aggregate(
+        total=Sum('days')
+    )['total'] or 0
+
+    overall_sale_items = overall_items.filter(
+        invoice__invoice_type=InvoiceType.SALE
+    )
+    sale_product_cost = overall_sale_items.aggregate(
+        total=Sum('product__cost_price')
+    )['total'] or Decimal('0')
+
+    total_gross_profit = total_revenue - sale_product_cost
+
+    # الغرامات
+    total_penalties = Penalty.objects.filter(
+        invoice__in=overall_invoices
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+
+    # الدفعات
+    customer_payments = overall_payments.select_related(
+        'customer', 'invoice', 'created_by'
+    )
     total_payments = customer_payments.aggregate(
         total=Sum('amount')
     )['total'] or Decimal('0')
-    
+
     context = {
         'today': today,
-        'invoices': invoices,
         'employees': employees,
         'selected_employee': selected_employee,
+        'is_admin': is_admin,
+
+        # ✅ قائمة التقارير لكل موظف (للأدمن)
+        'employees_report': employees_report,
+
+        # الإجماليات العامة (للبطاقات العلوية)
         'total_invoices': total_invoices,
         'total_revenue': total_revenue,
         'total_paid': total_paid,
@@ -2857,12 +3074,14 @@ def employee_performance_print(request):
         'total_sale_revenue': total_sale_revenue,
         'total_items': total_items,
         'total_rent_days': total_rent_days,
-        'customer_payments': customer_payments,
-
         'sale_product_cost': sale_product_cost,
         'total_gross_profit': total_gross_profit,
         'total_penalties': total_penalties,
         'total_payments': total_payments,
+
+        # الدفعات (للموظف العادي / العرض التفصيلي)
+        'customer_payments': customer_payments,
+        'invoices': overall_invoices,
     }
     return render(request, 'employee_performance_print.html', context)
 
@@ -2870,84 +3089,91 @@ def employee_performance_print(request):
 @login_required
 def admin_daily_report_print(request):
     today = timezone.now().date()
-    
+
     invoices = Invoice.objects.filter(
         created_at__date=today
     ).exclude(status=InvoiceStatus.CANCELLED)
-    
+
     rent_invoices = invoices.filter(invoice_type=InvoiceType.RENT)
     sale_invoices = invoices.filter(invoice_type=InvoiceType.SALE)
-    
+
     total_invoices = invoices.count()
     total_rent_invoices = rent_invoices.count()
     total_sale_invoices = sale_invoices.count()
-    
+
     total_revenue = invoices.aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
     total_rent_revenue = rent_invoices.aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
     total_sale_revenue = sale_invoices.aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
-    
+
     total_paid = invoices.aggregate(total=Sum('paid_amount'))['total'] or Decimal('0')
     total_remaining = invoices.aggregate(total=Sum('remaining_amount'))['total'] or Decimal('0')
     total_discount = invoices.aggregate(total=Sum('discount'))['total'] or Decimal('0')
     total_commission = invoices.aggregate(total=Sum('commission'))['total'] or Decimal('0')
-    
+
     invoice_items = InvoiceItem.objects.filter(invoice__in=invoices)
     total_items = invoice_items.count()
     total_rent_days = invoice_items.aggregate(total=Sum('days'))['total'] or 0
-    
+
     sale_items = invoice_items.filter(invoice__invoice_type=InvoiceType.SALE)
     rent_items = invoice_items.filter(invoice__invoice_type=InvoiceType.RENT)
-    
+
     sale_product_cost = sale_items.aggregate(total=Sum('product__cost_price'))['total'] or Decimal('0')
     rent_product_cost = rent_items.aggregate(total=Sum('product__cost_price'))['total'] or Decimal('0')
-    
+
     total_old_revenue = ProductOldRevenue.objects.filter(
         date=today
     ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-    
+
     total_penalties = Penalty.objects.filter(
         invoice__in=invoices
     ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-    
+
     total_gross_revenue = total_revenue + total_old_revenue + total_penalties
     total_gross_profit = total_gross_revenue - sale_product_cost
-    
-    expenses = Expense.objects.filter(
-        expense_date=today
-    )
+
+    expenses = Expense.objects.filter(expense_date=today)
     total_expenses = expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0')
-    
+
     total_salaries_paid = MonthlySalaryPayment.objects.filter(
         payment_date=today
     ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-    
-    repairs = RepairAndClean.objects.filter(
-        created_at=today
-    )
+
+    repairs = RepairAndClean.objects.filter(created_at=today)
     total_repair_cost = repairs.aggregate(total=Sum('total_cost'))['total'] or Decimal('0')
     repair_count = repairs.filter(kind='repair').count()
     clean_count = repairs.filter(kind='clean').count()
-    
+
     total_operating_expenses = total_expenses + total_repair_cost
     total_net_profit = total_gross_revenue - sale_product_cost - total_operating_expenses
-    
+
     profit_margin = 0
     if total_gross_revenue > 0:
         profit_margin = (total_gross_profit / total_gross_revenue) * 100
-    
+
     net_profit_margin = 0
     if total_gross_revenue > 0:
         net_profit_margin = (total_net_profit / total_gross_revenue) * 100
-    
+
     top_customers = Customer.objects.filter(
         invoice__in=invoices
     ).annotate(
         total_spent=Sum('invoice__total_amount'),
         total_invoices=Count('invoice')
     ).order_by('-total_spent')[:10]
-    
+
     invoices_with_users = invoices.select_related('created_by', 'customer')
-    
+
+    # ===== ✅ دفعات العملاء اليوم =====
+    customer_payments = CustomerPayment.objects.filter(
+        payment_date=today
+    ).select_related('customer', 'invoice', 'created_by', 'payment_method')
+
+    total_customer_payments = customer_payments.aggregate(
+        total=Sum('amount')
+    )['total'] or Decimal('0')
+
+    payment_count = customer_payments.count()
+
     context = {
         'today': today,
         'invoices': invoices_with_users,
@@ -2979,6 +3205,10 @@ def admin_daily_report_print(request):
         'total_net_profit': total_net_profit,
         'net_profit_margin': net_profit_margin,
         'top_customers': top_customers,
+
+        'customer_payments': customer_payments,
+        'total_customer_payments': total_customer_payments,
+        'payment_count': payment_count,
     }
     return render(request, 'admin_daily_report_print.html', context)
 

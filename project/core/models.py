@@ -192,10 +192,19 @@ class Product(models.Model):
         return self.status == Dstatus.INREPAIR
 
     def is_sold(self):
-        return self.status == Dstatus.SOLD    
+        return self.status == Dstatus.SOLD 
+    
+    from django.utils.functional import cached_property
 
-
-
+    @cached_property
+    def is_cost_covered(self):
+      from django.db.models import Sum
+      revenue = self.invoiceitem_set.filter(
+            invoice__invoice_type=InvoiceType.RENT,
+      ).exclude(
+            invoice__status=InvoiceStatus.CANCELLED,
+      ).aggregate(total=Sum('total_price'))['total'] or Decimal('0.00')
+      return revenue >= (self.cost_price or Decimal('0.00'))
 
 
 class PaymentMethod(models.Model):
@@ -208,6 +217,7 @@ class PaymentMethod(models.Model):
         verbose_name='نسبة الزيادة %',
         help_text='النسبة المئوية التي تضاف على إجمالي الفاتورة'
     )
+
     is_active = models.BooleanField(default=True, verbose_name='نشط')
     is_default = models.BooleanField(default=False, verbose_name='الطريقة الافتراضية')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -476,7 +486,14 @@ class Customer(models.Model):
 class CustomerPayment(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='payments',  null=True, blank=True)
     amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name='المبلغ المسدد')
-    payment_date = models.DateTimeField( verbose_name='تاريخ التسديد')
+    payment_date = models.DateField( verbose_name='تاريخ التسديد')
+    payment_method = models.ForeignKey(
+        'PaymentMethod',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='customer_payments',
+        verbose_name='طريقة الدفع'
+    )
     notes = models.TextField(blank=True, verbose_name='ملاحظات')
     receipt_number = models.CharField(max_length=50, unique=True, blank=True, verbose_name='رقم الإيصال')
     created_by = models.ForeignKey('core.CustomUser', on_delete=models.SET_NULL, null=True, verbose_name='تم بواسطة')

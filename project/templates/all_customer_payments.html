@@ -129,7 +129,30 @@
         <div class="stat-value" style="color:#2563eb">{{ payments.paginator.count|intcomma }}</div>
       </div>
     </div>
+{% if payment_method_breakdown %}
+<div class="payment-methods-section">
+  <h4 class="section-subtitle">توزيع المدفوعات حسب طريقة الدفع</h4>
 
+  <div class="methods-grid">
+    {% for row in payment_method_breakdown %}
+    <div class="method-card">
+      <div class="method-name">
+        {{ row.payment_method__name|default:"غير محددة" }}
+      </div>
+      <div class="method-total">
+        {{ row.total|floatformat:2|intcomma }} د.ل
+      </div>
+      <div class="method-count">
+        {{ row.count }} دفعة
+        {% if total_paid > 0 %}
+          — {{ row.total|floatformat:0 }}%
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
     <div class="desktop-table">
       <div class="table-wrap">
         <table class="erp-table">

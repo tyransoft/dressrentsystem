@@ -840,12 +840,13 @@ data-search="{{ product.name|lower }} {{ product.barcode|default:'' }}">
 {% endfor %}
 </select>
 </div>
+{% if request.user.is_main_admin %}
 
 <div class="form-group">
 <label class="form-label">الخصم</label>
 <input type="number" class="form-control" id="modal-discount" step="0.01" value="0" min="0" oninput="calcModalTotals()">
 </div>
-
+{% endif %}
 <div class="form-group">
 <label class="form-label">الرسوم الإضافية</label>
 <input type="number" class="form-control" id="modal-extra-amount" step="0.01" value="0" min="0" oninput="calcModalTotals()">
@@ -861,6 +862,8 @@ data-search="{{ product.name|lower }} {{ product.barcode|default:'' }}">
 <input type="checkbox" id="modal-identity-verified" checked> تأكيد استلام بطاقة الهوية
 </label>
 </div>
+{% if request.user.is_main_admin %}
+
 <div class="form-group">
     <label class="form-label">تاريخ الإضافة <span style="color:red;">*</span></label>
     <input
@@ -871,6 +874,7 @@ data-search="{{ product.name|lower }} {{ product.barcode|default:'' }}">
         required
     >
 </div>
+{% endif %}
 <div class="form-group">
     <label class="form-label">ملاحظات <span style="color:red;">*</span></label>
     <textarea class="form-control" id="modal-notes" rows="2" required></textarea>
