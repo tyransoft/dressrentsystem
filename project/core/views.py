@@ -987,8 +987,10 @@ def customer_detail(request, pk):
             'date': payment.payment_date,
         })
 
-    history.sort(key=lambda x: x['date'], reverse=True)
-
+    history.sort(
+      key=lambda x: x['date'].date() if isinstance(x['date'], datetime) else x['date'],
+      reverse=True
+    )
     return render(request, 'customers/detail.html', {
         'customer': customer,
         'invoices': invoices,
