@@ -194,9 +194,8 @@ class Product(models.Model):
     def is_sold(self):
         return self.status == Dstatus.SOLD 
     
-    from django.utils.functional import cached_property
 
-    @cached_property
+    @property
     def is_cost_covered(self):
        from django.db.models import Sum
        from decimal import Decimal
