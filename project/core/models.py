@@ -198,13 +198,25 @@ class Product(models.Model):
 
     @cached_property
     def is_cost_covered(self):
-      from django.db.models import Sum
-      revenue = self.invoiceitem_set.filter(
-            invoice__invoice_type=InvoiceType.RENT,
-      ).exclude(
-            invoice__status=InvoiceStatus.CANCELLED,
-      ).aggregate(total=Sum('total_price'))['total'] or Decimal('0.00')
-      return revenue >= (self.cost_price or Decimal('0.00'))
+       from django.db.models import Sum
+       from decimal import Decimal
+
+       rental_revenue = self.invoiceitem_set.filter(
+              invoice__invoice_type=InvoiceType.RENT,
+       ).exclude(
+              invoice__status=InvoiceStatus.CANCELLED,
+       ).aggregate(
+              total=Sum('total_price')
+       )['total'] or Decimal('0.00')
+
+       old_revenue = self.old_revenues.aggregate(
+              total=Sum('amount')
+       )['total'] or Decimal('0.00')
+ 
+       total_revenue = rental_revenue + old_revenue
+
+       return total_revenue >= (self.cost_price or Decimal('0.00'))
+
 
 
 class PaymentMethod(models.Model):
