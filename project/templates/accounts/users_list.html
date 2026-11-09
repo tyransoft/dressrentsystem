@@ -63,6 +63,16 @@
               </svg>
               تعديل
             </a>
+            
+                   
+            <a href="{% url 'employee_performance_print' %}?employee_id={{ u.id }}" class="btn btn-outline btn-sm" title="طباعة">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="6 9 6 2 18 2 18 9"></polyline>
+    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+    <rect x="6" y="14" width="12" height="8"></rect>
+  </svg>
+  طباعة
+</a>
             {% if u != request.user %}
             <a href="{% url 'user_delete' u.pk %}" class="btn btn-danger btn-sm" data-confirm="هل أنت متأكد من حذف هذا المستخدم؟">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -92,7 +102,6 @@
             <tr>
               <th>المستخدم</th>
               <th>الدور</th>
-              <th>الفرع</th>
               <th>الحالة</th>
               <th>الإجراءات</th>
             </tr>
@@ -127,6 +136,14 @@
                       <path d="M4 20h16"></path>
                     </svg>
                   </a>
+                
+                  <a href="{% url 'employee_performance_print' %}?employee_id={{ u.id }}" class="btn btn-outline btn-icon btn-sm" title="طباعة">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="6 9 6 2 18 2 18 9"></polyline>
+    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+    <rect x="6" y="14" width="12" height="8"></rect>
+  </svg>
+</a>
                   {% if u != request.user %}
                   <a href="{% url 'user_delete' u.pk %}" class="btn btn-danger btn-icon btn-sm" title="حذف" data-confirm="هل أنت متأكد من حذف هذا المستخدم؟">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
