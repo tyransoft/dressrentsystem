@@ -25,7 +25,7 @@ TEMP=BASE_DIR / 'templates'
 SECRET_KEY = 'django-insecure-^fnuj#%%un7^16h@w002qi6+lj)s6#w(pgmkz+ih4e46&*w*$a'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['dressrent.tip2.libyanspider.cloud']
 CSRF_TRUSTED_ORIGINS = [
@@ -143,6 +143,7 @@ AUTH_USER_MODEL = 'core.CustomUser'
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 
-
+CSRF_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SAMESITE = 'Lax'
 
 AUTH_PASSWORD_VALIDATORS = []

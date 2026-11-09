@@ -41,7 +41,11 @@ def home(request):
             return redirect('products_list')
         else:
             return redirect('create_invoice')      
+from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import ensure_csrf_cookie
 
+@never_cache
+@ensure_csrf_cookie
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('statistics')

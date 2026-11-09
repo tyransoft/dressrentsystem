@@ -213,7 +213,6 @@ class Product(models.Model):
        )['total'] or Decimal('0.00')
  
        total_revenue = rental_revenue + old_revenue
-
        return total_revenue >= (self.cost_price or Decimal('0.00'))
 
 
