@@ -2568,7 +2568,6 @@ def employee_edit(request, pk):
         employee.full_name = request.POST.get('full_name')
         employee.position = request.POST.get('position')
         employee.phone = request.POST.get('phone')
-        employee.monthly_salary = request.POST.get('monthly_salary', 0)
         employee.status = request.POST.get('status')
         employee.save()
         messages.success(request, f'تم تعديل بيانات {employee.full_name}')
