@@ -132,9 +132,16 @@
 <body>
 <div class="print-container">
     <div class="header">
-        <h2>تقرير أداء الموظفين - اليوم</h2>
+        <h2>تقرير أداء الموظفين</h2>
         <p>
-            التاريخ: {{ today|date:"Y-m-d" }}
+<div class="print-period-badge" style="text-align:center;margin-bottom:14px;font-size:14px;color:#4b5563;">
+  {% if is_range %}
+    الفترة: من <strong>{{ date_from|date:"Y-m-d" }}</strong>
+    إلى <strong>{{ date_to|date:"Y-m-d" }}</strong>
+  {% else %}
+    اليوم: <strong>{{ date_from|date:"Y-m-d" }}</strong>
+  {% endif %}
+</div>
             {% if selected_employee %}
                 | الموظف: {{ selected_employee.username }}
             {% elif is_admin %}

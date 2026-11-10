@@ -7,8 +7,6 @@
 
 {% block content %}
 <div class="users-page">
-  
-  
 
   <div class="card">
     <div class="card-header">
@@ -27,11 +25,16 @@
           <a href="{% url 'employees_performance' %}" class="btn btn-primary">
             <span class="btn-text">دخل المستخدمين</span>
           </a>
+          {% if request.user.is_main_admin %}
+          <a href="#" class="btn btn-primary" onclick="openPrintModal(''); return false;">
+            <span class="btn-text">طباعة الكل</span>
+          </a>
+          {% endif %}
         </div>
       </div>
     </div>
     <div class="card-body" style="padding:0;overflow:hidden;">
-      
+
       <div class="mobile-users-view" id="mobileUsersView">
         {% for u in users %}
         <div class="user-card-mobile" data-username="{{ u.username|lower }}" data-role="{{ u.role }}" data-branch="{{ u.branch.name|default:''|lower }}">
@@ -63,16 +66,15 @@
               </svg>
               تعديل
             </a>
-            
-                   
-            <a href="{% url 'employee_performance_print' %}?employee_id={{ u.id }}" class="btn btn-outline btn-sm" title="طباعة">
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <polyline points="6 9 6 2 18 2 18 9"></polyline>
-    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-    <rect x="6" y="14" width="12" height="8"></rect>
-  </svg>
-  طباعة
-</a>
+
+            <a href="#" onclick="openPrintModal({{ u.id }}); return false;" class="btn btn-outline btn-sm" title="طباعة">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                <rect x="6" y="14" width="12" height="8"></rect>
+              </svg>
+              طباعة
+            </a>
             {% if u != request.user %}
             <a href="{% url 'user_delete' u.pk %}" class="btn btn-danger btn-sm" data-confirm="هل أنت متأكد من حذف هذا المستخدم؟">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -136,14 +138,14 @@
                       <path d="M4 20h16"></path>
                     </svg>
                   </a>
-                
-                  <a href="{% url 'employee_performance_print' %}?employee_id={{ u.id }}" class="btn btn-outline btn-icon btn-sm" title="طباعة">
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <polyline points="6 9 6 2 18 2 18 9"></polyline>
-    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-    <rect x="6" y="14" width="12" height="8"></rect>
-  </svg>
-</a>
+
+                  <a href="#" onclick="openPrintModal({{ u.id }}); return false;" class="btn btn-outline btn-icon btn-sm" title="طباعة">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                      <rect x="6" y="14" width="12" height="8"></rect>
+                    </svg>
+                  </a>
                   {% if u != request.user %}
                   <a href="{% url 'user_delete' u.pk %}" class="btn btn-danger btn-icon btn-sm" title="حذف" data-confirm="هل أنت متأكد من حذف هذا المستخدم؟">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -177,15 +179,66 @@
   </div>
 </div>
 
+<!-- Modal اختيار تاريخ الطباعة -->
+<div id="printModal" class="print-modal-overlay" style="display:none;">
+  <div class="print-modal-box">
+    <div class="print-modal-header">
+      <h3>اختر نطاق الطباعة</h3>
+      <button type="button" class="print-modal-close" onclick="closePrintModal()">×</button>
+    </div>
+    <div class="print-modal-body">
+      <p class="print-modal-hint">اختر يوم محدد أو فترة زمنية</p>
+
+      <div class="print-modal-tabs">
+        <button type="button" class="print-tab active" data-tab="single" onclick="switchPrintTab('single')">يوم محدد</button>
+        <button type="button" class="print-tab" data-tab="range" onclick="switchPrintTab('range')">فترة من - إلى</button>
+      </div>
+
+      <div class="print-tab-content" id="tab-single">
+        <label class="print-label">التاريخ</label>
+        <input type="date" id="printSingleDate" class="print-input" value="{% now 'Y-m-d' %}">
+
+        <div class="print-quick-btns">
+          <button type="button" onclick="setSingleDate(0)">اليوم</button>
+          <button type="button" onclick="setSingleDate(-1)">أمس</button>
+        </div>
+      </div>
+
+      <div class="print-tab-content" id="tab-range" style="display:none;">
+        <div class="print-range-row">
+          <div>
+            <label class="print-label">من تاريخ</label>
+            <input type="date" id="printDateFrom" class="print-input" value="{% now 'Y-m-01' %}">
+          </div>
+          <div>
+            <label class="print-label">إلى تاريخ</label>
+            <input type="date" id="printDateTo" class="print-input" value="{% now 'Y-m-d' %}">
+          </div>
+        </div>
+
+        <div class="print-quick-btns">
+          <button type="button" onclick="setRange('today')">اليوم</button>
+          <button type="button" onclick="setRange('yesterday')">أمس</button>
+          <button type="button" onclick="setRange('week')">هذا الأسبوع</button>
+          <button type="button" onclick="setRange('month')">هذا الشهر</button>
+        </div>
+      </div>
+    </div>
+    <div class="print-modal-footer">
+      <button type="button" class="btn btn-outline" onclick="closePrintModal()">إلغاء</button>
+      <button type="button" class="btn btn-primary" onclick="confirmPrint()">طباعة</button>
+    </div>
+  </div>
+</div>
+
 <style>
- 
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 16px;
     margin-bottom: 24px;
   }
-  
+
   .stat-card {
     background: #fff;
     border-radius: 12px;
@@ -197,12 +250,12 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     transition: all 0.2s;
   }
-  
+
   .stat-card:hover {
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     transform: translateY(-2px);
   }
-  
+
   .stat-icon {
     width: 48px;
     height: 48px;
@@ -213,24 +266,24 @@
     font-size: 22px;
     flex-shrink: 0;
   }
-  
+
   .stat-icon.primary { background: #fef3ed; color: #E8793A; }
   .stat-icon.success { background: #dcfce7; color: #16a34a; }
   .stat-icon.warning { background: #fef3c7; color: #d97706; }
-  
+
   .stat-value {
     font-size: 24px;
     font-weight: 800;
     color: #1a2236;
     line-height: 1.2;
   }
-  
+
   .stat-label {
     font-size: 12px;
     color: #6b7280;
     font-weight: 500;
   }
-  
+
   .card-header {
     padding: 16px 20px;
     border-bottom: 1px solid #eaecf0;
@@ -240,31 +293,31 @@
     flex-wrap: wrap;
     gap: 12px;
   }
-  
+
   .card-header-left {
     display: flex;
     align-items: center;
     gap: 10px;
   }
-  
+
   .card-header-right {
     display: flex;
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
   }
-  
+
   .card-title {
     font-size: 16px;
     font-weight: 700;
     color: #1a2236;
     margin: 0;
   }
-  
+
   .search-wrapper {
     position: relative;
   }
-  
+
   .search-input {
     padding: 8px 14px;
     border: 1.5px solid #eaecf0;
@@ -273,19 +326,19 @@
     transition: all 0.2s;
     min-width: 200px;
   }
-  
+
   .search-input:focus {
     outline: none;
     border-color: #E8793A;
     box-shadow: 0 0 0 4px rgba(232, 121, 58, 0.1);
   }
-  
+
   .user-cell {
     display: flex;
     align-items: center;
     gap: 12px;
   }
-  
+
   .user-avatar-table {
     width: 36px;
     height: 36px;
@@ -299,20 +352,20 @@
     font-size: 14px;
     flex-shrink: 0;
   }
-  
+
   .action-buttons {
     display: flex;
     gap: 6px;
     justify-content: center;
   }
-  
+
   .mobile-users-view {
     display: none;
     padding: 12px;
     gap: 12px;
     flex-direction: column;
   }
-  
+
   .user-card-mobile {
     background: #fff;
     border: 1px solid #eaecf0;
@@ -320,19 +373,19 @@
     padding: 14px 16px;
     transition: all 0.2s;
   }
-  
+
   .user-card-mobile:hover {
     border-color: #E8793A;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   }
-  
+
   .user-card-header {
     display: flex;
     align-items: center;
     gap: 12px;
     margin-bottom: 12px;
   }
-  
+
   .user-avatar-mobile {
     width: 44px;
     height: 44px;
@@ -346,18 +399,18 @@
     font-size: 18px;
     flex-shrink: 0;
   }
-  
+
   .user-card-info {
     flex: 1;
     min-width: 0;
   }
-  
+
   .user-card-name {
     font-weight: 600;
     font-size: 15px;
     color: #1a2236;
   }
-  
+
   .user-card-details {
     display: flex;
     align-items: center;
@@ -365,31 +418,31 @@
     flex-wrap: wrap;
     margin-top: 2px;
   }
-  
+
   .user-branch {
     font-size: 12px;
     color: #6b7280;
   }
-  
+
   .user-card-status {
     flex-shrink: 0;
   }
-  
+
   .status-dot {
     width: 12px;
     height: 12px;
     border-radius: 50%;
     display: inline-block;
   }
-  
+
   .status-dot.active {
     background: #16a34a;
   }
-  
+
   .status-dot.inactive {
     background: #dc2626;
   }
-  
+
   .user-card-actions {
     display: flex;
     gap: 8px;
@@ -397,184 +450,342 @@
     padding-top: 12px;
     justify-content: flex-end;
   }
-  
+
   .user-card-actions .btn {
     flex: 1;
     min-height: 36px;
     font-size: 13px;
   }
-  
+
   .user-card-actions .btn svg {
     margin-left: 4px;
   }
-  
+
   .empty-state {
     text-align: center;
     padding: 40px 20px;
   }
-  
+
   .empty-icon {
     font-size: 48px;
     margin-bottom: 12px;
   }
-  
+
   .empty-state h5 {
     font-size: 18px;
     color: #1a2236;
     margin-bottom: 4px;
   }
-  
+
+  /* ===== Modal الطباعة ===== */
+  .print-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  .print-modal-box {
+    background: #fff;
+    border-radius: 14px;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+    overflow: hidden;
+    animation: modalIn 0.25s ease;
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: translateY(20px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .print-modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #eaecf0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .print-modal-header h3 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    color: #1a2236;
+  }
+
+  .print-modal-close {
+    background: none;
+    border: none;
+    font-size: 26px;
+    line-height: 1;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0 6px;
+  }
+
+  .print-modal-body {
+    padding: 18px 20px;
+  }
+
+  .print-modal-hint {
+    margin: 0 0 12px;
+    color: #6b7280;
+    font-size: 13px;
+  }
+
+  .print-modal-tabs {
+    display: flex;
+    gap: 6px;
+    background: #f3f4f6;
+    padding: 4px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+  }
+
+  .print-tab {
+    flex: 1;
+    padding: 8px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .print-tab.active {
+    background: #fff;
+    color: #E8793A;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+
+  .print-label {
+    display: block;
+    font-size: 12px;
+    color: #4b5563;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .print-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid #eaecf0;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s;
+  }
+
+  .print-input:focus {
+    outline: none;
+    border-color: #E8793A;
+    box-shadow: 0 0 0 4px rgba(232,121,58,0.1);
+  }
+
+  .print-range-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .print-quick-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .print-quick-btns button {
+    background: #f3f4f6;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #4b5563;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .print-quick-btns button:hover {
+    background: #E8793A;
+    color: #fff;
+  }
+
+  .print-modal-footer {
+    padding: 14px 20px;
+    border-top: 1px solid #eaecf0;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+
   @media (max-width: 1024px) {
     .stats-grid {
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     }
   }
-  
+
   @media (max-width: 768px) {
     .stats-grid {
       grid-template-columns: repeat(3, 1fr);
       gap: 10px;
     }
-    
+
     .stat-card {
       padding: 12px 14px;
     }
-    
+
     .stat-value {
       font-size: 20px;
     }
-    
+
     .stat-icon {
       width: 40px;
       height: 40px;
       font-size: 18px;
     }
-    
+
     .desktop-users-view {
       display: none !important;
     }
-    
+
     .mobile-users-view {
       display: flex !important;
     }
-    
+
     .card-header {
       flex-direction: column;
       align-items: stretch !important;
       gap: 12px;
     }
-    
+
     .card-header-right {
       flex-direction: column;
       width: 100%;
     }
-    
+
     .search-wrapper {
       width: 100%;
     }
-    
+
     .search-input {
       width: 100%;
       min-width: unset;
     }
-    
+
     .card-header-right .btn {
       width: 100%;
       justify-content: center;
     }
-    
+
     .btn-text {
       display: inline;
     }
   }
-  
+
   @media (max-width: 480px) {
     .stats-grid {
       grid-template-columns: 1fr 1fr;
       gap: 8px;
     }
-    
+
     .stat-card {
       padding: 10px 12px;
     }
-    
+
     .stat-value {
       font-size: 18px;
     }
-    
+
     .stat-label {
       font-size: 10px;
     }
-    
+
     .stat-icon {
       width: 36px;
       height: 36px;
       font-size: 16px;
     }
-    
+
     .user-card-mobile {
       padding: 12px;
     }
-    
+
     .user-avatar-mobile {
       width: 38px;
       height: 38px;
       font-size: 16px;
     }
-    
+
     .user-card-name {
       font-size: 14px;
     }
-    
+
     .user-card-actions .btn {
       font-size: 12px;
       padding: 6px 10px;
       min-height: 32px;
     }
-    
+
     .card-header {
       padding: 12px 14px;
     }
-    
+
     .card-body {
       padding: 0;
     }
+
+    .print-range-row { grid-template-columns: 1fr; }
+    .print-modal-footer .btn { flex: 1; }
   }
-  
+
   @media (min-width: 769px) {
     .desktop-users-view {
       display: block !important;
     }
-    
+
     .mobile-users-view {
       display: none !important;
     }
   }
-  
+
   @media print {
     .stats-grid {
       display: none;
     }
-    
+
     .search-wrapper,
     .card-header-right .btn {
       display: none;
     }
-    
+
     .action-buttons {
       display: none;
     }
-    
+
     .user-card-actions {
       display: none;
     }
-    
+
     .mobile-users-view {
       display: none !important;
     }
-    
+
     .desktop-users-view {
       display: block !important;
+    }
+
+    .print-modal-overlay {
+      display: none !important;
     }
   }
 </style>
@@ -582,41 +793,43 @@
 <script>
   (function() {
     'use strict';
-    
+
+    /* ===== البحث ===== */
     const searchInput = document.getElementById('userSearch');
-    
+
     if (searchInput) {
       searchInput.addEventListener('input', function() {
         const query = this.value.toLowerCase().trim();
-        
+
         const tableRows = document.querySelectorAll('#usersTableBody tr');
         tableRows.forEach(function(row) {
           const username = row.getAttribute('data-username') || '';
           const role = row.getAttribute('data-role') || '';
           const branch = row.getAttribute('data-branch') || '';
-          
-          const matches = username.includes(query) || 
-                         role.includes(query) || 
+
+          const matches = username.includes(query) ||
+                         role.includes(query) ||
                          branch.includes(query);
-          
+
           row.style.display = matches ? '' : 'none';
         });
-        
+
         const mobileCards = document.querySelectorAll('.user-card-mobile');
         mobileCards.forEach(function(card) {
           const username = card.getAttribute('data-username') || '';
           const role = card.getAttribute('data-role') || '';
           const branch = card.getAttribute('data-branch') || '';
-          
-          const matches = username.includes(query) || 
-                         role.includes(query) || 
+
+          const matches = username.includes(query) ||
+                         role.includes(query) ||
                          branch.includes(query);
-          
+
           card.style.display = matches ? '' : 'none';
         });
       });
     }
-    
+
+    /* ===== تأكيد الحذف ===== */
     document.querySelectorAll('[data-confirm]').forEach(function(btn) {
       btn.addEventListener('click', function(e) {
         const message = this.getAttribute('data-confirm');
@@ -626,17 +839,127 @@
         }
       });
     });
-    
+
+    /* ===== تأثير لمس على أزرار الموبايل ===== */
     document.querySelectorAll('.user-card-mobile .btn').forEach(function(btn) {
       btn.addEventListener('touchstart', function() {
         this.style.transform = 'scale(0.97)';
       }, { passive: true });
-      
+
       btn.addEventListener('touchend', function() {
         this.style.transform = 'scale(1)';
       }, { passive: true });
     });
-    
+
   })();
+
+  /* ============================================================
+     Modal الطباعة
+  ============================================================ */
+  let currentPrintEmployeeId = '';
+
+  function openPrintModal(employeeId) {
+    currentPrintEmployeeId = employeeId || '';
+    const modal = document.getElementById('printModal');
+    if (modal) {
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  function closePrintModal() {
+    const modal = document.getElementById('printModal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  function switchPrintTab(tab) {
+    document.querySelectorAll('.print-tab').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.tab === tab);
+    });
+    document.getElementById('tab-single').style.display = (tab === 'single') ? '' : 'none';
+    document.getElementById('tab-range').style.display  = (tab === 'range')  ? '' : 'none';
+  }
+
+  /* ===== أزرار سريعة ===== */
+  function toISO(d) {
+    return d.toISOString().slice(0, 10);
+  }
+
+  function setSingleDate(offsetDays) {
+    const d = new Date();
+    d.setDate(d.getDate() + offsetDays);
+    document.getElementById('printSingleDate').value = toISO(d);
+  }
+
+  function setRange(type) {
+    const today = new Date();
+    const fromEl = document.getElementById('printDateFrom');
+    const toEl   = document.getElementById('printDateTo');
+
+    if (type === 'today') {
+      fromEl.value = toISO(today);
+      toEl.value   = toISO(today);
+    } else if (type === 'yesterday') {
+      const y = new Date(today);
+      y.setDate(y.getDate() - 1);
+      fromEl.value = toISO(y);
+      toEl.value   = toISO(y);
+    } else if (type === 'week') {
+      const start = new Date(today);
+      const day = start.getDay(); // 0 = الأحد
+      // اجعل بداية الأسبوع السبت (6)
+      const diff = (day + 1) % 7;
+      start.setDate(start.getDate() - diff);
+      fromEl.value = toISO(start);
+      toEl.value   = toISO(today);
+    } else if (type === 'month') {
+      const start = new Date(today.getFullYear(), today.getMonth(), 1);
+      fromEl.value = toISO(start);
+      toEl.value   = toISO(today);
+    }
+  }
+
+  function confirmPrint() {
+    const activeTab = document.querySelector('.print-tab.active');
+    const isSingle = activeTab && activeTab.dataset.tab === 'single';
+
+    const baseUrl = "{% url 'employee_performance_print' %}";
+    const params = new URLSearchParams();
+
+    if (currentPrintEmployeeId) {
+      params.set('employee_id', currentPrintEmployeeId);
+    }
+
+    if (isSingle) {
+      const d = document.getElementById('printSingleDate').value;
+      if (!d) { alert('اختر التاريخ'); return; }
+      params.set('date_from', d);
+      params.set('date_to', d);
+    } else {
+      const from = document.getElementById('printDateFrom').value;
+      const to   = document.getElementById('printDateTo').value;
+      if (!from || !to) { alert('اختر الفترة كاملة'); return; }
+      if (from > to) { alert('تاريخ البداية يجب أن يكون قبل النهاية'); return; }
+      params.set('date_from', from);
+      params.set('date_to', to);
+    }
+
+    closePrintModal();
+    window.open(baseUrl + '?' + params.toString(), '_blank');
+  }
+
+  /* ===== إغلاق عند الضغط على الخلفية أو ESC ===== */
+  document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('printModal');
+    if (modal) {
+      modal.addEventListener('click', function(e) {
+        if (e.target === this) closePrintModal();
+      });
+    }
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closePrintModal();
+    });
+  });
 </script>
 {% endblock %}

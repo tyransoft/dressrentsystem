@@ -2879,6 +2879,38 @@ def employee_performance_print(request):
     today = timezone.now().date()
     employee_id = request.GET.get('employee_id')
 
+    # ===== قراءة معاملات التاريخ =====
+    date_from_str = request.GET.get('date_from')
+    date_to_str = request.GET.get('date_to')
+
+    def parse_date(value):
+        if not value:
+            return None
+        try:
+            return datetime.strptime(value, '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            return None
+
+    date_from = parse_date(date_from_str)
+    date_to = parse_date(date_to_str)
+
+    # لو المستخدم مرر تاريخ واحد فقط → نعتبره يوم واحد
+    if date_from and not date_to:
+        date_to = date_from
+    if date_to and not date_from:
+        date_from = date_to
+
+    # لو ما في تاريخ → اليوم
+    if not date_from:
+        date_from = today
+        date_to = today
+
+    # ضمان الترتيب
+    if date_from > date_to:
+        date_from, date_to = date_to, date_from
+
+    is_range = (date_from != date_to)
+
     employees = CustomUser.objects.all()
     selected_employee = None
     if employee_id:
@@ -2890,21 +2922,26 @@ def employee_performance_print(request):
 
     # ===== تحديد الموظفين المشمولين بالتقرير =====
     if is_admin:
-        # الأدمن: كل الموظفين (أو موظف محدد إن اختار)
         employees_to_report = (
             [selected_employee] if selected_employee else employees
         )
     else:
-        # الموظف العادي: نفسه فقط
         employees_to_report = [request.user]
+
+    # ===== دالة مساعدة لبناء فلتر التاريخ =====
+    def invoice_date_filter():
+        return dict(created_at__date__range=(date_from, date_to))
+
+    def payment_date_filter():
+        return dict(payment_date__range=(date_from, date_to))
 
     # ===== بناء تقرير لكل موظف =====
     employees_report = []
 
     for emp in employees_to_report:
         emp_invoices = Invoice.objects.filter(
-            created_at__date=today,
             created_by=emp,
+            **invoice_date_filter()
         ).exclude(status=InvoiceStatus.CANCELLED)
 
         totals = emp_invoices.aggregate(
@@ -2921,7 +2958,6 @@ def employee_performance_print(request):
         total_discount = totals['discount'] or Decimal('0')
         total_commission = totals['commission'] or Decimal('0')
 
-        # إيجار / بيع
         rent_invoices = emp_invoices.filter(invoice_type=InvoiceType.RENT)
         sale_invoices = emp_invoices.filter(invoice_type=InvoiceType.SALE)
         total_rent_revenue = rent_invoices.aggregate(
@@ -2931,31 +2967,26 @@ def employee_performance_print(request):
             total=Sum('total_amount')
         )['total'] or Decimal('0')
 
-        # البنود
         emp_items = InvoiceItem.objects.filter(invoice__in=emp_invoices)
         total_items = emp_items.count()
         total_rent_days = emp_items.aggregate(
             total=Sum('days')
         )['total'] or 0
 
-        sale_items = emp_items.filter(
-            invoice__invoice_type=InvoiceType.SALE
-        )
+        sale_items = emp_items.filter(invoice__invoice_type=InvoiceType.SALE)
         sale_product_cost = sale_items.aggregate(
             total=Sum('product__cost_price')
         )['total'] or Decimal('0')
 
         total_gross_profit = total_revenue - sale_product_cost
 
-        # الغرامات
         total_penalties = Penalty.objects.filter(
             invoice__in=emp_invoices
         ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
 
-        # الدفعات (payment_date الآن DateField)
         emp_payments = CustomerPayment.objects.filter(
-            payment_date=today,
             created_by=emp,
+            **payment_date_filter()
         ).select_related('customer', 'invoice', 'created_by')
 
         total_payments = emp_payments.aggregate(
@@ -2982,29 +3013,25 @@ def employee_performance_print(request):
             'total_payments': total_payments,
         })
 
-    # ===== الإجماليات العامة (للعرض في البطاقات العلوية) =====
+    # ===== الإجماليات العامة =====
     if is_admin and not selected_employee:
-        # الأدمن بدون تحديد موظف: مجموع الجميع
         overall_invoices = Invoice.objects.filter(
-            created_at__date=today
+            **invoice_date_filter()
         ).exclude(status=InvoiceStatus.CANCELLED)
-
         overall_payments = CustomerPayment.objects.filter(
-            payment_date=today
+            **payment_date_filter()
         )
     else:
         target_emp = selected_employee or request.user
         overall_invoices = Invoice.objects.filter(
-            created_at__date=today,
             created_by=target_emp,
+            **invoice_date_filter()
         ).exclude(status=InvoiceStatus.CANCELLED)
-
         overall_payments = CustomerPayment.objects.filter(
-            payment_date=today,
             created_by=target_emp,
+            **payment_date_filter()
         )
 
-    # إجماليات الفواتير العامة
     overall_totals = overall_invoices.aggregate(
         revenue=Sum('total_amount'),
         paid=Sum('paid_amount'),
@@ -3020,7 +3047,6 @@ def employee_performance_print(request):
     total_discount = overall_totals['discount'] or Decimal('0')
     total_commission = overall_totals['commission'] or Decimal('0')
 
-    # إيجار / بيع
     overall_rent = overall_invoices.filter(invoice_type=InvoiceType.RENT)
     overall_sale = overall_invoices.filter(invoice_type=InvoiceType.SALE)
     total_rent_revenue = overall_rent.aggregate(
@@ -3030,7 +3056,6 @@ def employee_performance_print(request):
         total=Sum('total_amount')
     )['total'] or Decimal('0')
 
-    # البنود
     overall_items = InvoiceItem.objects.filter(invoice__in=overall_invoices)
     total_items = overall_items.count()
     total_rent_days = overall_items.aggregate(
@@ -3046,12 +3071,10 @@ def employee_performance_print(request):
 
     total_gross_profit = total_revenue - sale_product_cost
 
-    # الغرامات
     total_penalties = Penalty.objects.filter(
         invoice__in=overall_invoices
     ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
 
-    # الدفعات
     customer_payments = overall_payments.select_related(
         'customer', 'invoice', 'created_by'
     )
@@ -3061,14 +3084,13 @@ def employee_performance_print(request):
 
     context = {
         'today': today,
+        'date_from': date_from,
+        'date_to': date_to,
+        'is_range': is_range,
         'employees': employees,
         'selected_employee': selected_employee,
         'is_admin': is_admin,
-
-        # ✅ قائمة التقارير لكل موظف (للأدمن)
         'employees_report': employees_report,
-
-        # الإجماليات العامة (للبطاقات العلوية)
         'total_invoices': total_invoices,
         'total_revenue': total_revenue,
         'total_paid': total_paid,
@@ -3083,14 +3105,10 @@ def employee_performance_print(request):
         'total_gross_profit': total_gross_profit,
         'total_penalties': total_penalties,
         'total_payments': total_payments,
-
-        # الدفعات (للموظف العادي / العرض التفصيلي)
         'customer_payments': customer_payments,
         'invoices': overall_invoices,
     }
     return render(request, 'employee_performance_print.html', context)
-
-
 @login_required
 def admin_daily_report_print(request):
     today = timezone.now().date()
