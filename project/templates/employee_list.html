@@ -286,6 +286,29 @@ tbody td {
         justify-content: center;
     }
 }
+.remaining-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 700;
+}
+.remaining-zero {
+    color: #16a34a;
+    font-size: 18px;
+    font-weight: 700;
+}
+.remaining-positive {
+    color: #dc2626;
+}
+.remaining-positive .icon-x {
+    font-size: 16px;
+}
+.remaining-negative {
+    color: #d97706; 
+}
+.remaining-negative .icon-warn {
+    font-size: 14px;
+}
 </style>
 
 <div class="page-container">
@@ -302,6 +325,7 @@ tbody td {
                     <th>الاسم</th>
                     <th>الوظيفة</th>
                     <th>المرتب</th>
+                    <th>المتبقي</th>
                     <th>الحالة</th>
                     <th>الاجراءات</th>
                 </tr>
@@ -313,6 +337,21 @@ tbody td {
                     <td class="fw-semibold">{{ emp.full_name }}</td>
                     <td>{{ emp.position }}</td>
                     <td>{{ emp.monthly_salary|floatformat:0 }} د.ل</td>
+<td>
+    {% if emp.monthly_remaining == 0 %}
+        <span class="remaining-zero" title="مسدد بالكامل">✔</span>
+    {% elif emp.monthly_remaining > 0 %}
+        <span class="remaining-cell remaining-positive">
+            <span class="icon-x">✘</span>
+            {{ emp.monthly_remaining|floatformat:0 }} د.ل
+        </span>
+    {% else %}
+        <span class="remaining-cell remaining-negative" title="سلفة / زيادة">
+            <span class="icon-warn">⚠</span>
+            {{ emp.monthly_remaining|floatformat:0 }} د.ل
+        </span>
+    {% endif %}
+</td>
                     <td>
                         {% if emp.status == 'active' %}
                         <span class="badge-status badge-active">نشط</span>
@@ -362,6 +401,22 @@ tbody td {
                     <span class="label">المرتب</span>
                     <span class="value salary">{{ emp.monthly_salary|floatformat:0 }} د.ل</span>
                 </div>
+<div class="card-item">
+    <span class="label">المتبقي</span>
+    {% if emp.monthly_remaining == 0 %}
+        <span class="value remaining-zero">✔ مسدد</span>
+    {% elif emp.monthly_remaining > 0 %}
+        <span class="value remaining-cell remaining-positive">
+            <span class="icon-x">✘</span>
+            {{ emp.monthly_remaining|floatformat:0 }} د.ل
+        </span>
+    {% else %}
+        <span class="value remaining-cell remaining-negative" title="سلفة / زيادة">
+            <span class="icon-warn">⚠</span>
+            {{ emp.monthly_remaining|floatformat:0 }} د.ل
+        </span>
+    {% endif %}
+</div>
             </div>
             <div class="card-footer">
                 <a href="{% url 'employee_edit' emp.pk %}" class="btn-action btn-edit">تعديل</a>
