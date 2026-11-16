@@ -326,14 +326,35 @@ def product_detail(request, pk):
     }
     return render(request, 'products/detail.html', context)
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 @login_required
 def product_delete(request, pk):
-    if not (request.user.is_main_admin() or request.user.is_product_manager):
+    logger.warning(
+        "PRODUCT DELETE REQUEST | User: %s | PK: %s | Path: %s",
+        request.user.username,
+        pk,
+        request.path
+    )
+
+    if not request.user.is_main_admin() and not request.user.is_product_manager():
         messages.error(request, 'غير مصرح')
         return redirect('products_list')
 
-    product = get_object_or_404(Product, pk=pk)
+    product = Product.objects.filter(pk=pk).first()
+
+    if not product:
+        logger.error(
+            "PRODUCT NOT FOUND | User: %s | PK: %s",
+            request.user.username,
+            pk
+        )
+        messages.error(request, 'المنتج غير موجود، ربما تم حذفه مسبقاً')
+        return redirect('products_list')
+
+
 
     blocking_items = InvoiceItem.objects.filter(
         product=product
