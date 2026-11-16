@@ -25,7 +25,7 @@ TEMP=BASE_DIR / 'templates'
 SECRET_KEY = 'django-insecure-^fnuj#%%un7^16h@w002qi6+lj)s6#w(pgmkz+ih4e46&*w*$a'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['dressrent.tip2.libyanspider.cloud']
 CSRF_TRUSTED_ORIGINS = [

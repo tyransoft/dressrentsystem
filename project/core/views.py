@@ -326,9 +326,10 @@ def product_detail(request, pk):
     }
     return render(request, 'products/detail.html', context)
 
+
 @login_required
 def product_delete(request, pk):
-    if not request.user.is_main_admin():
+    if not (request.user.is_main_admin() or request.user.is_product_manager):
         messages.error(request, 'غير مصرح')
         return redirect('products_list')
 
