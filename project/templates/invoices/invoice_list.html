@@ -255,6 +255,9 @@
                   <a href="{% url 'confirm_return' invoice.id %}" class="btn btn-success" title="استلام">
                     <i class="fas fa-check"></i>
                   </a>
+                  {% endif %}
+                  {% if request.user.is_main_admin %}
+
                   <a class="btn btn-danger" href="{% url 'cancel_invoice' invoice.id %}" title="حذف">
                     <i class="fas fa-times"></i>
                   </a>
@@ -324,7 +327,9 @@
           <a href="{% url 'confirm_return' invoice.id %}" class="btn-success-sm">
             <i class="fas fa-check"></i> استلام
           </a>
-          
+          {% endif%}
+          {% if request.user.is_main_admin %}
+
           <a class="btn btn-danger" href="{% url 'cancel_invoice' invoice.id %}" title="حذف">
             <i class="fas fa-times"></i>
           </a>

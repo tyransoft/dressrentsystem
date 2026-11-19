@@ -763,7 +763,7 @@
             <i class="fa-solid fa-check"></i> تسليم
         </button>
         {% endif %}
-        {% if invoice.status != 'cancelled' %}
+        {% if invoice.status != 'cancelled'  and  request.user.is_main_admin %}
 <a href="{% url 'edit_invoice' reservation.pk %}" class="btn-back">
     تعديل الفاتورة
 </a>
@@ -779,10 +779,11 @@
                 )" style="border-color: #25D366; color: #25D366;">
             <i class="fa-brands fa-whatsapp"></i> تنبيه واتساب
         </button>
-        
+        {% if request.user.is_main_admin %}
                   <a class="btn btn-danger" href="{% url 'cancel_invoice' reservation.id %}" title="حذف">
                     <i class="fas fa-times"></i>
                   </a>
+                  {% endif  %}
     </div>
 
 </div>
